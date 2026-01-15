@@ -64,16 +64,12 @@
    </div>
  <script>
  // --- PHẦN 1: KHỞI TẠO DỮ LIỆU ---
-    
-    // 1. Kiểm tra xem trong kho lưu trữ (LocalStorage) đã có gì chưa?
     let dataLuuTru = localStorage.getItem("danhSachHocTap");
     let loTrinh;
 
     if (dataLuuTru) {
-        // Nếu có rồi thì lôi ra dùng (parse: giải nén dữ liệu)
         loTrinh = JSON.parse(dataLuuTru);
     } else {
-        // Nếu là người mới chưa có gì, thì dùng dữ liệu mẫu này
         loTrinh = [
             { thang: "Tháng 1", noiDung: "HTML & Cấu trúc Web", trangThai: "✅ Hoàn thành" },
             { thang: "Tháng 2", noiDung: "CSS & Giao diện đẹp", trangThai: "⏳ Đang học" },
@@ -83,71 +79,94 @@
 
     const boKhungBang = document.getElementById("bang-lo-trinh");
 
-    loTrinh.forEach(function(monHoc) {
-        // --- ĐOẠN LOGIC MỚI THÊM VÀO ---
-        let mauSac = ""; // Tạo một biến để chứa tên class màu
+    // --- PHẦN 2: HÀM HIỂN THỊ BẢNG (CORE) ---
+    // Đây là hàm quan trọng nhất, dùng để vẽ lại bảng bất cứ lúc nào
+    function hienThiBang() {
+        // 1. Xóa trắng bảng cũ trước khi vẽ lại (để không bị trùng lặp)
+        boKhungBang.innerHTML = "";
 
-        // Máy tính sẽ kiểm tra nội dung chữ để chọn màu
-        if (monHoc.trangThai.includes("Hoàn thành")) {
-            mauSac = "status-done"; // Gán class màu xanh
-        } else if (monHoc.trangThai.includes("Đang học")) {
-            mauSac = "status-learning"; // Gán class màu cam
-        } else {
-            mauSac = "status-waiting"; // Còn lại là màu đỏ
-        }
-        // -------------------------------
+        // 2. Chạy vòng lặp vẽ từng dòng
+        // Tham số 'index' là số thứ tự: 0, 1, 2... (Dùng để xác định dòng nào cần xóa)
+        loTrinh.forEach(function(monHoc, index) {
+            
+            // Logic màu sắc
+            let mauSac = "status-waiting";
+            if (monHoc.trangThai.includes("Hoàn thành")) {
+                mauSac = "status-done";
+            } else if (monHoc.trangThai.includes("Đang học")) {
+                mauSac = "status-learning";
+            }
 
-        const dongMoi = `
-            <tr>
-                <td>${monHoc.thang}</td>
-                <td>${monHoc.noiDung}</td>
-                <td class="${mauSac}">${monHoc.trangThai}</td>
-            </tr>
-        `;
-        
-        boKhungBang.innerHTML += dongMoi;
-    });
+            // Tạo dòng HTML (Có thêm nút Xóa màu đỏ)
+            // Lưu ý chỗ onclick="xoaThang(${index})" -> Gọi hàm xóa đúng số thứ tự đó
+          // Tạo dòng HTML (Đã Clean Code)
+            const dongMoi = `
+                <tr>
+                    <td>${monHoc.thang}</td>
+                    <td>${monHoc.noiDung}</td>
+                    <td class="${mauSac}">${monHoc.trangThai}</td>
+                    <td style="text-align: center;">
+                        <button onclick="xoaThang(${index})" class="btn-delete">
+                            Xóa
+                        </button>
+                    </td>
+                </tr>
+            `;
+            
+            boKhungBang.innerHTML += dongMoi;
+        });
+    }
+
+    // Gọi hàm hiển thị lần đầu tiên khi vừa vào trang
+    hienThiBang();
+
+    // --- PHẦN 3: CÁC CHỨC NĂNG NGƯỜI DÙNG ---
+
+    // Chức năng 1: Thêm mới
     function themThangMoi() {
-        // ... (Phần lấy dữ liệu và kiểm tra rỗng GIỮ NGUYÊN) ...
         const thangNhap = document.getElementById("nhap-thang").value;
         const noiDungNhap = document.getElementById("nhap-noi-dung").value;
-        
+
         if (thangNhap === "" || noiDungNhap === "") {
-            alert("Bạn ơi, nhập đủ thông tin nhé!");
+            alert("Vui lòng nhập đầy đủ thông tin!");
             return;
         }
 
-        // ... (Phần tạo HTML hiển thị lên bảng GIỮ NGUYÊN) ...
-        const dongMoi = `
-            <tr>
-                <td>${thangNhap}</td>
-                <td>${noiDungNhap}</td>
-                <td class="status-waiting">⭕ Sắp tới</td>
-            </tr>
-        `;
-        const boKhungBang = document.getElementById("bang-lo-trinh");
-        boKhungBang.innerHTML += dongMoi;
-
-        // --- 👇 THÊM ĐOẠN MỚI NÀY VÀO ĐÂY 👇 ---
-        
-        // 1. Gói dữ liệu vừa nhập thành một cục (Object)
         const doiTuongMoi = {
             thang: thangNhap,
             noiDung: noiDungNhap,
             trangThai: "⭕ Sắp tới"
         };
 
-        // 2. Nhét vào danh sách chung
+        // Thêm vào dữ liệu
         loTrinh.push(doiTuongMoi);
-
-        // 3. Lưu cả danh sách vào kho LocalStorage (stringify: đóng gói để lưu)
-        localStorage.setItem("danhSachHocTap", JSON.stringify(loTrinh));
         
-        // ----------------------------------------
-
+        // Lưu và Vẽ lại bảng ngay lập tức
+        luuVaCapNhat();
+        
         // Dọn dẹp ô nhập
         document.getElementById("nhap-thang").value = "";
         document.getElementById("nhap-noi-dung").value = "";
+    }
+
+    // Chức năng 2: Xóa (Mới toanh)
+    function xoaThang(index) {
+        // Hỏi lại cho chắc chắn (Dùng hàm confirm của trình duyệt)
+        const xacNhan = confirm("Bạn có chắc muốn xóa dòng này không?");
+        
+        if (xacNhan == true) {
+            // Lệnh splice(vị trí, số lượng): Xóa 1 phần tử tại vị trí 'index'
+            loTrinh.splice(index, 1);
+            
+            // Lưu và Vẽ lại bảng ngay lập tức
+            luuVaCapNhat();
+        }
+    }
+
+    // Hàm phụ: Giúp code gọn hơn (Lưu vào kho -> Vẽ lại bảng)
+    function luuVaCapNhat() {
+        localStorage.setItem("danhSachHocTap", JSON.stringify(loTrinh));
+        hienThiBang();
     }
 </script>
 </body>
