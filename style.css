@@ -158,3 +158,17 @@ tr:hover {
 .btn-add:hover {
     background: #2980b9; 
 }
+/* --- Nút Xóa (Delete Button) --- */
+.btn-delete {
+    background: #e74c3c; /* Màu đỏ */
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.btn-delete:hover {
+    background: #c0392b; /* Đậm hơn khi di chuột */
+}
