@@ -1,0 +1,160 @@
+/* Tổng thể trang web */
+body {
+    background-color: #f0f2f5; /* Màu nền nhẹ nhàng */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+}
+
+/* Căn giữa phần Header */
+.header {
+    background-color: #ffffff;
+    padding: 40px;
+    text-align: center; /* Căn giữa toàn bộ chữ và ảnh */
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Tạo hiệu ứng đổ bóng */
+    margin-bottom: 30px;
+}
+
+.header img {
+    border-radius: 50%; /* Làm ảnh đại diện hình tròn */
+    border: 5px solid #007bff; /* Thêm viền xanh cho ảnh */
+    margin-top: 15px;
+}
+
+/* Làm đẹp các khối nội dung */
+.skills, .about, .contact {
+    background-color: #ffffff;
+    padding: 25px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+}
+
+.skills ul {
+    list-style-type: none;
+    padding: 0;
+    display: flex; /* Xếp các mục nằm ngang */
+    flex-wrap: wrap; /* Tự động xuống dòng nếu hết chỗ */
+    gap: 10px; /* Khoảng cách giữa các thẻ */
+}
+
+.skills li {
+    background: #e7f3ff;
+    padding: 8px 20px;
+    border-radius: 20px; /* Bo tròn như hình viên thuốc */
+    border-left: none; /* Bỏ đường kẻ bên trái cũ */
+    font-weight: bold;
+    transition: 0.3s;
+}
+/* Tạo một "thùng chứa" chung để giới hạn độ rộng của CV */
+.container {
+    max-width: 800px; /* Độ rộng tối đa là 800 pixel */
+    margin: 0 auto;  /* Căn giữa toàn bộ khối này ra giữa màn hình */
+}
+/* Hiệu ứng khi di chuột vào các khối nội dung */
+.header:hover, .about:hover, .skills:hover, .contact:hover {
+    transform: translateY(-5px); /* Nhấc khối lên 5px */
+    transition: all 0.3s ease; /* Làm cho chuyển động mượt mà */
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2); /* Đổ bóng đậm hơn */
+}
+
+/* Hiệu ứng cho các dòng kỹ năng */
+.skills li:hover {
+    background-color: #007bff; /* Đổi màu nền thành xanh */
+    color: white; /* Đổi màu chữ thành trắng */
+    cursor: pointer; /* Đổi con trỏ chuột thành hình bàn tay */
+}
+/* Trang trí bảng lộ trình */
+.roadmap {
+    background-color: #ffffff;
+    padding: 25px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+table {
+    width: 100%; /* Bảng rộng full khung */
+    border-collapse: collapse; /* Gộp các đường viền lại thành 1 nét mảnh */
+    margin-top: 10px;
+}
+
+th, td {
+    padding: 12px 15px; /* Tạo khoảng trống trong ô cho thoáng */
+    border: 1px solid #ddd; /* Kẻ viền màu xám nhạt */
+    text-align: left;
+}
+
+/* Tô màu nền cho hàng tiêu đề */
+th {
+    background-color: #2c3e50;
+    color: white;
+}
+
+/* Hiệu ứng "Zebra Striping" - Tô màu xen kẽ các dòng chẵn lẻ */
+tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+/* Hiệu ứng khi di chuột vào từng dòng */
+tr:hover {
+    background-color: #f1f1f1;
+}
+/* Định nghĩa các màu sắc trạng thái */
+.status-done {
+    color: #27ae60; /* Màu xanh lá */
+    font-weight: bold;
+}
+
+.status-learning {
+    color: #f39c12; /* Màu cam */
+    font-weight: bold;
+}
+
+.status-waiting {
+    color: #c0392b; /* Màu đỏ */
+    font-style: italic;
+}
+/* --- PHẦN FORM NHẬP LIỆU MỚI --- */
+
+/* Cái khung bao quanh */
+.form-container {
+    margin-top: 20px;
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    text-align: center; /* Căn giữa toàn bộ nội dung */
+}
+
+/* Các ô nhập liệu (Input) */
+.input-box {
+    padding: 10px;
+    margin-right: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    outline: none; /* Bỏ viền xanh mặc định khi click vào */
+}
+
+/* Riêng ô nhập nội dung thì cho rộng hơn */
+.input-wide {
+    width: 300px;
+}
+
+/* Nút bấm (Button) */
+.btn-add {
+    padding: 10px 20px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s; /* Làm mượt hiệu ứng đổi màu */
+}
+
+/* Hiệu ứng: Khi di chuột vào nút thì nút đậm màu hơn */
+.btn-add:hover {
+    background: #2980b9; 
+}

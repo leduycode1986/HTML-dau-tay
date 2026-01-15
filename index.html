@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trang Cá Nhân Lê Khánh Duy</title>  
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Lê Khánh Duy</h1>
+            <p><strong>Lập trình viên tương lai</strong></p>
+            <img src="anh chan dung.jpg" alt="Ảnh Lê Khánh Duy" width="200">
+            <p>Xin chào! Tôi là Lê Khánh Duy, một lập trình viên đam mê công nghệ và phát triển phần mềm. Tôi yêu thích việc khám phá các ngôn ngữ lập trình.</p>
+        </div>
+    <hr> <div class="about">
+        <h2>Giới thiệu bản thân</h2>
+        <p>Tôi sinh ra và lớn lên ở Việt Nam, nơi tôi đã phát triển niềm đam mê với công nghệ từ khi còn nhỏ. Trong quá trình học tập, tôi luôn nỗ lực.</p>
+    </div>
+
+    <div class="skills">
+        <h2>Kỹ năng lập trình</h2>
+        <ul>
+            <li><strong>HTML5:</strong> Cấu trúc web (Đang học)</li>
+            <li><strong>CSS3:</strong> Giao diện web (Đang học)</li>
+            <li><strong>Công cụ:</strong> Sử dụng Visual Studio Code thành thạo</li>
+        </ul>
+    </div>
+<div class="roadmap">
+    <h2>Lộ trình học tập</h2>
+    <table>
+    <thead>
+        <tr>
+            <th>Thời gian</th>
+            <th>Nội dung</th>
+            <th>Trạng thái</th>
+        </tr>
+    </thead>
+    <tbody id="bang-lo-trinh">
+        </tbody>
+    </table>
+
+    <div class="form-container">
+        <h3>🌱 Thêm kế hoạch mới</h3>
+        
+        <input type="text" id="nhap-thang" class="input-box" placeholder="Ví dụ: Tháng 6">
+        
+        <input type="text" id="nhap-noi-dung" class="input-box input-wide" placeholder="Nội dung bạn muốn học...">
+
+        <button onclick="themThangMoi()" class="btn-add">
+            + Thêm ngay
+        </button>
+    </div>
+
+</div>
+    <div class="contact">
+        <h2>Thông tin liên hệ</h2>
+        <p>📍 Địa chỉ: 123 Đường ABC, Quận 1, TP. Hồ Chí Minh</p>
+        <p>📞 Số điện thoại: 0123 456 789</p>
+        <p>📧 Email: <a href="mailto:lekhanhduy1986@gmail.com">lekhanhduy1986@gmail.com</a></p>
+        <p>🌐 Facebook: <a href="https://www.facebook.com/lekhanhduy.lkd/" target="_blank">Ghé thăm Facebook của tôi</a></p>
+    </div>
+   </div>
+ <script>
+ // --- PHẦN 1: KHỞI TẠO DỮ LIỆU ---
+    
+    // 1. Kiểm tra xem trong kho lưu trữ (LocalStorage) đã có gì chưa?
+    let dataLuuTru = localStorage.getItem("danhSachHocTap");
+    let loTrinh;
+
+    if (dataLuuTru) {
+        // Nếu có rồi thì lôi ra dùng (parse: giải nén dữ liệu)
+        loTrinh = JSON.parse(dataLuuTru);
+    } else {
+        // Nếu là người mới chưa có gì, thì dùng dữ liệu mẫu này
+        loTrinh = [
+            { thang: "Tháng 1", noiDung: "HTML & Cấu trúc Web", trangThai: "✅ Hoàn thành" },
+            { thang: "Tháng 2", noiDung: "CSS & Giao diện đẹp", trangThai: "⏳ Đang học" },
+            { thang: "Tháng 3", noiDung: "JavaScript cơ bản", trangThai: "⭕ Sắp tới" }
+        ];
+    }
+
+    const boKhungBang = document.getElementById("bang-lo-trinh");
+
+    loTrinh.forEach(function(monHoc) {
+        // --- ĐOẠN LOGIC MỚI THÊM VÀO ---
+        let mauSac = ""; // Tạo một biến để chứa tên class màu
+
+        // Máy tính sẽ kiểm tra nội dung chữ để chọn màu
+        if (monHoc.trangThai.includes("Hoàn thành")) {
+            mauSac = "status-done"; // Gán class màu xanh
+        } else if (monHoc.trangThai.includes("Đang học")) {
+            mauSac = "status-learning"; // Gán class màu cam
+        } else {
+            mauSac = "status-waiting"; // Còn lại là màu đỏ
+        }
+        // -------------------------------
+
+        const dongMoi = `
+            <tr>
+                <td>${monHoc.thang}</td>
+                <td>${monHoc.noiDung}</td>
+                <td class="${mauSac}">${monHoc.trangThai}</td>
+            </tr>
+        `;
+        
+        boKhungBang.innerHTML += dongMoi;
+    });
+    function themThangMoi() {
+        // ... (Phần lấy dữ liệu và kiểm tra rỗng GIỮ NGUYÊN) ...
+        const thangNhap = document.getElementById("nhap-thang").value;
+        const noiDungNhap = document.getElementById("nhap-noi-dung").value;
+        
+        if (thangNhap === "" || noiDungNhap === "") {
+            alert("Bạn ơi, nhập đủ thông tin nhé!");
+            return;
+        }
+
+        // ... (Phần tạo HTML hiển thị lên bảng GIỮ NGUYÊN) ...
+        const dongMoi = `
+            <tr>
+                <td>${thangNhap}</td>
+                <td>${noiDungNhap}</td>
+                <td class="status-waiting">⭕ Sắp tới</td>
+            </tr>
+        `;
+        const boKhungBang = document.getElementById("bang-lo-trinh");
+        boKhungBang.innerHTML += dongMoi;
+
+        // --- 👇 THÊM ĐOẠN MỚI NÀY VÀO ĐÂY 👇 ---
+        
+        // 1. Gói dữ liệu vừa nhập thành một cục (Object)
+        const doiTuongMoi = {
+            thang: thangNhap,
+            noiDung: noiDungNhap,
+            trangThai: "⭕ Sắp tới"
+        };
+
+        // 2. Nhét vào danh sách chung
+        loTrinh.push(doiTuongMoi);
+
+        // 3. Lưu cả danh sách vào kho LocalStorage (stringify: đóng gói để lưu)
+        localStorage.setItem("danhSachHocTap", JSON.stringify(loTrinh));
+        
+        // ----------------------------------------
+
+        // Dọn dẹp ô nhập
+        document.getElementById("nhap-thang").value = "";
+        document.getElementById("nhap-noi-dung").value = "";
+    }
+</script>
+</body>
+</html>
