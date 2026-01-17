@@ -73,7 +73,7 @@ function ProductDetail({ themVaoGio }) {  // <-- Thêm chữ này vào giữa 2 
           onClick={() => {
             themVaoGio(sanPham); // 1. Gọi hàm thêm vào giỏ
             alert("Đã thêm " + sanPham.ten + " vào giỏ hàng!"); // 2. Báo thông báo cho sướng tay
-        }}  
+       }}  
           style={{backgroundColor: '#ff4d4f', color: 'white', padding: '15px 40px', 
           fontSize: '20px', border: 'none', borderRadius: '8px', marginTop: '30px', cursor: 'pointer' 
         }}>
