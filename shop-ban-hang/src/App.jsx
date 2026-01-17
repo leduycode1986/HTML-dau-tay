@@ -6,12 +6,23 @@ import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import Badge from 'react-bootstrap/Badge';
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // <-- 1. Nhập thêm useEffect
 
 function App() {
-  const [gioHang, setGioHang] = useState([]);
+  // 2. KHỞI TẠO THÔNG MINH:
+  // Thay vì để rỗng [], máy sẽ tìm xem trong kho 'gioHangCuaDuy' có gì không
+  const [gioHang, setGioHang] = useState(() => {
+      const duLieuCu = localStorage.getItem('gioHangCuaDuy');
+      return duLieuCu ? JSON.parse(duLieuCu) : [];
+  });
 
-  // 1. Hàm thêm vào giỏ
+  // 3. TỰ ĐỘNG LƯU:
+  // Cứ mỗi khi gioHang thay đổi (thêm, xóa, sửa), máy sẽ lưu ngay vào kho
+  useEffect(() => {
+      localStorage.setItem('gioHangCuaDuy', JSON.stringify(gioHang));
+  }, [gioHang]);
+
+  // --- CÁC HÀM CŨ (Giữ nguyên không đổi) ---
   function themVaoGio(sanPhamCanMua) {
     const sanPhamDaCo = gioHang.find(sp => sp.id === sanPhamCanMua.id);
     if (sanPhamDaCo) {
@@ -23,7 +34,6 @@ function App() {
     }
   }
 
-  // 2. Hàm chỉnh sửa số lượng (CÁI NÀY LÚC NÃY BẠN THIẾU)
   function chinhSuaSoLuong(idSanPham, loai) {
      setGioHang(gioHang.map(sp => {
         if (sp.id === idSanPham) {
@@ -34,7 +44,6 @@ function App() {
      }));
   }
 
-  // 3. Hàm xóa sản phẩm (CÁI NÀY CŨNG THIẾU)
   function xoaSanPham(idSanPham) {
      setGioHang(gioHang.filter(sp => sp.id !== idSanPham));
   }
@@ -65,10 +74,7 @@ function App() {
       <Container style={{ marginTop: '20px' }}>
          <Routes>
             <Route path="/" element={<Home themVaoGio={themVaoGio} />} />
-            
             <Route path="/product/:id" element={<ProductDetail themVaoGio={themVaoGio} />} />
-            
-            {/* Truyền các hàm xuống cho Cart sử dụng */}
             <Route 
                 path="/cart" 
                 element={
