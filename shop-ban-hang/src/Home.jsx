@@ -37,7 +37,7 @@ function Home(props) {
      {
       id: 5,
       ten: "Tai nghe Bluetooth",
-      gia: "850.000 VNĐ",
+      gia: "600.000 VNĐ",
       anh: "https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=500&q=60"
     }
   ];
