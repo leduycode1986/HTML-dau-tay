@@ -13,7 +13,7 @@ function Home(props) {
     {
       id: 1,
       ten: "Laptop Gaming",
-      gia: "20.000.000 VNĐ",
+      gia: "25.000.000 VNĐ",
       anh: "https://images.unsplash.com/photo-1603302576837-37561b2e2302?auto=format&fit=crop&w=500&q=60"
     },
     {
@@ -31,7 +31,7 @@ function Home(props) {
     {
       id: 4,
       ten: "Bàn phím cơ",
-      gia: "1.000.000 VNĐ",
+      gia: "500.000 VNĐ",
       anh: "https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=500&q=60"
     }
   ];
