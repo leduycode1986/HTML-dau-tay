@@ -57,7 +57,7 @@ function Home(props) {
             onChange={(e) => setTuKhoa(e.target.value)}
           />
        </div>
-        <div className="product-list" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
         {danhSachLoc.map((item) => (
           <SanPham 
             key={item.id}
