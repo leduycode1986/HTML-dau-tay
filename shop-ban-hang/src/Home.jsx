@@ -33,7 +33,7 @@ function Home(props) {
       ten: "Bàn phím cơ",
       gia: "500.000 VNĐ",
       anh: "https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=500&q=60"
-    }
+    },
      {
       id: 5,
       ten: "Tai nghe Bluetooth",
