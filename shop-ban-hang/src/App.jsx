@@ -47,7 +47,9 @@ function App() {
   function xoaSanPham(idSanPham) {
      setGioHang(gioHang.filter(sp => sp.id !== idSanPham));
   }
-
+  function xoaHetGioHang() {
+      setGioHang([]); // Đưa giỏ hàng về rỗng
+  }
   return (
     <>
       <Navbar bg="dark" data-bs-theme="dark" expand="lg" sticky="top">
@@ -75,13 +77,16 @@ function App() {
          <Routes>
             <Route path="/" element={<Home themVaoGio={themVaoGio} />} />
             <Route path="/product/:id" element={<ProductDetail themVaoGio={themVaoGio} />} />
+            
+            {/* --- 2. SỬA LẠI DÒNG NÀY ĐỂ TRUYỀN HÀM XUỐNG --- */}
             <Route 
                 path="/cart" 
                 element={
                     <Cart 
                         gioHang={gioHang} 
                         chinhSuaSoLuong={chinhSuaSoLuong} 
-                        xoaSanPham={xoaSanPham} 
+                        xoaSanPham={xoaSanPham}
+                        xoaHetGioHang={xoaHetGioHang} // <--- Gửi "lệnh bài" xuống
                     />
                 } 
             />
