@@ -33,7 +33,7 @@ function SanPham(props) {
       <p>Giá: {props.gia}</p>
       
       <div style={{display: 'flex', justifyContent: 'center', gap: '10px'}}>
-        <button onClick={props.muaHang}>Thêm vào giỏ</button>
+        <button onClick={props.muaHang}>Mua Hàng</button>
         <button 
           onClick={xuLyThich} 
           style={{ backgroundColor: daThich ? 'pink' : 'white' }}
