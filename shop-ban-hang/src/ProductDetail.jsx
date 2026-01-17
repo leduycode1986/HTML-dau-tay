@@ -1,7 +1,7 @@
 import React from 'react'
 import { useParams } from 'react-router-dom'
 
-function ProductDetail() {
+function ProductDetail({ themVaoGio }) {  // <-- Thêm chữ này vào giữa 2 ngoặc tròn
   const { id } = useParams();
 
   // --- BƯỚC 1: KHO HÀNG (Bạn copy y chang cái biến database bên file Home.jsx dán đè vào đây nhé) ---
@@ -69,13 +69,17 @@ function ProductDetail() {
           Thiết kế hiện đại, hiệu năng mạnh mẽ, phù hợp cho mọi nhu cầu sử dụng của bạn.
         </p>
 
-        <button style={{ 
-            backgroundColor: '#ff4d4f', color: 'white', padding: '15px 40px', 
-            fontSize: '20px', border: 'none', borderRadius: '8px', marginTop: '30px', cursor: 'pointer' 
+        <button 
+          onClick={() => {
+            themVaoGio(sanPham); // 1. Gọi hàm thêm vào giỏ
+            alert("Đã thêm " + sanPham.ten + " vào giỏ hàng!"); // 2. Báo thông báo cho sướng tay
+        }}  
+          style={{backgroundColor: '#ff4d4f', color: 'white', padding: '15px 40px', 
+          fontSize: '20px', border: 'none', borderRadius: '8px', marginTop: '30px', cursor: 'pointer' 
         }}>
           🛒 Đặt Mua Ngay
         </button>
-      </div>
+      </div>  
     </div>
   )
 }
