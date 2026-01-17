@@ -1,85 +1,82 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
 
-function Cart(props) {
-  const gioHang = props.gioHang; 
+// 1. Nhận đủ 3 công cụ từ App gửi sang
+function Cart({ gioHang, chinhSuaSoLuong, xoaSanPham }) { 
 
-  // 1. Hàm phụ: Chuyển tiền từ chữ sang số để tính toán
-  function chuyenDoiTien(chuoiTien) {
-     return Number(chuoiTien.replace(/[^0-9]/g, ""));
-  }
-
-  // 2. Tính tổng tiền (Đây là đoạn code thay thế chữ "Đang tính toán...")
-  const tongTien = gioHang.reduce((tong, sp) => {
-     return tong + (chuyenDoiTien(sp.gia) * sp.soLuong);
+  // 2. Tính tổng tiền (Có nhân với số lượng)
+  const tongTien = gioHang.reduce((total, item) => {
+    // Chuyển đổi giá từ chuỗi "20.000.000 VNĐ" thành số 20000000
+    const giaTien = parseInt(item.gia.replace(/\./g, '').replace(' VNĐ', '')); 
+    return total + (giaTien * item.soLuong);
   }, 0);
 
-  // 3. Hàm phụ: Format lại số tiền cho đẹp
-  function formatTien(soTien) {
-     return soTien.toLocaleString('vi-VN') + ' VNĐ';
-  }
-
   return (
-    <div className="container" style={{ marginTop: '20px' }}>
-      <h2 className="mb-4">🛒 Giỏ hàng của bạn</h2>
-
+    <div style={{ padding: '20px', maxWidth: '900px', margin: '0 auto' }}>
+      <h1 style={{textAlign: 'center', marginBottom: '30px'}}>🛒 Giỏ hàng của bạn</h1>
+      
       {gioHang.length === 0 ? (
-        <div className="text-center">
-            <p className="fs-5">Giỏ hàng đang trống trơn...</p>
-            <Link to="/" className="btn btn-primary">Quay lại mua sắm</Link>
+        <div style={{textAlign: 'center', marginTop: '50px'}}>
+           <h3>Giỏ hàng đang trống trơn! 😭</h3>
+           <p>Hãy quay lại trang chủ để sắm đồ nhé.</p>
         </div>
       ) : (
         <div>
-            <table className="table table-bordered table-hover">
-                <thead className="table-light">
-                    <tr>
-                        <th>Sản phẩm</th>
-                        <th>Tên</th>
-                        <th>Đơn giá</th>
-                        <th>Số lượng</th>
-                        <th>Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {gioHang.map((sp, index) => (
-                        <tr key={index} style={{verticalAlign: 'middle'}}>
-                            <td>
-                                <img src={sp.anh} alt={sp.ten} width="60" className="rounded" />
-                            </td>
-                            <td className="fw-bold">{sp.ten}</td>
-                            <td>{sp.gia}</td>
-                            <td>
-                                {/* Nút giảm */}
-                                <button 
-                                  className="btn btn-sm btn-outline-secondary me-2"
-                                  onClick={() => props.chinhSuaSoLuong(sp.id, 'giam')}
-                                >-</button>
-                                
-                                <span className="fw-bold">{sp.soLuong}</span>
+          {/* Danh sách sản phẩm */}
+          {gioHang.map((item, index) => (
+            <div key={index} style={{ 
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                borderBottom: '1px solid #eee', padding: '20px 0' 
+              }}>
+              
+              {/* Cột 1: Ảnh và Tên */}
+              <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flex: 2 }}>
+                <img src={item.anh} alt={item.ten} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '10px' }} />
+                <div>
+                  <h4 style={{margin: 0}}>{item.ten}</h4>
+                  <p style={{ color: 'red', margin: '5px 0' }}>{item.gia}</p>
+                </div>
+              </div>
 
-                                {/* Nút tăng */}
-                                <button 
-                                  className="btn btn-sm btn-outline-secondary ms-2"
-                                  onClick={() => props.chinhSuaSoLuong(sp.id, 'tang')}
-                                >+</button>
-                            </td>
-                            <td>
-                                {/* Nút xóa */}
-                                <button 
-                                  className="btn btn-danger btn-sm"
-                                  onClick={() => props.xoaSanPham(sp.id)}
-                                >🗑 Xóa</button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+              {/* Cột 2: Bộ điều chỉnh số lượng (+ -) */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, justifyContent: 'center' }}>
+                <button 
+                  onClick={() => chinhSuaSoLuong(item.id, 'giam')}
+                  style={{ width: '30px', height: '30px', cursor: 'pointer' }}
+                >-</button>
+                
+                <span style={{ fontWeight: 'bold', fontSize: '18px' }}>{item.soLuong}</span>
+                
+                <button 
+                  onClick={() => chinhSuaSoLuong(item.id, 'tang')}
+                  style={{ width: '30px', height: '30px', cursor: 'pointer' }}
+                >+</button>
+              </div>
 
-            <div className="text-end mt-4">
-                {/* HIỂN THỊ TỔNG TIỀN ĐÃ TÍNH ĐƯỢC */}
-                <h4>Tổng tiền: <span className="text-danger">{formatTien(tongTien)}</span></h4>
-                <button className="btn btn-success btn-lg mt-2">Thanh toán ngay</button>
+              {/* Cột 3: Nút Xóa */}
+              <div style={{ flex: 1, textAlign: 'right' }}>
+                <button 
+                  onClick={() => {
+                      if(window.confirm("Bạn có chắc muốn xóa món này không?")) {
+                          xoaSanPham(item.id)
+                      }
+                  }}
+                  style={{ background: '#ff4d4f', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer' }}>
+                  Xóa
+                </button>
+              </div>
             </div>
+          ))}
+
+          {/* Tổng tiền và nút Thanh toán */}
+          <div style={{ marginTop: '30px', textAlign: 'right', borderTop: '2px solid #333', paddingTop: '20px' }}>
+            <h2>Tổng thanh toán: <span style={{ color: '#d63031' }}>{tongTien.toLocaleString()} VNĐ</span></h2>
+            <button style={{ 
+              background: '#00b894', color: 'white', padding: '15px 40px', 
+              fontSize: '20px', border: 'none', borderRadius: '8px', marginTop: '15px', cursor: 'pointer', fontWeight: 'bold'
+            }} onClick={() => alert("Chức năng thanh toán đang bảo trì (Hết tiền)!")}>
+              Tiến hành Thanh Toán
+            </button>
+          </div>
         </div>
       )}
     </div>
