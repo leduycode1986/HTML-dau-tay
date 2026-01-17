@@ -58,7 +58,7 @@ function Home(props) {
           />
        </div>
       
-      <div className="product-list d-flex flex-wrap justify-content-center">
+      <div className="product-list" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
         {danhSachLoc.map((item) => (
           <SanPham 
             key={item.id}
