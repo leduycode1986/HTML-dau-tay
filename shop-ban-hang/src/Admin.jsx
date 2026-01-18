@@ -9,8 +9,10 @@ import Tabs from 'react-bootstrap/Tabs';
 import InputGroup from 'react-bootstrap/InputGroup';
 import { Link } from 'react-router-dom';
 
-function Admin({ dsSanPham, setDsSanPham, dsDanhMuc, setDsDanhMuc }) {
-  // --- 1. QUẢN LÝ TÀI KHOẢN ADMIN ---
+// Nhận các hàm xử lý Firebase từ App truyền xuống
+function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM }) {
+  
+  // --- 1. QUẢN LÝ TÀI KHOẢN ADMIN (Lưu ở máy cá nhân) ---
   const [adminConfig, setAdminConfig] = useState(() => {
       const saved = localStorage.getItem('adminConfig');
       return saved ? JSON.parse(saved) : { username: 'admin', password: 'admin123' };
@@ -34,9 +36,9 @@ function Admin({ dsSanPham, setDsSanPham, dsDanhMuc, setDsDanhMuc }) {
   }
 
   function handleChangePassword() {
-      if (passForm.oldPass !== adminConfig.password) { alert("Mật khẩu cũ không đúng!"); return; }
-      if (passForm.newPass !== passForm.confirmPass) { alert("Mật khẩu mới không khớp!"); return; }
-      if (passForm.newPass.length < 6) { alert("Mật khẩu mới phải dài hơn 6 ký tự!"); return; }
+      if (passForm.oldPass !== adminConfig.password) return alert("Mật khẩu cũ không đúng!");
+      if (passForm.newPass !== passForm.confirmPass) return alert("Mật khẩu mới không khớp!");
+      if (passForm.newPass.length < 6) return alert("Mật khẩu phải dài hơn 6 ký tự!");
 
       setAdminConfig({ ...adminConfig, password: passForm.newPass });
       alert("✅ Đổi mật khẩu thành công!");
@@ -44,7 +46,7 @@ function Admin({ dsSanPham, setDsSanPham, dsDanhMuc, setDsDanhMuc }) {
       setPassForm({ oldPass: '', newPass: '', confirmPass: '' });
   }
 
-  // --- 2. QUẢN LÝ SẢN PHẨM ---
+  // --- 2. QUẢN LÝ SẢN PHẨM (GỌI FIREBASE) ---
   const [showModalSP, setShowModalSP] = useState(false);
   const [editingSP, setEditingSP] = useState(null);
   const [formDataSP, setFormDataSP] = useState({
@@ -52,6 +54,7 @@ function Admin({ dsSanPham, setDsSanPham, dsDanhMuc, setDsDanhMuc }) {
       isKhuyenMai: false, isBanChay: false, isMoi: false
   });
 
+  // Hàm xử lý chọn ảnh từ máy tính
   const handleImageUpload = (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -62,17 +65,20 @@ function Admin({ dsSanPham, setDsSanPham, dsDanhMuc, setDsDanhMuc }) {
   };
 
   function handleSaveSP() {
-      if (!formDataSP.ten || !formDataSP.gia) { alert("Thiếu tên hoặc giá!"); return; }
+      if (!formDataSP.ten || !formDataSP.gia) return alert("Vui lòng nhập Tên và Giá!");
+      
       if (editingSP) {
-          setDsSanPham(dsSanPham.map(sp => sp.id === editingSP.id ? { ...formDataSP, id: editingSP.id } : sp));
+          // Gửi lệnh UPDATE lên Firebase
+          handleUpdateDS_SP('UPDATE', { ...formDataSP, id: editingSP.id });
       } else {
-          const newId = dsSanPham.length > 0 ? Math.max(...dsSanPham.map(s => s.id)) + 1 : 1;
-          const sanPhamMoi = { ...formDataSP, id: newId, anh: formDataSP.anh || 'https://via.placeholder.com/150' };
-          setDsSanPham([...dsSanPham, sanPhamMoi]);
+          // Gửi lệnh ADD lên Firebase
+          // (Không cần tạo ID, Firebase tự tạo, nhưng cần ảnh mặc định nếu thiếu)
+          handleUpdateDS_SP('ADD', { 
+              ...formDataSP, 
+              anh: formDataSP.anh || 'https://via.placeholder.com/150' 
+          });
       }
-      setShowModalSP(false);
-      setEditingSP(null);
-      resetFormSP();
+      setShowModalSP(false); setEditingSP(null); resetFormSP();
   }
 
   function handleEditSP(sp) {
@@ -82,50 +88,54 @@ function Admin({ dsSanPham, setDsSanPham, dsDanhMuc, setDsDanhMuc }) {
   }
 
   function handleDeleteSP(id) {
-      if (window.confirm("Xóa sản phẩm này?")) setDsSanPham(dsSanPham.filter(sp => sp.id !== id));
+      if (window.confirm("Bạn chắc chắn muốn xóa sản phẩm này?")) {
+          // Gửi lệnh DELETE lên Firebase
+          handleUpdateDS_SP('DELETE', id);
+      }
   }
 
   function resetFormSP() {
       setFormDataSP({ ten: '', gia: '', anh: '', phanLoai: 'thitca', isKhuyenMai: false, isBanChay: false, isMoi: false });
   }
 
-  // --- 3. QUẢN LÝ MENU (ĐÃ NÂNG CẤP: THÊM - SỬA - XÓA) ---
-  const [formDataDM, setFormDataDM] = useState({ id: '', ten: '', icon: '' });
-  
-  // State mới cho việc Sửa Menu
+  // --- 3. QUẢN LÝ MENU (GỌI FIREBASE) ---
+  const [formDataDM, setFormDataDM] = useState({ id: '', ten: '', icon: '', parent: '' });
   const [showModalEditDM, setShowModalEditDM] = useState(false);
-  const [editingDM, setEditingDM] = useState(null); // Lưu danh mục đang sửa
-  const [editFormDM, setEditFormDM] = useState({ id: '', ten: '', icon: '' });
+  const [editingDM, setEditingDM] = useState(null);
+  const [editFormDM, setEditFormDM] = useState({ id: '', ten: '', icon: '', parent: '' });
 
-  // Hàm thêm mới (Giữ nguyên)
   function handleAddDM() {
-      if (!formDataDM.id || !formDataDM.ten) { alert("Vui lòng nhập Mã và Tên!"); return; }
-      if (dsDanhMuc.some(dm => dm.id === formDataDM.id)) { alert("Mã danh mục này đã tồn tại!"); return; }
+      if (!formDataDM.ten) return alert("Vui lòng nhập Tên danh mục!");
       
-      setDsDanhMuc([...dsDanhMuc, formDataDM]);
-      setFormDataDM({ id: '', ten: '', icon: '' });
+      // Gửi lệnh ADD danh mục lên Firebase
+      const newDM = {
+          ten: formDataDM.ten,
+          icon: formDataDM.icon || '📦',
+          parent: formDataDM.parent || null,
+          customId: formDataDM.id // Lưu mã riêng (vd: thitheo) để dùng lọc
+      };
+      handleUpdateDS_DM('ADD', newDM);
+      setFormDataDM({ id: '', ten: '', icon: '', parent: '' });
   }
 
-  // Hàm mở modal sửa
   function handleEditDM(dm) {
       setEditingDM(dm);
-      setEditFormDM(dm); // Load dữ liệu cũ vào form sửa
+      setEditFormDM(dm);
       setShowModalEditDM(true);
   }
 
-  // Hàm lưu sau khi sửa
   function handleSaveEditDM() {
-      setDsDanhMuc(dsDanhMuc.map(dm => 
-          dm.id === editingDM.id ? editFormDM : dm
-      ));
+      // Gửi lệnh UPDATE danh mục lên Firebase
+      handleUpdateDS_DM('UPDATE', editFormDM);
       setShowModalEditDM(false);
       setEditingDM(null);
   }
 
   function handleDeleteDM(id) {
-      if (id === 'all') { alert("Không thể xóa danh mục gốc!"); return; }
-      if (window.confirm("Xóa danh mục này sẽ ảnh hưởng đến việc lọc sản phẩm. Bạn chắc chứ?")) {
-          setDsDanhMuc(dsDanhMuc.filter(dm => dm.id !== id));
+      if (id === 'all') return alert("Không thể xóa danh mục gốc!");
+      if (window.confirm("Xóa danh mục này sẽ ảnh hưởng đến sản phẩm. Tiếp tục?")) {
+          // Gửi lệnh DELETE danh mục lên Firebase
+          handleUpdateDS_DM('DELETE', id);
       }
   }
 
@@ -138,8 +148,6 @@ function Admin({ dsSanPham, setDsSanPham, dsDanhMuc, setDsDanhMuc }) {
                      <img src="/img/logo.jpg" alt="Logo" style={{width: '100%', height: '100%', objectFit: 'contain', borderRadius: '50%'}} />
                   </div>
                   <h3 style={{ marginBottom: '5px', color: '#008848', fontWeight: 'bold' }}>QUẢN TRỊ VIÊN</h3>
-                  <p style={{color: '#666', marginBottom: '25px'}}>Đăng nhập hệ thống Mai Vàng</p>
-                  
                   <Form onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
                     <InputGroup className="mb-3">
                         <InputGroup.Text>👤</InputGroup.Text>
@@ -149,9 +157,8 @@ function Admin({ dsSanPham, setDsSanPham, dsDanhMuc, setDsDanhMuc }) {
                         <InputGroup.Text>🔑</InputGroup.Text>
                         <Form.Control type="password" placeholder="Mật khẩu" value={loginInput.password} onChange={e => setLoginInput({...loginInput, password: e.target.value})} />
                     </InputGroup>
-                    <Button variant="success" type="submit" style={{ width: '100%', padding: '12px', fontWeight: 'bold', fontSize: '16px' }}>ĐĂNG NHẬP</Button>
+                    <Button variant="success" type="submit" style={{ width: '100%', padding: '12px', fontWeight: 'bold' }}>ĐĂNG NHẬP</Button>
                   </Form>
-                  
                   <div style={{marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '15px'}}>
                       <Link to="/" style={{color: '#008848', textDecoration: 'none'}}>← Quay về trang bán hàng</Link>
                   </div>
@@ -171,31 +178,28 @@ function Admin({ dsSanPham, setDsSanPham, dsDanhMuc, setDsDanhMuc }) {
           </div>
           <div style={{display: 'flex', gap: '10px'}}>
             <Button variant="outline-primary" onClick={() => setShowModalPass(true)}>🔑 Đổi mật khẩu</Button>
-            <Link to="/"><Button variant="outline-danger">⬅ Thoát về Trang chủ</Button></Link>
+            <Link to="/"><Button variant="outline-danger">⬅ Thoát</Button></Link>
           </div>
       </div>
 
-      <Tabs defaultActiveKey="products" id="admin-tabs" className="mb-3">
+      <Tabs defaultActiveKey="products" className="mb-3">
         
         {/* TAB 1: SẢN PHẨM */}
         <Tab eventKey="products" title="📦 Quản lý Sản phẩm">
             <Button variant="primary" className="mb-3" onClick={() => { setEditingSP(null); resetFormSP(); setShowModalSP(true); }}>+ Thêm sản phẩm mới</Button>
             <Table striped bordered hover responsive>
-                <thead>
-                    <tr><th>ID</th><th>Ảnh</th><th>Tên</th><th>Giá</th><th>Loại</th><th>Tags</th><th>Hành động</th></tr>
-                </thead>
+                <thead><tr><th>Ảnh</th><th>Tên</th><th>Giá</th><th>Danh mục</th><th>Tags</th><th>Hành động</th></tr></thead>
                 <tbody>
                     {dsSanPham.map(sp => (
                         <tr key={sp.id}>
-                            <td>{sp.id}</td>
                             <td><img src={sp.anh} alt="" style={{width: '50px', height: '50px', objectFit: 'cover', borderRadius: '5px'}} /></td>
                             <td style={{fontWeight: 'bold'}}>{sp.ten}</td>
                             <td style={{color: '#d63031'}}>{sp.gia}</td>
-                            <td>{dsDanhMuc.find(dm => dm.id === sp.phanLoai)?.ten || sp.phanLoai}</td>
+                            <td>{dsDanhMuc.find(dm => (dm.customId || dm.id) === sp.phanLoai)?.ten || sp.phanLoai}</td>
                             <td>
-                                {sp.isKhuyenMai && <Badge bg="danger" className="me-1">Giảm giá</Badge>}
-                                {sp.isBanChay && <Badge bg="warning" text="dark" className="me-1">Bán chạy</Badge>}
-                                {sp.isMoi && <Badge bg="success">Mới</Badge>}
+                                {sp.isKhuyenMai && <Badge bg="danger" className="me-1">Giảm</Badge>}
+                                {sp.isBanChay && <Badge bg="warning" text="dark" className="me-1">Hot</Badge>}
+                                {sp.isMoi && <Badge bg="success">New</Badge>}
                             </td>
                             <td>
                                 <Button size="sm" variant="warning" className="me-2" onClick={() => handleEditSP(sp)}>Sửa</Button>
@@ -207,24 +211,34 @@ function Admin({ dsSanPham, setDsSanPham, dsDanhMuc, setDsDanhMuc }) {
             </Table>
         </Tab>
 
-        {/* TAB 2: MENU (ĐÃ THÊM NÚT SỬA) */}
-        <Tab eventKey="categories" title="📂 Quản lý Menu">
-             <div style={{ maxWidth: '800px' }}>
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', background: '#f9f9f9', padding: '15px', borderRadius: '10px' }}>
-                    <input placeholder="Mã (vd: dokho)" className="form-control" value={formDataDM.id} onChange={e => setFormDataDM({...formDataDM, id: e.target.value})} />
-                    <input placeholder="Tên (vd: Đồ Khô)" className="form-control" value={formDataDM.ten} onChange={e => setFormDataDM({...formDataDM, ten: e.target.value})} />
-                    <input placeholder="Icon (vd: 🍪)" className="form-control" style={{width: '120px'}} value={formDataDM.icon} onChange={e => setFormDataDM({...formDataDM, icon: e.target.value})} />
-                    <Button variant="success" onClick={handleAddDM} style={{whiteSpace: 'nowrap'}}>+ Thêm mới</Button>
+        {/* TAB 2: MENU */}
+        <Tab eventKey="menu" title="📂 Quản lý Menu">
+             <div style={{ maxWidth: '900px' }}>
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', background: '#f8f9fa', padding: '15px', borderRadius: '10px', flexWrap: 'wrap' }}>
+                    <Form.Control placeholder="Mã (vd: thitheo)" style={{flex: 1, minWidth: '150px'}} value={formDataDM.id} onChange={e => setFormDataDM({...formDataDM, id: e.target.value})} />
+                    <Form.Control placeholder="Tên (vd: Thịt Heo)" style={{flex: 2, minWidth: '200px'}} value={formDataDM.ten} onChange={e => setFormDataDM({...formDataDM, ten: e.target.value})} />
+                    <Form.Control placeholder="Icon (🐷)" style={{width: '100px'}} value={formDataDM.icon} onChange={e => setFormDataDM({...formDataDM, icon: e.target.value})} />
+                    
+                    {/* CHỌN DANH MỤC CHA */}
+                    <Form.Select style={{flex: 2, minWidth: '200px'}} value={formDataDM.parent} onChange={e => setFormDataDM({...formDataDM, parent: e.target.value})}>
+                        <option value="">-- Là Danh Mục Gốc --</option>
+                        {dsDanhMuc.filter(dm => !dm.parent && dm.id !== 'all').map(dm => (
+                            <option key={dm.id} value={dm.customId || dm.id}>Con của: {dm.ten}</option>
+                        ))}
+                    </Form.Select>
+
+                    <Button variant="success" onClick={handleAddDM}>+ Thêm</Button>
                 </div>
                 
                 <Table bordered hover>
-                    <thead style={{background: '#f1f1f1'}}><tr><th>Mã danh mục</th><th>Tên hiển thị</th><th>Icon</th><th>Hành động</th></tr></thead>
+                    <thead style={{background: '#f1f1f1'}}><tr><th>Cấp độ</th><th>Mã</th><th>Tên hiển thị</th><th>Icon</th><th>Hành động</th></tr></thead>
                     <tbody>
                         {dsDanhMuc.map(dm => (
                             <tr key={dm.id}>
-                                <td><code>{dm.id}</code></td>
-                                <td style={{fontWeight: 'bold'}}>{dm.ten}</td>
-                                <td style={{fontSize: '20px', textAlign: 'center'}}>{dm.icon}</td>
+                                <td>{dm.parent ? <Badge bg="info">Con</Badge> : <Badge bg="primary">Gốc</Badge>}</td>
+                                <td><code>{dm.customId || dm.id}</code></td>
+                                <td>{dm.parent ? <span style={{color: '#999', marginRight: '5px'}}>↳</span> : ''}<b>{dm.ten}</b></td>
+                                <td style={{textAlign: 'center', fontSize: '18px'}}>{dm.icon}</td>
                                 <td>
                                     {dm.id !== 'all' && (
                                         <>
@@ -247,49 +261,61 @@ function Admin({ dsSanPham, setDsSanPham, dsDanhMuc, setDsDanhMuc }) {
         <Modal.Body>
             <Form>
                 <Form.Group className="mb-3"><Form.Label>Tên sản phẩm</Form.Label><Form.Control value={formDataSP.ten} onChange={e => setFormDataSP({...formDataSP, ten: e.target.value})} /></Form.Group>
-                <div className="d-flex gap-3">
-                    <Form.Group className="mb-3 flex-fill"><Form.Label>Giá tiền</Form.Label><Form.Control value={formDataSP.gia} onChange={e => setFormDataSP({...formDataSP, gia: e.target.value})} /></Form.Group>
-                    <Form.Group className="mb-3 flex-fill"><Form.Label>Phân loại</Form.Label>
+                <div className="d-flex gap-3 mb-3">
+                    <Form.Group className="flex-fill"><Form.Label>Giá tiền</Form.Label><Form.Control value={formDataSP.gia} onChange={e => setFormDataSP({...formDataSP, gia: e.target.value})} /></Form.Group>
+                    <Form.Group className="flex-fill"><Form.Label>Phân loại</Form.Label>
                         <Form.Select value={formDataSP.phanLoai} onChange={e => setFormDataSP({...formDataSP, phanLoai: e.target.value})}>
-                            {dsDanhMuc.map(dm => <option key={dm.id} value={dm.id}>{dm.ten}</option>)}
+                            {dsDanhMuc.map(dm => (
+                                <option key={dm.id} value={dm.customId || dm.id}>
+                                    {dm.parent ? ` -- ${dm.ten}` : dm.ten}
+                                </option>
+                            ))}
                         </Form.Select>
                     </Form.Group>
                 </div>
                 <Form.Group className="mb-3">
-                    <Form.Label>Hình ảnh sản phẩm</Form.Label>
+                    <Form.Label>Hình ảnh (Chọn file từ máy)</Form.Label>
                     <Form.Control type="file" accept="image/*" onChange={handleImageUpload} />
-                    {formDataSP.anh && (<div style={{marginTop: '10px', border: '1px dashed #ccc', padding: '5px', display: 'inline-block', borderRadius: '5px'}}><img src={formDataSP.anh} alt="Preview" style={{height: '100px', objectFit: 'contain'}} /></div>)}
+                    {formDataSP.anh && (<div style={{marginTop: '10px', border: '1px dashed #ccc', padding: '5px', display: 'inline-block'}}><img src={formDataSP.anh} alt="Preview" style={{height: '100px'}} /></div>)}
                 </Form.Group>
                 <div className="d-flex gap-3">
-                    <Form.Check type="checkbox" label="🔥 Khuyến mãi sốc" checked={formDataSP.isKhuyenMai} onChange={e => setFormDataSP({...formDataSP, isKhuyenMai: e.target.checked})} />
-                    <Form.Check type="checkbox" label="💎 Bán chạy nhất" checked={formDataSP.isBanChay} onChange={e => setFormDataSP({...formDataSP, isBanChay: e.target.checked})} />
-                    <Form.Check type="checkbox" label="🆕 Hàng mới về" checked={formDataSP.isMoi} onChange={e => setFormDataSP({...formDataSP, isMoi: e.target.checked})} />
+                    <Form.Check type="checkbox" label="🔥 Khuyến mãi" checked={formDataSP.isKhuyenMai} onChange={e => setFormDataSP({...formDataSP, isKhuyenMai: e.target.checked})} />
+                    <Form.Check type="checkbox" label="💎 Bán chạy" checked={formDataSP.isBanChay} onChange={e => setFormDataSP({...formDataSP, isBanChay: e.target.checked})} />
+                    <Form.Check type="checkbox" label="🆕 Hàng mới" checked={formDataSP.isMoi} onChange={e => setFormDataSP({...formDataSP, isMoi: e.target.checked})} />
                 </div>
             </Form>
         </Modal.Body>
         <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowModalSP(false)}>Hủy</Button>
-            <Button variant="primary" onClick={handleSaveSP}>Lưu thông tin</Button>
+            <Button variant="primary" onClick={handleSaveSP}>Lưu</Button>
         </Modal.Footer>
       </Modal>
 
-      {/* MODAL SỬA MENU (MỚI) */}
+      {/* MODAL SỬA MENU */}
       <Modal show={showModalEditDM} onHide={() => setShowModalEditDM(false)}>
           <Modal.Header closeButton><Modal.Title>Sửa Danh Mục</Modal.Title></Modal.Header>
           <Modal.Body>
               <Form>
                   <Form.Group className="mb-3">
-                      <Form.Label>Mã danh mục (Không thể sửa)</Form.Label>
-                      <Form.Control type="text" value={editFormDM.id} disabled style={{backgroundColor: '#e9ecef'}} />
-                      <Form.Text className="text-muted">Để sửa mã, vui lòng xóa đi tạo mới.</Form.Text>
+                      <Form.Label>Mã (Không thể sửa)</Form.Label>
+                      <Form.Control type="text" value={editFormDM.customId || editFormDM.id} disabled style={{background: '#eee'}} />
                   </Form.Group>
                   <Form.Group className="mb-3">
                       <Form.Label>Tên hiển thị</Form.Label>
                       <Form.Control type="text" value={editFormDM.ten} onChange={e => setEditFormDM({...editFormDM, ten: e.target.value})} />
                   </Form.Group>
                   <Form.Group className="mb-3">
-                      <Form.Label>Icon (Emoji)</Form.Label>
+                      <Form.Label>Icon</Form.Label>
                       <Form.Control type="text" value={editFormDM.icon} onChange={e => setEditFormDM({...editFormDM, icon: e.target.value})} />
+                  </Form.Group>
+                  <Form.Group className="mb-3">
+                      <Form.Label>Thuộc danh mục cha</Form.Label>
+                      <Form.Select value={editFormDM.parent || ''} onChange={e => setEditFormDM({...editFormDM, parent: e.target.value})}>
+                        <option value="">-- Là Danh Mục Gốc --</option>
+                        {dsDanhMuc.filter(dm => !dm.parent && dm.id !== 'all' && dm.id !== editFormDM.id).map(dm => (
+                            <option key={dm.id} value={dm.customId || dm.id}>Con của: {dm.ten}</option>
+                        ))}
+                      </Form.Select>
                   </Form.Group>
               </Form>
           </Modal.Body>
@@ -301,18 +327,12 @@ function Admin({ dsSanPham, setDsSanPham, dsDanhMuc, setDsDanhMuc }) {
 
       {/* MODAL ĐỔI MẬT KHẨU */}
       <Modal show={showModalPass} onHide={() => setShowModalPass(false)}>
-          <Modal.Header closeButton><Modal.Title>Đổi mật khẩu Admin</Modal.Title></Modal.Header>
           <Modal.Body>
-              <Form>
-                  <Form.Group className="mb-3"><Form.Label>Mật khẩu cũ</Form.Label><Form.Control type="password" value={passForm.oldPass} onChange={e => setPassForm({...passForm, oldPass: e.target.value})} /></Form.Group>
-                  <Form.Group className="mb-3"><Form.Label>Mật khẩu mới</Form.Label><Form.Control type="password" value={passForm.newPass} onChange={e => setPassForm({...passForm, newPass: e.target.value})} /></Form.Group>
-                  <Form.Group className="mb-3"><Form.Label>Nhập lại mật khẩu mới</Form.Label><Form.Control type="password" value={passForm.confirmPass} onChange={e => setPassForm({...passForm, confirmPass: e.target.value})} /></Form.Group>
-              </Form>
+              <Form.Control className="mb-2" type="password" placeholder="Mật khẩu cũ" onChange={e => setPassForm({...passForm, oldPass: e.target.value})} />
+              <Form.Control className="mb-2" type="password" placeholder="Mật khẩu mới" onChange={e => setPassForm({...passForm, newPass: e.target.value})} />
+              <Form.Control type="password" placeholder="Xác nhận mới" onChange={e => setPassForm({...passForm, confirmPass: e.target.value})} />
           </Modal.Body>
-          <Modal.Footer>
-              <Button variant="secondary" onClick={() => setShowModalPass(false)}>Hủy</Button>
-              <Button variant="primary" onClick={handleChangePassword}>Xác nhận đổi</Button>
-          </Modal.Footer>
+          <Modal.Footer><Button onClick={handleChangePassword}>Đổi Mật Khẩu</Button></Modal.Footer>
       </Modal>
 
     </div>
