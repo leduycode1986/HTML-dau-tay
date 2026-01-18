@@ -2,20 +2,19 @@ import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
 import Home from './Home'
 import Cart from './Cart'
 import ProductDetail from './ProductDetail'
-import Admin from './Admin' // Import trang Admin
+import Admin from './Admin'
 import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import Badge from 'react-bootstrap/Badge';
 import Form from 'react-bootstrap/Form';
 import { useState, useEffect } from 'react';
-import { products as khoHangBanDau } from './products' // Import dữ liệu mẫu ban đầu
+import { products as khoHangBanDau } from './products'
 
 const colors = { primaryGreen: '#008848', accentYellow: '#ffc107', bgLight: '#f0fdf4', textDark: '#333' };
 
 function App() {
-  // 1. DỮ LIỆU TẬP TRUNG (Sản phẩm & Danh mục)
-  // Nếu chưa có trong kho thì lấy từ file products.js, sau này sửa ở Admin sẽ lưu vào State này.
+  // 1. DỮ LIỆU TẬP TRUNG
   const [dsSanPham, setDsSanPham] = useState(khoHangBanDau);
   
   const [dsDanhMuc, setDsDanhMuc] = useState([
@@ -28,7 +27,7 @@ function App() {
   const [danhMucHienTai, setDanhMucHienTai] = useState('all'); 
   const [tuKhoa, setTuKhoa] = useState('');
   const navigate = useNavigate();
-  const location = useLocation(); // Để kiểm tra xem đang ở trang nào
+  const location = useLocation(); 
 
   // Giỏ hàng
   const [gioHang, setGioHang] = useState(() => {
@@ -58,7 +57,7 @@ function App() {
   function xoaSanPham(id) { setGioHang(gioHang.filter(sp => sp.id !== id)); }
   function xoaHetGioHang() { setGioHang([]); }
 
-  // NẾU ĐANG Ở TRANG ADMIN -> Ẩn toàn bộ Header/Footer của khách hàng
+  // NẾU ĐANG Ở TRANG ADMIN -> Ẩn Header/Footer khách hàng
   if (location.pathname === '/admin') {
       return (
         <Routes>
@@ -72,7 +71,7 @@ function App() {
       );
   }
 
-  // GIAO DIỆN KHÁCH HÀNG (Giống cũ nhưng Menu lấy từ State)
+  // GIAO DIỆN KHÁCH HÀNG
   return (
     <div style={{ backgroundColor: colors.bgLight, minHeight: '100vh', fontFamily: 'Segoe UI, sans-serif' }}>
       
@@ -91,10 +90,19 @@ function App() {
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
             <div className="mx-auto my-2" style={{ width: '100%', maxWidth: '500px' }}>
-                <Form className="d-flex"><Form.Control type="search" placeholder="🔍 Tìm kiếm..." className="me-2" style={{ borderRadius: '20px' }} value={tuKhoa} onChange={(e) => { setTuKhoa(e.target.value); navigate('/'); }} /></Form.Form>
+                {/* --- ĐÃ SỬA LỖI TẠI ĐÂY --- */}
+                <Form className="d-flex">
+                    <Form.Control 
+                        type="search" 
+                        placeholder="🔍 Tìm kiếm..." 
+                        className="me-2" 
+                        style={{ borderRadius: '20px' }} 
+                        value={tuKhoa} 
+                        onChange={(e) => { setTuKhoa(e.target.value); navigate('/'); }} 
+                    />
+                </Form>
             </div>
             <Nav className="ms-auto" style={{alignItems: 'center', gap: '15px'}}>
-                {/* Link dẫn tới trang Admin (Ẩn đi nếu muốn) */}
                 <Link to="/admin" style={{color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '13px'}}>🔧 Admin</Link>
 
                 <Nav.Link as={Link} to="/cart" className="d-flex align-items-center gap-2 text-white">
@@ -108,7 +116,7 @@ function App() {
         </Container>
       </Navbar>
 
-      {/* Menu Danh Mục Động (Lấy từ State) */}
+      {/* Menu Danh Mục Động */}
       <div style={{ backgroundColor: 'white', padding: '12px 0', borderBottom: '1px solid #eee' }}>
         <Container style={{ display: 'flex', gap: '10px', overflowX: 'auto', whiteSpace: 'nowrap', justifyContent: 'center' }}>
             {dsDanhMuc.map(dm => (
@@ -128,12 +136,8 @@ function App() {
 
       <Container style={{ marginTop: '25px', marginBottom: '40px' }}>
          <Routes>
-            {/* TRUYỀN dsSanPham XUỐNG HOME ĐỂ HIỂN THỊ */}
             <Route path="/" element={<Home dsSanPham={dsSanPham} themVaoGio={themVaoGio} danhMuc={danhMucHienTai} tuKhoa={tuKhoa} colors={colors} />} />
-            
-            {/* TRUYỀN dsSanPham XUỐNG CHI TIẾT ĐỂ TÌM KIẾM */}
             <Route path="/product/:id" element={<ProductDetail dsSanPham={dsSanPham} themVaoGio={themVaoGio} colors={colors} />} />
-            
             <Route path="/cart" element={<Cart gioHang={gioHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} xoaHetGioHang={xoaHetGioHang} colors={colors} />} />
          </Routes>
       </Container>
