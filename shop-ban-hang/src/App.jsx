@@ -9,12 +9,13 @@ import Badge from 'react-bootstrap/Badge';
 import Form from 'react-bootstrap/Form';
 import { useState, useEffect } from 'react';
 
-// --- BỘ MÀU SẮC CHUẨN THEO LOGO ---
+// --- BỘ MÀU MỚI: XANH LÁ + VÀNG RỰC RỠ ---
 const colors = {
-  primaryGreen: '#00a651', // Xanh lá đậm
-  accentGold: '#ffc107',   // Vàng tươi
-  bgLight: '#e8f5e9',      // Nền xanh nhạt
-  textDark: '#212529'      // Chữ đen
+  primaryGreen: '#008848', // Xanh lá Bách Hóa (đậm đà hơn)
+  accentYellow: '#ffc107', // Vàng tươi (Hoa mai)
+  priceText: '#ff8f00',    // Cam vàng (Giá tiền)
+  bgLight: '#f7fcf5',      // Nền xanh siêu nhạt
+  textDark: '#333'
 };
 
 function App() {
@@ -61,43 +62,36 @@ function App() {
   }
 
   return (
-    <div style={{ backgroundColor: colors.bgLight, minHeight: '100vh', fontFamily: 'Segoe UI, Roboto, sans-serif' }}>
+    <div style={{ backgroundColor: colors.bgLight, minHeight: '100vh', fontFamily: 'Segoe UI, sans-serif' }}>
       
-      {/* --- THANH MENU (NAVBAR) --- */}
-      <Navbar style={{ backgroundColor: colors.primaryGreen, boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }} variant="dark" expand="lg" sticky="top">
+      {/* NAVBAR: Thêm viền dưới màu Vàng rực rỡ */}
+      <Navbar style={{ backgroundColor: colors.primaryGreen, borderBottom: `4px solid ${colors.accentYellow}`, boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }} variant="dark" expand="lg" sticky="top">
         <Container>
           
-          {/* KHU VỰC LOGO + TÊN THƯƠNG HIỆU */}
           <Navbar.Brand as={Link} to="/" onClick={() => { setDanhMuc('all'); setTuKhoa('') }} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            
-            {/* 1. Ảnh Logo (Trong khung tròn trắng) */}
-            <div style={{ backgroundColor: 'white', borderRadius: '50%', padding: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '55px', height: '55px', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}>
-                <img 
-                    src="/img/logo.jpg" 
-                    alt="Logo Mai Vang" 
-                    style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'contain' }}
-                />
+            {/* Logo tròn */}
+            <div style={{ backgroundColor: 'white', borderRadius: '50%', padding: '2px', width: '50px', height: '50px', border: `2px solid ${colors.accentYellow}` }}>
+                <img src="/img/logo.jpg" alt="Logo" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'contain' }} />
             </div>
-
-            {/* 2. Tên thương hiệu (Xếp dọc cho đẹp) */}
-            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1' }}>
-                <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px', fontWeight: '500', letterSpacing: '1px' }}>Thực phẩm</span>
-                <span style={{ color: colors.accentGold, textTransform: 'uppercase', fontWeight: '900', fontSize: '22px', textShadow: '1px 1px 2px rgba(0,0,0,0.2)' }}>
+            {/* Tên thương hiệu */}
+            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.1' }}>
+                <span style={{ color: '#fff', fontSize: '13px', letterSpacing: '1px' }}>Thực phẩm sạch</span>
+                <span style={{ color: colors.accentYellow, textTransform: 'uppercase', fontWeight: '900', fontSize: '24px', textShadow: '1px 1px 0 #000' }}>
                     MaiVang
                 </span>
             </div>
           </Navbar.Brand>
           
-          <Navbar.Toggle aria-controls="basic-navbar-nav" style={{ border: 'none' }} />
+          <Navbar.Toggle aria-controls="basic-navbar-nav" style={{border: 'none'}} />
           <Navbar.Collapse id="basic-navbar-nav">
             
             <div className="mx-auto my-2" style={{ width: '100%', maxWidth: '500px' }}>
                 <Form className="d-flex">
                     <Form.Control
                     type="search"
-                    placeholder="Tìm kiếm: Thịt, Cá, Rau sạch..."
+                    placeholder="Hôm nay bạn muốn ăn gì? 🍖🥦"
                     className="me-2"
-                    style={{ borderRadius: '25px', border: 'none', padding: '10px 20px', fontSize: '15px', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)' }}
+                    style={{ borderRadius: '5px', border: 'none', padding: '10px 15px', fontSize: '15px' }}
                     value={tuKhoa}
                     onChange={(e) => {
                         setTuKhoa(e.target.value);
@@ -109,9 +103,9 @@ function App() {
 
             <Nav className="ms-auto">
               <Nav.Link as={Link} to="/cart" className="d-flex align-items-center gap-2 text-white" style={{ fontWeight: '600' }}>
-                <div style={{ position: 'relative', display: 'inline-block', marginRight: '5px' }}>
+                <div style={{ position: 'relative' }}>
                     <span style={{fontSize: '28px'}}>🛒</span> 
-                    <Badge bg="none" style={{ backgroundColor: colors.accentGold, color: colors.textDark, position: 'absolute', top: '-8px', right: '-12px', borderRadius: '50%', padding: '5px 8px', fontSize: '12px', fontWeight: 'bold', border: `2px solid ${colors.primaryGreen}` }}>
+                    <Badge bg="warning" text="dark" style={{ position: 'absolute', top: '-5px', right: '-10px', borderRadius: '50%', border: '2px solid white' }}>
                     {gioHang.reduce((tong, sp) => tong + sp.soLuong, 0)}
                     </Badge>
                 </div>
@@ -123,9 +117,9 @@ function App() {
         </Container>
       </Navbar>
 
-      {/* --- MENU DANH MỤC NGANG --- */}
-      <div style={{ backgroundColor: 'white', padding: '15px 0', borderBottom: `1px solid ${colors.primaryGreen}20` }}>
-        <Container style={{ display: 'flex', gap: '15px', overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: '5px', justifyContent: 'center' }}>
+      {/* MENU DANH MỤC: Nền trắng sạch sẽ */}
+      <div style={{ backgroundColor: 'white', padding: '12px 0', borderBottom: '1px solid #eee' }}>
+        <Container style={{ display: 'flex', gap: '10px', overflowX: 'auto', whiteSpace: 'nowrap', justifyContent: 'center' }}>
             <NutDanhMuc ten="Tất cả" icon="🏠" dangChon={danhMuc === 'all'} onClick={() => setDanhMuc('all')} colors={colors} />
             <NutDanhMuc ten="Thịt, Cá" icon="🥩" dangChon={danhMuc === 'thitca'} onClick={() => setDanhMuc('thitca')} colors={colors} />
             <NutDanhMuc ten="Rau Củ" icon="🥦" dangChon={danhMuc === 'raucu'} onClick={() => setDanhMuc('raucu')} colors={colors} />
@@ -133,56 +127,43 @@ function App() {
         </Container>
       </div>
 
-      <Container style={{ marginTop: '30px', marginBottom: '40px' }}>
+      <Container style={{ marginTop: '25px', marginBottom: '40px' }}>
          <Routes>
             <Route path="/" element={<Home themVaoGio={themVaoGio} danhMuc={danhMuc} tuKhoa={tuKhoa} colors={colors} />} />
             <Route path="/product/:id" element={<ProductDetail themVaoGio={themVaoGio} colors={colors} />} />
-            <Route 
-                path="/cart" 
-                element={
-                    <Cart 
-                        gioHang={gioHang} 
-                        chinhSuaSoLuong={chinhSuaSoLuong} 
-                        xoaSanPham={xoaSanPham}
-                        xoaHetGioHang={xoaHetGioHang}
-                        colors={colors}
-                    />
-                } 
-            />
+            <Route path="/cart" element={<Cart gioHang={gioHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} xoaHetGioHang={xoaHetGioHang} colors={colors} />} />
          </Routes>
       </Container>
       
-      <footer style={{ textAlign: 'center', padding: '25px', backgroundColor: colors.primaryGreen, color: 'white', marginTop: 'auto' }}>
-        <h5 style={{fontWeight: 'bold', color: colors.accentGold}}>THỰC PHẨM MAI VÀNG</h5>
-        <p style={{ margin: '5px 0', fontSize: '14px', opacity: 0.9 }}>Địa chỉ: Chợ Bình Trưng, Quận 2, TP.HCM</p>
-        <p style={{ margin: 0, fontSize: '14px', opacity: 0.9 }}>© 2024 - Cam kết tươi ngon mỗi ngày!</p>
+      <footer style={{ textAlign: 'center', padding: '30px 10px', backgroundColor: colors.primaryGreen, color: 'white', marginTop: 'auto', borderTop: `5px solid ${colors.accentYellow}` }}>
+        <h5 style={{fontWeight: '900', color: colors.accentYellow, fontSize: '20px', marginBottom: '10px'}}>THỰC PHẨM MAI VÀNG</h5>
+        <p style={{ margin: '5px 0', opacity: 0.9 }}>Địa chỉ: Chợ Bình Trưng, Quận 2, TP.HCM</p>
+        <p style={{ margin: 0, opacity: 0.9 }}>© 2024 - Cam kết tươi ngon mỗi ngày!</p>
       </footer>
     </div>
   )
 }
 
-// Component Nút Danh Mục
+// Nút danh mục: Khi chọn sẽ có màu Vàng + Chữ Đen (Rất nổi)
 function NutDanhMuc({ ten, icon, dangChon, onClick, colors }) {
     return (
         <button 
             onClick={onClick}
             style={{ 
-                padding: '8px 20px', 
-                borderRadius: '30px', 
-                border: dangChon ? `2px solid ${colors.primaryGreen}` : '1px solid #ddd', 
+                padding: '8px 16px', 
+                borderRadius: '20px', 
+                border: dangChon ? `2px solid ${colors.accentYellow}` : '1px solid #ddd', 
                 cursor: 'pointer',
-                backgroundColor: dangChon ? colors.primaryGreen : 'white', 
-                color: dangChon ? 'white' : '#555', 
+                backgroundColor: dangChon ? colors.accentYellow : 'white', // Nền Vàng khi chọn
+                color: dangChon ? '#000' : '#555', // Chữ Đen khi chọn (cho dễ đọc)
                 fontWeight: '700',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
+                display: 'flex', alignItems: 'center', gap: '6px',
+                fontSize: '14px',
                 transition: 'all 0.2s',
-                fontSize: '15px',
-                boxShadow: dangChon ? '0 4px 10px rgba(0,166,81,0.3)' : 'none'
+                boxShadow: dangChon ? '0 2px 5px rgba(255, 193, 7, 0.4)' : 'none'
             }}
         >
-            <span style={{ fontSize: '1.2em' }}>{icon}</span> {ten}
+            <span>{icon}</span> {ten}
         </button>
     )
 }
