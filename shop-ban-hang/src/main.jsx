@@ -1,14 +1,7 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
+import { createRoot } from 'react-dom/client'
+import './index.css'
 import App from './App.jsx'
-// QUAN TRỌNG: Dòng này giúp web hiểu giao diện cột, hàng, nút bấm...
-import 'bootstrap/dist/css/bootstrap.min.css'; 
-import { BrowserRouter } from 'react-router-dom'
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </React.StrictMode>,
+createRoot(document.getElementById('root')).render(
+    <App />
 )
