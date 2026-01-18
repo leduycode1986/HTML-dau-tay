@@ -4,7 +4,6 @@ import { Table, Button, Form, Row, Col, Container } from 'react-bootstrap';
 function Cart({ gioHang, handleDatHang, chinhSuaSoLuong, xoaSanPham }) {
   const [khach, setKhach] = useState({ ten: '', sdt: '', diachi: '' });
   const tongTien = gioHang.reduce((t, s) => t + (s.giaBan || s.giaGoc) * s.soLuong, 0);
-  
   return (
     <Container className="py-5 bg-white shadow-lg mt-3 rounded-4">
       <h3 className="fw-bold text-success mb-5 text-center text-uppercase border-bottom pb-3">Giỏ hàng của bạn</h3>
@@ -27,12 +26,15 @@ function Cart({ gioHang, handleDatHang, chinhSuaSoLuong, xoaSanPham }) {
             <Form.Control className="mb-3 p-3 border-0 shadow-sm" placeholder="SĐT liên hệ *" value={khach.sdt} onChange={e => setKhach({...khach, sdt: e.target.value})} />
             <Form.Control as="textarea" rows={3} className="mb-3 p-3 border-0 shadow-sm" placeholder="Địa chỉ giao hàng chi tiết *" value={khach.diachi} onChange={e => setKhach({...khach, diachi: e.target.value})} />
             
-            {/* --- ĐÃ SỬA LỖI LINK MAP --- */}
-            <div className="map-container shadow-sm border rounded-3" style={{height:'300px'}}>
+            {/* ĐÃ SỬA LẠI LINK MAP CHUẨN */}
+            <div className="map-container shadow-sm border rounded-3" style={{height: '300px'}}>
               <iframe 
                 title="map" 
                 src={`https://maps.google.com/maps?q=${encodeURIComponent(khach.diachi || 'Vietnam')}&output=embed`}
-                width="100%" height="100%" style={{border:0}} loading="lazy"
+                width="100%" 
+                height="100%" 
+                style={{border:0}} 
+                loading="lazy"
               ></iframe>
             </div>
           </div>
