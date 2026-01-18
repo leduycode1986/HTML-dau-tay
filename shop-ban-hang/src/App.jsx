@@ -43,8 +43,8 @@ function App() {
         const list = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
         if (list.length === 0) {
             setDsDanhMuc([
-                { id: 'all', ten: 'Tất cả', icon: '🏠', parent: null },
-                { id: 'thitca', ten: 'Thịt, Cá', icon: '🥩', parent: null }
+                { id: 'all', ten: 'Tất cả', icon: '🏠', parent: null, order: 0 },
+                { id: 'thitca', ten: 'Thịt, Cá', icon: '🥩', parent: null, order: 1 }
             ]);
         } else {
             setDsDanhMuc(list);
@@ -144,8 +144,6 @@ function App() {
 
   const [danhMucHienTai, setDanhMucHienTai] = useState('all'); 
   const [tuKhoa, setTuKhoa] = useState('');
-  
-  // STATE MỚI: QUẢN LÝ MENU NÀO ĐANG XỔ XUỐNG
   const [menuDangMo, setMenuDangMo] = useState(null);
 
   const navigate = useNavigate();
@@ -156,9 +154,11 @@ function App() {
       return <Routes><Route path="/admin" element={<Admin dsSanPham={dsSanPham} handleUpdateDS_SP={handleUpdateDS_SP} dsDanhMuc={dsDanhMuc} handleUpdateDS_DM={handleUpdateDS_DM} dsDonHang={dsDonHang} handleUpdateStatusOrder={handleUpdateStatusOrder} handleDeleteOrder={handleDeleteOrder} />} /></Routes>;
   }
 
-  const danhMucGoc = dsDanhMuc.filter(dm => !dm.parent);
+  // SẮP XẾP MENU GỐC THEO ORDER
+  const danhMucGoc = dsDanhMuc
+    .filter(dm => !dm.parent)
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-  // HÀM TOGGLE MENU (BẤM VÀO THÌ XỔ, BẤM LẠI THÌ ĐÓNG)
   const toggleMenu = (id) => {
       if (menuDangMo === id) setMenuDangMo(null);
       else setMenuDangMo(id);
@@ -190,13 +190,12 @@ function App() {
 
       <Container fluid style={{ marginTop: '20px' }}>
         <Row>
-            {/* SIDEBAR MENU (ACCORDION STYLE) */}
+            {/* SIDEBAR MENU (CÓ SẮP XẾP VÀ XỬ LÝ ẨN ICON) */}
             <Col md={3} lg={2} className="d-none d-md-block">
                 <div style={{ backgroundColor: 'white', borderRadius: '10px', overflow: 'hidden', position: 'sticky', top: '90px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                     <h5 style={{ backgroundColor: colors.primaryGreen, color: 'white', padding: '15px', margin: 0, textAlign: 'center' }}>DANH MỤC</h5>
                     <div style={{ padding: '10px' }}>
                         
-                        {/* Nút Tất Cả */}
                         <button onClick={() => { setDanhMucHienTai('all'); navigate('/'); }} 
                             style={{
                                 width: '100%', textAlign: 'left', padding: '12px', border: 'none', borderRadius: '8px', marginBottom: '5px',
@@ -207,7 +206,12 @@ function App() {
                         
                         {danhMucGoc.map(cha => {
                             if (cha.id === 'all') return null;
-                            const conCuaCha = dsDanhMuc.filter(dm => dm.parent === (cha.customId || cha.id));
+                            
+                            // SẮP XẾP MENU CON
+                            const conCuaCha = dsDanhMuc
+                                .filter(dm => dm.parent === (cha.customId || cha.id))
+                                .sort((a, b) => (a.order || 0) - (b.order || 0));
+
                             const isExpanded = menuDangMo === (cha.customId || cha.id);
                             const isActiveCha = danhMucHienTai === (cha.customId || cha.id);
                             
@@ -216,10 +220,8 @@ function App() {
                                     {/* MENU CHA */}
                                     <button 
                                         onClick={() => { 
-                                            // 1. Chuyển danh mục
                                             setDanhMucHienTai(cha.customId || cha.id); 
                                             navigate('/'); 
-                                            // 2. Nếu có con thì bật tắt xổ xuống
                                             if (conCuaCha.length > 0) toggleMenu(cha.customId || cha.id);
                                         }}
                                         style={{
@@ -230,9 +232,10 @@ function App() {
                                             fontSize: '16px', transition: 'all 0.2s'
                                         }}>
                                         <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
-                                            <span>{cha.icon}</span> {cha.ten}
+                                            {/* CHỈ HIỆN ICON NẾU CÓ DỮ LIỆU */}
+                                            {cha.icon && <span>{cha.icon}</span>} 
+                                            {cha.ten}
                                         </div>
-                                        {/* Mũi tên chỉ xuống nếu có con */}
                                         {conCuaCha.length > 0 && (
                                             <span style={{fontSize: '12px', color: '#888'}}>
                                                 {isExpanded ? '▼' : '▶'}
@@ -240,7 +243,7 @@ function App() {
                                         )}
                                     </button>
 
-                                    {/* MENU CON (Chỉ hiện khi isExpanded = true) */}
+                                    {/* MENU CON */}
                                     {conCuaCha.length > 0 && isExpanded && (
                                         <div style={{marginLeft: '15px', paddingLeft: '10px', borderLeft: `2px solid ${colors.bgLight}`, marginTop: '5px'}}>
                                             {conCuaCha.map(con => {
@@ -248,20 +251,21 @@ function App() {
                                                 return (
                                                     <button key={con.id} 
                                                         onClick={(e) => { 
-                                                            e.stopPropagation(); // Tránh kích hoạt lại cha
+                                                            e.stopPropagation(); 
                                                             setDanhMucHienTai(con.customId || con.id); 
                                                             navigate('/'); window.scrollTo(0,0); 
                                                         }}
                                                         style={{
                                                             width: '100%', textAlign: 'left', padding: '10px', border: 'none', borderRadius: '5px', marginTop: '2px',
-                                                            // SỬA GIAO DIỆN CON TẠI ĐÂY:
                                                             backgroundColor: isActiveCon ? '#e8f5e9' : 'transparent',
-                                                            color: isActiveCon ? colors.primaryGreen : '#444', // Đậm hơn (#444)
-                                                            fontSize: '15px', // To hơn (15px)
-                                                            fontWeight: isActiveCon ? 'bold' : '500', // Đậm vừa
+                                                            color: isActiveCon ? colors.primaryGreen : '#444',
+                                                            fontSize: '15px', 
+                                                            fontWeight: isActiveCon ? 'bold' : '500',
                                                             display: 'flex', alignItems: 'center', gap: '8px'
                                                         }}>
-                                                        <span style={{fontSize: '6px', color: '#ccc'}}>●</span> {con.ten}
+                                                        {/* CHỈ HIỆN ICON CON NẾU CÓ */}
+                                                        {con.icon ? <span>{con.icon}</span> : <span style={{fontSize: '6px', color: '#ccc'}}>●</span>} 
+                                                        {con.ten}
                                                     </button>
                                                 )
                                             })}
