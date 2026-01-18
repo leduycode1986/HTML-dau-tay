@@ -1,73 +1,106 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Button, Badge, Container, Row, Col } from 'react-bootstrap';
 import Product from './Product';
 
 function ProductDetail({ dsSanPham, dsDanhMuc, themVaoGio }) {
   const { id } = useParams();
+  const [openMenuId, setOpenMenuId] = useState(null);
   const sp = dsSanPham.find(p => p.id === id);
 
   if (!sp) return <div className="p-5 text-center"><h5>Không tìm thấy sản phẩm này</h5></div>;
 
-  // Lấy sản phẩm liên quan & khuyến mãi
+  // Lấy sản phẩm cùng loại
   const relatedProducts = dsSanPham.filter(p => p.phanLoai === sp.phanLoai && p.id !== sp.id).slice(0, 4);
   const promoProducts = dsSanPham.filter(p => p.isKhuyenMai && p.id !== sp.id).slice(0, 5);
 
   return (
     <Container fluid className="py-3 py-md-4">
       <Row>
-        {/* CỘT TRÁI: MENU (Ẩn trên mobile và tablet nhỏ, chỉ hiện trên PC lớn) */}
+        {/* MENU TRÁI */}
         <Col lg={2} className="d-none d-lg-block">
-          <div className="bg-white rounded shadow-sm p-3">
-            <h6 className="fw-bold text-success border-bottom pb-2">DANH MỤC</h6>
-            <div className="d-flex flex-column gap-2">
-              {dsDanhMuc.filter(d => !d.parent).map(d => (
-                <Link key={d.id} to={`/category/${d.id}`} className="text-dark small hover-green">{d.ten}</Link>
-              ))}
+          <div className="sidebar-main shadow-sm bg-white rounded overflow-hidden">
+            <div className="bg-success text-white p-3 fw-bold text-center text-uppercase"><i className="fa-solid fa-bars me-2"></i> DANH MỤC</div>
+            <div className="category-list p-2">
+              {dsDanhMuc.filter(d => !d.parent).map(parent => {
+                const hasChild = dsDanhMuc.some(c => c.parent === parent.id);
+                const isOpen = openMenuId === parent.id;
+                return (
+                  <div key={parent.id} className="mb-1 border-bottom">
+                    <div className="d-flex align-items-center justify-content-between p-2 text-dark">
+                      <Link to={`/category/${parent.id}`} className="text-decoration-none text-dark flex-grow-1 d-flex align-items-center" style={{fontSize:'0.95rem', fontWeight:'500'}}><span className="me-2">{parent.icon || '📦'}</span> {parent.ten}</Link>
+                      {hasChild && <span onClick={(e) => { e.preventDefault(); setOpenMenuId(isOpen ? null : parent.id); }} style={{cursor: 'pointer', padding: '0 10px', color: '#888', fontSize:'0.8rem'}}>{isOpen ? '▲' : '▼'}</span>}
+                    </div>
+                    {hasChild && isOpen && <div className="ms-3 ps-2 border-start bg-light rounded">{dsDanhMuc.filter(c => c.parent === parent.id).map(child => (<Link key={child.id} to={`/category/${child.id}`} className="d-block py-1 px-2 text-decoration-none text-secondary small hover-green">↳ {child.ten}</Link>))}</div>}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </Col>
 
-        {/* CỘT GIỮA: CHI TIẾT SẢN PHẨM */}
+        {/* CỘT GIỮA: CHI TIẾT */}
         <Col xs={12} lg={7}>
-          <div className="bg-white rounded p-3 p-md-4 shadow-sm mb-4">
+          <div className="bg-white rounded p-4 shadow-sm mb-4">
             <Row>
-              <Col xs={12} md={5} className="mb-3 mb-md-0"><img src={sp.anh} alt={sp.ten} className="img-fluid rounded border w-100" /></Col>
-              <Col xs={12} md={7}>
-                <h2 className="fw-bold text-success fs-3">{sp.ten}</h2>
-                <div className="mb-2">
-                  {sp.isMoi && <Badge bg="success" className="me-1">NEW</Badge>}
-                  {sp.isBanChay && <Badge bg="danger" className="me-1">HOT</Badge>}
+              <Col md={5} className="mb-4 mb-md-0"><img src={sp.anh} alt={sp.ten} className="img-fluid rounded border w-100 shadow-sm" style={{objectFit: 'cover'}} /></Col>
+              <Col md={7}>
+                <h2 className="fw-bold text-success">{sp.ten}</h2>
+                <div className="mb-3">{sp.isMoi && <Badge bg="success" className="me-2">NEW</Badge>}{sp.isBanChay && <Badge bg="danger">HOT</Badge>}</div>
+                <div className="p-3 bg-light rounded border mb-3">
+                  {sp.phanTramGiam > 0 && <div className="price-original">Giá gốc: {sp.giaGoc?.toLocaleString()} ¥</div>}
+                  <div className="price-sale">{sp.giaBan?.toLocaleString()} ¥</div>
                 </div>
-                <h3 className="text-danger fw-bold my-2">{sp.giaBan?.toLocaleString()} ¥</h3>
-                <div className="text-muted mb-4 small" dangerouslySetInnerHTML={{ __html: sp.moTa || 'Đang cập nhật mô tả...' }}></div>
-                <Button variant="success" size="lg" className="w-100 fw-bold rounded-pill" onClick={() => themVaoGio(sp)}>THÊM VÀO GIỎ</Button>
+                <Button variant="success" size="lg" className="w-100 fw-bold rounded-pill mb-4 shadow" onClick={() => themVaoGio(sp)}><i className="fa-solid fa-cart-plus me-2"></i> THÊM VÀO GIỎ NGAY</Button>
+                <div>
+                  <h6 className="fw-bold text-dark border-bottom pb-2 mb-2">Thông tin chi tiết</h6>
+                  <div className="border rounded p-3 bg-light" style={{ maxHeight: '300px', overflowY: 'auto', fontSize: '0.95rem' }} dangerouslySetInnerHTML={{ __html: sp.moTa || 'Đang cập nhật mô tả...' }}></div>
+                </div>
               </Col>
             </Row>
           </div>
 
-          {/* SẢN PHẨM CÙNG LOẠI (Mobile hiện 2 cột) */}
-          <h5 className="fw-bold text-uppercase border-bottom pb-2 mb-3">Sản phẩm cùng loại</h5>
-          <Row className="g-2 g-md-3">
-            {relatedProducts.length > 0 ? relatedProducts.map(p => (
-              <Col key={p.id} xs={6} md={3}><Product sp={p} themVaoGio={themVaoGio} /></Col>
-            )) : <p className="text-muted">Chưa có sản phẩm liên quan.</p>}
-          </Row>
+          {/* SẢN PHẨM CÙNG LOẠI - ĐÃ NÂNG CẤP GIAO DIỆN */}
+          <div className="related-product-wrapper shadow-sm">
+            <h5 className="fw-bold text-uppercase border-bottom pb-3 mb-3 text-primary">
+              <i className="fa-solid fa-layer-group me-2"></i> Sản phẩm cùng loại
+            </h5>
+            {relatedProducts.length > 0 ? (
+              <Row className="g-2 g-md-3">
+                {relatedProducts.map(p => (
+                  <Col key={p.id} xs={6} md={3}>
+                    <Product sp={p} themVaoGio={themVaoGio} />
+                  </Col>
+                ))}
+              </Row>
+            ) : (
+              <div className="text-center py-4 text-muted bg-light rounded">
+                Hiện chưa có sản phẩm cùng loại nào khác.
+              </div>
+            )}
+          </div>
         </Col>
 
-        {/* CỘT PHẢI: KHUYẾN MÃI (Trên mobile đẩy xuống dưới cùng) */}
+        {/* CỘT PHẢI: KHUYẾN MÃI */}
         <Col xs={12} lg={3} className="mt-4 mt-lg-0">
-          <div className="bg-white rounded shadow-sm p-3">
-            <h6 className="fw-bold text-danger border-bottom pb-2">⚡ ĐANG GIẢM GIÁ</h6>
-            {promoProducts.map(p => (
-              <div key={p.id} className="promo-sidebar-item">
-                <Link to={`/product/${p.id}`}><img src={p.anh} alt={p.ten} /></Link>
-                <div className="promo-info">
-                  <Link to={`/product/${p.id}`} className="fw-bold text-dark d-block text-truncate" style={{maxWidth:'120px'}}>{p.ten}</Link>
-                  <span className="text-danger fw-bold">{p.giaBan?.toLocaleString()} ¥</span>
-                </div>
-              </div>
-            ))}
+          <div className="bg-white rounded shadow-sm overflow-hidden">
+            <div className="bg-warning p-3 fw-bold text-dark text-center border-bottom"><i className="fa-solid fa-bolt me-2"></i> SIÊU KHUYẾN MÃI</div>
+            <div className="p-3">
+              {promoProducts.map(p => (
+                <Link to={`/product/${p.id}`} key={p.id} className="d-flex align-items-center gap-3 mb-3 text-decoration-none border-bottom pb-2">
+                  <div style={{position: 'relative', width: '60px', height: '60px', flexShrink: 0}}>
+                    <img src={p.anh} alt={p.ten} className="rounded border w-100 h-100" style={{objectFit:'cover'}} />
+                    <span className="position-absolute top-0 start-0 badge bg-danger" style={{fontSize:'0.6rem'}}>-{p.phanTramGiam}%</span>
+                  </div>
+                  <div style={{overflow: 'hidden'}}>
+                    <div className="text-dark fw-bold text-truncate" style={{fontSize: '0.9rem'}}>{p.ten}</div>
+                    <div className="price-sale small">{p.giaBan?.toLocaleString()} ¥</div>
+                    <div className="price-original" style={{fontSize: '0.75rem'}}>{p.giaGoc?.toLocaleString()} ¥</div>
+                  </div>
+                </Link>
+              ))}
+              <div className="text-center mt-2"><Link to="/" className="btn btn-outline-warning btn-sm w-100 fw-bold text-dark">Xem tất cả</Link></div>
+            </div>
           </div>
         </Col>
       </Row>

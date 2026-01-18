@@ -61,7 +61,11 @@ function App() {
           <Container>
             <Navbar.Brand as={Link} to="/" className="d-flex align-items-center">
               {shopConfig.logo ? (
-                <img src={shopConfig.logo} alt="Logo" className="me-2 rounded shop-logo" />
+                <img 
+                  src={shopConfig.logo} 
+                  alt="Logo" 
+                  className="me-2 rounded shop-logo"
+                />
               ) : (
                 <span className="fs-2 me-2">🦁</span>
               )}
@@ -74,7 +78,7 @@ function App() {
             <Navbar.Collapse id="basic-navbar-nav">
               <Nav className="w-100 d-flex justify-content-between align-items-center ms-lg-4 mt-3 mt-lg-0">
                 <Form className="d-flex w-100 mx-lg-3">
-                  <Form.Control type="search" placeholder="🔍 Tìm kiếm sản phẩm..." className="rounded-pill border-1 bg-light px-4 py-2" style={{width: '100%'}} value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)} />
+                  <Form.Control type="search" placeholder="🔍 Tìm kiếm..." className="rounded-pill border-1 bg-light px-4 py-2" style={{width: '100%'}} value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)} />
                 </Form>
                 <Link to="/cart" className="text-decoration-none ms-lg-3 mt-3 mt-lg-0">
                   <Button variant="success" className="rounded-pill fw-bold px-4 py-2 d-flex align-items-center gap-2 shadow-sm">
@@ -90,13 +94,12 @@ function App() {
       <Routes>
         <Route path="/" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
         
-        {/* --- DÒNG NÀY ĐÃ ĐƯỢC SỬA: Thêm dsDanhMuc vào ProductDetail --- */}
+        {/* --- ĐÃ SỬA: Thêm dsDanhMuc vào đây để không bị lỗi trắng trang --- */}
         <Route path="/product/:id" element={<ProductDetail dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
-        {/* --------------------------------------------------------------- */}
-
-        <Route path="/category/:id" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
+        {/* ------------------------------------------------------------------ */}
         
-        <Route path="/cart" element={<Cart gioHang={gioHang} handleDatHang={handleDatHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} />} />
+        <Route path="/category/:id" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
+        <Route path="/cart" element={<Cart gioHang={gioHang} dsDanhMuc={dsDanhMuc} handleDatHang={handleDatHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} />} />
         
         <Route path="/admin" element={
           <Admin 

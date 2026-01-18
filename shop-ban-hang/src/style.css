@@ -86,3 +86,27 @@ img { max-width: 100%; height: auto; }
     height: 40px; /* Nhỏ hơn chút trên điện thoại */
   }
 }
+/* ... (Giữ nguyên code cũ) ... */
+
+/* --- 6. GIÁ TIỀN & NHÃN (LÀM ĐẸP) --- */
+.price-original {
+  text-decoration: line-through;
+  color: #adb5bd; /* Màu xám nhạt */
+  font-size: 0.9rem;
+  margin-right: 8px;
+  font-weight: 400;
+}
+
+.price-sale {
+  color: #dc3545; /* Màu đỏ */
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+
+/* Khung sản phẩm cùng loại trong trang chi tiết */
+.related-product-wrapper {
+  background: #fff;
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px solid #eee;
+}
