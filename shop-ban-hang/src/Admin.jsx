@@ -6,43 +6,26 @@ import Modal from 'react-bootstrap/Modal';
 import Badge from 'react-bootstrap/Badge';
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
-import InputGroup from 'react-bootstrap/InputGroup';
 import { Link } from 'react-router-dom';
 
-// --- BỘ ICON CHUẨN BÁCH HÓA XANH ---
+// --- BỘ ICON ---
 const ICON_LIST = [
-    // 1. Nhóm Tươi Sống (Thịt, Cá, Hải Sản)
-    '🥩', '🍗', '🍖', '🐟', '🦀', '🦐', '🐙', '🦑', '🥚',
-    
-    // 2. Nhóm Rau Củ Quả
-    '🥬', '🥦', '🥕', '🥔', '🍆', '🌽', '🍄', '🍅', '🥒',
-    '🍎', '🍇', '🍉', '🍌', '🍋', '🍊', '🍓', '🥭', '🍍', '🥥',
-    
-    // 3. Nhóm Gạo, Bột, Đồ Khô
-    '🍚', '🌾', '🍜', '🍝', '🍲', '🍞', '🥖', '🥪', '🥜', '🌰',
-    
-    // 4. Gia Vị, Dầu Ăn
+    '🔥', '⚡', '💎', '🆕', '🎁', '🏷️', '📦',
+    '🥩', '🍗', '🍖', '🐟', '🦀', '🦐', '🐙', '🥚',
+    '🥬', '🥦', '🥕', '🥔', '🍆', '🌽', '🍄', '🍅', 
+    '🍎', '🍇', '🍉', '🍌', '🍋', '🍊', '🍓', '🥭', '🥥',
+    '🍚', '🌾', '🍞', '🥖', '🥪', '🥜', '🌰',
+    '🍜', '🍝', '🍲', '🥣', '🥢', '🥡', '🥘',
     '🍾', '🧂', '🌶️', '🧄', '🧅', '🥫', '🍯', '🧈',
-    
-    // 5. Đồ Uống, Giải Khát
     '🍺', '🍷', '🥂', '🥤', '🧃', '☕', '🍵', '🍼',
-    
-    // 6. Sữa, Kem, Bánh Kẹo
-    '🥛', '🧀', '🍦', '🍧', '🍰', '🍪', '🍫', '🍬', '🍮',
-    
-    // 7. Chăm Sóc Cá Nhân & Nhà Cửa
-    '🧴', '🧼', '🧽', '🧻', '🪥', '🧹', '🧺', '🏠', '🛁',
-    
-    // 8. Mẹ & Bé, Thú Cưng
-    '👶', '🧸', '🐶', '🐱',
-    
-    // 9. Khuyến Mãi & Khác
-    '🔥', '⚡', '💎', '🆕', '🎁', '🏷️', '📦'
+    '🥛', '🧀', '🍦', '🍧', '🍰', '🍪', '🍫', '🍬',
+    '🧴', '🧼', '🧽', '🧻', '🪥', '🧹', '🧺', '🏠',
+    '👶', '🧸', '🐶', '🐱'
 ];
 
 function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsDonHang, handleUpdateStatusOrder, handleDeleteOrder }) {
   
-  // --- HÀM SẮP XẾP & DI CHUYỂN (GIỮ NGUYÊN) ---
+  // --- LOGIC SẮP XẾP ---
   const getSortedDanhMuc = () => {
       const sortFunc = (a, b) => (a.order || 0) - (b.order || 0);
       const roots = dsDanhMuc.filter(dm => !dm.parent).sort(sortFunc);
@@ -50,6 +33,7 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
       let result = [];
       roots.forEach(root => {
           result.push(root);
+          // Tìm con theo ID của Firebase hoặc customId cũ (để tương thích dữ liệu cũ)
           const myChildren = children.filter(child => child.parent === (root.customId || root.id));
           result.push(...myChildren);
       });
@@ -120,8 +104,8 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
   function handleDeleteSP(id) { if(window.confirm("Xóa sản phẩm?")) handleUpdateDS_SP('DELETE', id); }
   function resetFormSP() { setFormDataSP({ ten: '', gia: '', anh: '', phanLoai: 'thitca', isKhuyenMai: false, isBanChay: false, isMoi: false }); }
 
-  // --- MENU (CẬP NHẬT LOGIC ICON) ---
-  const [formDataDM, setFormDataDM] = useState({ id: '', ten: '', icon: '', parent: '' }); // Mặc định icon rỗng
+  // --- MENU (ĐÃ XÓA MÃ) ---
+  const [formDataDM, setFormDataDM] = useState({ ten: '', icon: '', parent: '' });
   const [showModalEditDM, setShowModalEditDM] = useState(false);
   const [editingDM, setEditingDM] = useState(null);
   const [editFormDM, setEditFormDM] = useState({ id: '', ten: '', icon: '', parent: '' });
@@ -131,13 +115,13 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
       const currentCount = dsDanhMuc.length;
       const newItem = { 
           ten: formDataDM.ten, 
-          icon: formDataDM.icon, // Có thể rỗng
+          icon: formDataDM.icon, 
           parent: formDataDM.parent || null,
-          customId: formDataDM.id,
+          // Không cần customId nữa, Firebase tự lo ID
           order: currentCount 
       };
       handleUpdateDS_DM('ADD', newItem);
-      setFormDataDM({ id: '', ten: '', icon: '', parent: '' }); // Reset về rỗng
+      setFormDataDM({ ten: '', icon: '', parent: '' });
   }
   function handleEditDM(dm) { setEditingDM(dm); setEditFormDM(dm); setShowModalEditDM(true); }
   function handleSaveEditDM() { handleUpdateDS_DM('UPDATE', editFormDM); setShowModalEditDM(false); setEditingDM(null); }
@@ -223,20 +207,19 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
             </Table>
         </Tab>
 
-        {/* TAB MENU - CÓ TÙY CHỌN "NONE" */}
+        {/* TAB MENU (ĐÃ XÓA MÃ) */}
         <Tab eventKey="menu" title="📂 Menu Danh Mục">
             <div style={{background: '#f8f9fa', padding: '15px', borderRadius: '10px', marginBottom: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap'}}>
-                <Form.Control placeholder="Mã (vd: thit)" style={{flex: 1}} value={formDataDM.id} onChange={e => setFormDataDM({...formDataDM, id: e.target.value})} />
-                <Form.Control placeholder="Tên (vd: Thịt Heo)" style={{flex: 2}} value={formDataDM.ten} onChange={e => setFormDataDM({...formDataDM, ten: e.target.value})} />
+                {/* Ô NHẬP MÃ ĐÃ BỊ XÓA */}
+                <Form.Control placeholder="Tên danh mục (vd: Thịt Heo)" style={{flex: 2, minWidth: '200px'}} value={formDataDM.ten} onChange={e => setFormDataDM({...formDataDM, ten: e.target.value})} />
                 
-                {/* SELECT ICON: CÓ MỤC NONE */}
                 <Form.Select style={{width: '100px', fontSize: '16px'}} value={formDataDM.icon} onChange={e => setFormDataDM({...formDataDM, icon: e.target.value})}>
-                    <option value="">(None)</option> {/* Mặc định chọn cái này là không có icon */}
+                    <option value="">(None)</option>
                     {ICON_LIST.map(icon => <option key={icon} value={icon}>{icon}</option>)}
                 </Form.Select>
 
-                <Form.Select style={{flex: 2}} value={formDataDM.parent} onChange={e => setFormDataDM({...formDataDM, parent: e.target.value})}>
-                    <option value="">-- Danh Mục Gốc --</option>
+                <Form.Select style={{flex: 2, minWidth: '200px'}} value={formDataDM.parent} onChange={e => setFormDataDM({...formDataDM, parent: e.target.value})}>
+                    <option value="">-- Danh Mục Gốc (Tạo cha) --</option>
                     {dsDanhMuc.filter(dm => !dm.parent && dm.id !== 'all').map(dm => (<option key={dm.id} value={dm.customId || dm.id}>Con của: {dm.ten}</option>))}
                 </Form.Select>
                 <Button variant="success" onClick={handleAddDM}>+ Thêm</Button>
@@ -273,27 +256,36 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
 
       {/* MODAL SP */}
       <Modal show={showModalSP} onHide={() => setShowModalSP(false)} size="lg">
-        {/* ... (Giữ nguyên) ... */}
-         <Modal.Body><Form>...</Form></Modal.Body>
+         <Modal.Header closeButton><Modal.Title>{editingSP ? 'Sửa SP' : 'Thêm SP'}</Modal.Title></Modal.Header>
+         <Modal.Body>
+             <Form>
+                <Form.Group className="mb-3"><Form.Label>Tên SP</Form.Label><Form.Control value={formDataSP.ten} onChange={e => setFormDataSP({...formDataSP, ten: e.target.value})} /></Form.Group>
+                <div className="d-flex gap-3 mb-3">
+                    <Form.Group className="flex-fill"><Form.Label>Giá</Form.Label><Form.Control value={formDataSP.gia} onChange={e => setFormDataSP({...formDataSP, gia: e.target.value})} /></Form.Group>
+                    <Form.Group className="flex-fill"><Form.Label>Loại</Form.Label>
+                        <Form.Select value={formDataSP.phanLoai} onChange={e => setFormDataSP({...formDataSP, phanLoai: e.target.value})}>{dsDanhMuc.map(dm => <option key={dm.id} value={dm.customId || dm.id}>{dm.parent ? `-- ${dm.ten}` : dm.ten}</option>)}</Form.Select>
+                    </Form.Group>
+                </div>
+                <Form.Group className="mb-3"><Form.Label>Ảnh</Form.Label><Form.Control type="file" onChange={handleImageUpload} />{formDataSP.anh && <img src={formDataSP.anh} height="60" style={{marginTop:'5px'}}/>}</Form.Group>
+                <div className="d-flex gap-3"><Form.Check label="Khuyến mãi" checked={formDataSP.isKhuyenMai} onChange={e => setFormDataSP({...formDataSP, isKhuyenMai: e.target.checked})} /><Form.Check label="Bán chạy" checked={formDataSP.isBanChay} onChange={e => setFormDataSP({...formDataSP, isBanChay: e.target.checked})} /><Form.Check label="Mới" checked={formDataSP.isMoi} onChange={e => setFormDataSP({...formDataSP, isMoi: e.target.checked})} /></div>
+             </Form>
+         </Modal.Body>
          <Modal.Footer><Button onClick={handleSaveSP}>Lưu</Button></Modal.Footer>
       </Modal>
 
-      {/* MODAL MENU - SỬA LẠI SELECT ICON */}
+      {/* MODAL MENU - ĐÃ XÓA MÃ */}
       <Modal show={showModalEditDM} onHide={() => setShowModalEditDM(false)}>
         <Modal.Header closeButton><Modal.Title>Sửa Danh Mục</Modal.Title></Modal.Header>
         <Modal.Body>
             <Form>
-                <Form.Group className="mb-3"><Form.Label>Mã (Không sửa)</Form.Label><Form.Control value={editFormDM.customId || editFormDM.id} disabled style={{background: '#eee'}}/></Form.Group>
+                {/* ĐÃ XÓA FORM MÃ */}
                 <Form.Group className="mb-3"><Form.Label>Tên</Form.Label><Form.Control value={editFormDM.ten} onChange={e => setEditFormDM({...editFormDM, ten: e.target.value})} /></Form.Group>
-                
-                {/* SELECT ICON TRONG MODAL */}
                 <Form.Group className="mb-3"><Form.Label>Icon</Form.Label>
                     <Form.Select value={editFormDM.icon} onChange={e => setEditFormDM({...editFormDM, icon: e.target.value})}>
                         <option value="">(None)</option>
                         {ICON_LIST.map(icon => <option key={icon} value={icon}>{icon}</option>)}
                     </Form.Select>
                 </Form.Group>
-
                 <Form.Group className="mb-3"><Form.Label>Thuộc cha</Form.Label>
                     <Form.Select value={editFormDM.parent || ''} onChange={e => setEditFormDM({...editFormDM, parent: e.target.value})}><option value="">-- Gốc --</option>{dsDanhMuc.filter(dm => !dm.parent && dm.id !== 'all' && dm.id !== editFormDM.id).map(dm => <option key={dm.id} value={dm.customId || dm.id}>Con của: {dm.ten}</option>)}</Form.Select>
                 </Form.Group>
@@ -302,9 +294,13 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
         <Modal.Footer><Button onClick={handleSaveEditDM}>Cập nhật</Button></Modal.Footer>
       </Modal>
 
-      {/* MODAL PASS */}
       <Modal show={showModalPass} onHide={() => setShowModalPass(false)}>
-          {/* ... (Giữ nguyên) ... */}
+         <Modal.Body>
+             <Form.Control className="mb-2" type="password" placeholder="Pass cũ" onChange={e => setPassForm({...passForm, oldPass: e.target.value})} />
+             <Form.Control className="mb-2" type="password" placeholder="Pass mới" onChange={e => setPassForm({...passForm, newPass: e.target.value})} />
+             <Form.Control type="password" placeholder="Nhập lại mới" onChange={e => setPassForm({...passForm, confirmPass: e.target.value})} />
+         </Modal.Body>
+         <Modal.Footer><Button onClick={handleChangePassword}>Đổi</Button></Modal.Footer>
       </Modal>
     </div>
   );
