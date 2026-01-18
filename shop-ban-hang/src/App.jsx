@@ -12,6 +12,7 @@ import Admin from './Admin';
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
+  
   const [dsSanPham, setDsSanPham] = useState([]);
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [dsDonHang, setDsDonHang] = useState([]);
@@ -45,7 +46,9 @@ function App() {
     setGioHang([]); alert("Đặt hàng thành công!"); navigate('/');
   };
 
-  const chinhSuaSoLuong = (id, kieu) => { setGioHang(gioHang.map(i => i.id === id ? {...i, soLuong: kieu === 'tang' ? i.soLuong + 1 : Math.max(1, i.soLuong - 1)} : i)); };
+  const chinhSuaSoLuong = (id, kieu) => {
+    setGioHang(gioHang.map(i => i.id === id ? {...i, soLuong: kieu === 'tang' ? i.soLuong + 1 : Math.max(1, i.soLuong - 1)} : i));
+  };
   const xoaSanPham = (id) => setGioHang(gioHang.filter(i => i.id !== id));
   
   const sanPhamHienThi = dsSanPham.filter(sp => sp.ten?.toLowerCase().includes(tuKhoa.toLowerCase()));
@@ -57,16 +60,35 @@ function App() {
         <Navbar bg="white" variant="light" expand="lg" className="sticky-top shadow-sm py-2 border-bottom">
           <Container>
             <Navbar.Brand as={Link} to="/" className="d-flex align-items-center">
-              {shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" height="50" className="me-2 rounded" style={{objectFit: 'contain'}} /> : <span className="fs-2 me-2">🦁</span>}
-              <div className="d-flex flex-column"><span className="fw-bold text-success text-uppercase" style={{fontSize: '1.1rem'}}>{shopConfig.tenShop}</span><span className="text-warning small fw-bold" style={{fontSize: '0.7rem'}}>⭐ {shopConfig.slogan} ⭐</span></div>
+              
+              {/* --- ĐÃ SỬA: Dùng class "shop-logo" chuẩn CSS --- */}
+              {shopConfig.logo ? (
+                <img 
+                  src={shopConfig.logo} 
+                  alt="Logo" 
+                  className="me-2 rounded shop-logo" 
+                />
+              ) : (
+                <span className="fs-2 me-2">🦁</span>
+              )}
+              {/* ----------------------------------------------- */}
+
+              <div className="d-flex flex-column">
+                <span className="fw-bold text-success text-uppercase" style={{fontSize: '1.1rem'}}>{shopConfig.tenShop}</span>
+                <span className="text-warning small fw-bold" style={{fontSize: '0.7rem'}}>⭐ {shopConfig.slogan} ⭐</span>
+              </div>
             </Navbar.Brand>
             <Navbar.Toggle aria-controls="basic-navbar-nav" />
             <Navbar.Collapse id="basic-navbar-nav">
               <Nav className="w-100 d-flex justify-content-between align-items-center ms-lg-4 mt-3 mt-lg-0">
                 <Form className="d-flex w-100 mx-lg-3">
-                  <Form.Control type="search" placeholder="🔍 Tìm kiếm..." className="rounded-pill border-1 bg-light px-4 py-2" style={{width: '100%'}} value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)} />
+                  <Form.Control type="search" placeholder="🔍 Tìm kiếm sản phẩm..." className="rounded-pill border-1 bg-light px-4 py-2" style={{width: '100%'}} value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)} />
                 </Form>
-                <Link to="/cart" className="text-decoration-none ms-lg-3"><Button variant="success" className="rounded-pill fw-bold px-4 py-2 d-flex align-items-center gap-2 shadow-sm"><i className="fa-solid fa-cart-shopping"></i> Giỏ <Badge bg="warning" text="dark" pill>{gioHang.reduce((acc, item) => acc + item.soLuong, 0)}</Badge></Button></Link>
+                <Link to="/cart" className="text-decoration-none ms-lg-3 mt-3 mt-lg-0">
+                  <Button variant="success" className="rounded-pill fw-bold px-4 py-2 d-flex align-items-center gap-2 shadow-sm">
+                    <i className="fa-solid fa-cart-shopping"></i> Giỏ <Badge bg="warning" text="dark" pill>{gioHang.reduce((acc, item) => acc + item.soLuong, 0)}</Badge>
+                  </Button>
+                </Link>
               </Nav>
             </Navbar.Collapse>
           </Container>
@@ -76,13 +98,13 @@ function App() {
       <Routes>
         <Route path="/" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
         <Route path="/category/:id" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
-        <Route path="/product/:id" element={<ProductDetail dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
-        
-        {/* --- CẬP NHẬT ROUTE CART: Truyền thêm dsDanhMuc --- */}
-        <Route path="/cart" element={<Cart gioHang={gioHang} dsDanhMuc={dsDanhMuc} handleDatHang={handleDatHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} />} />
+        <Route path="/product/:id" element={<ProductDetail dsSanPham={dsSanPham} themVaoGio={themVaoGio} />} />
         
         <Route path="/admin" element={
-          <Admin dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} dsDonHang={dsDonHang} 
+          <Admin 
+            dsSanPham={dsSanPham} 
+            dsDanhMuc={dsDanhMuc} 
+            dsDonHang={dsDonHang} 
             handleUpdateDS_SP={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"sanPham",d)):(t==='ADD'?await addDoc(collection(db,"sanPham"),d):await updateDoc(doc(db,"sanPham",d.id),d))}
             handleUpdateDS_DM={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"danhMuc",d)):(t==='ADD'?await addDoc(collection(db,"danhMuc"),d):await updateDoc(doc(db,"danhMuc",d.id),d))}
             handleUpdateStatusOrder={async (id, s) => await updateDoc(doc(db,"donHang",id),{trangThai:s})}
