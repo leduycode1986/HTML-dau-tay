@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { db } from './firebase'; 
-// Import setDoc để lưu cấu hình, import getDoc không cần ở đây vì dùng onSnapshot
 import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Badge, Button, Form, Container, Navbar, Nav } from 'react-bootstrap';
 
@@ -14,12 +13,13 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // --- 1. STATE DỮ LIỆU ---
+  // State dữ liệu
   const [dsSanPham, setDsSanPham] = useState([]);
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [dsDonHang, setDsDonHang] = useState([]);
   const [gioHang, setGioHang] = useState(() => JSON.parse(localStorage.getItem('cart') || '[]'));
-  
+  const [tuKhoa, setTuKhoa] = useState('');
+
   // State Cấu hình Shop (Logo, Tên, Slogan)
   const [shopConfig, setShopConfig] = useState({ 
     tenShop: 'MaiVang Shop', 
@@ -27,9 +27,7 @@ function App() {
     logo: '' 
   });
 
-  const [tuKhoa, setTuKhoa] = useState('');
-
-  // --- 2. KẾT NỐI REALTIME FIREBASE ---
+  // 1. KẾT NỐI REALTIME (Tự động lấy dữ liệu mới nhất)
   useEffect(() => {
     // Lấy Sản phẩm
     const unsubSP = onSnapshot(collection(db, "sanPham"), (snapshot) => {
@@ -48,20 +46,19 @@ function App() {
       setDsDonHang(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
     });
 
-    // Lấy Cấu hình Shop (Logo) - QUAN TRỌNG ĐỂ HIỂN THỊ LOGO
+    // --- QUAN TRỌNG: LẤY LOGO & TÊN SHOP ---
     const unsubConfig = onSnapshot(doc(db, "cauHinh", "thongTinChung"), (doc) => {
       if (doc.exists()) {
-        setShopConfig(doc.data());
+        setShopConfig(doc.data()); // Cập nhật logo ngay lập tức khi DB thay đổi
       }
     });
 
     return () => { unsubSP(); unsubDM(); unsubDH(); unsubConfig(); };
   }, []);
 
-  // Lưu giỏ hàng vào LocalStorage
+  // 2. Lưu giỏ hàng
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
 
-  // --- 3. CÁC HÀM XỬ LÝ ---
   const themVaoGio = (sp) => {
     const check = gioHang.find(i => i.id === sp.id);
     if (check) setGioHang(gioHang.map(i => i.id === sp.id ? {...i, soLuong: i.soLuong + 1} : i));
@@ -74,31 +71,28 @@ function App() {
     setGioHang([]); alert("Đặt hàng thành công!"); navigate('/');
   };
 
-  // Logic lọc tìm kiếm
   const sanPhamHienThi = dsSanPham.filter(sp => sp.ten?.toLowerCase().includes(tuKhoa.toLowerCase()));
-  
-  // Kiểm tra xem có đang ở trang Admin không để ẩn Header
   const isAdminPage = location.pathname.startsWith('/admin');
 
   return (
     <div className="app-container">
-      {/* HEADER: HIỂN THỊ LOGO ĐỘNG TỪ FIREBASE */}
+      {/* --- HEADER: HIỂN THỊ LOGO & TÊN SHOP ĐỘNG --- */}
       {!isAdminPage && (
         <Navbar bg="white" variant="light" expand="lg" className="sticky-top shadow-sm py-2 border-bottom">
           <Container>
             <Navbar.Brand as={Link} to="/" className="d-flex align-items-center">
-              {/* Nếu có Logo trong DB thì hiện, ko thì hiện chữ cái đầu */}
+              {/* Logo động */}
               {shopConfig.logo ? (
-                <img src={shopConfig.logo} alt="Logo" height="50" className="me-2" style={{objectFit: 'contain', maxHeight:'50px'}} />
+                <img src={shopConfig.logo} alt="Logo" height="55" className="me-2" style={{objectFit: 'contain'}} />
               ) : (
-                <span className="fs-2 me-2">🦁</span>
+                <span className="fs-1 me-2">🦁</span>
               )}
               
               <div className="d-flex flex-column">
-                <span className="fw-bold text-success text-uppercase" style={{fontSize: '1.1rem', letterSpacing:'0.5px'}}>
+                <span className="fw-bold text-success text-uppercase" style={{fontSize: '1.2rem', letterSpacing:'1px'}}>
                   {shopConfig.tenShop || 'MaiVang Shop'}
                 </span>
-                <span className="text-warning small fw-bold" style={{fontSize: '0.7rem'}}>
+                <span className="text-warning small fw-bold" style={{fontSize: '0.75rem'}}>
                   ⭐ {shopConfig.slogan || 'Uy Tín Là Vàng'} ⭐
                 </span>
               </div>
@@ -108,7 +102,7 @@ function App() {
             <Navbar.Collapse id="basic-navbar-nav">
               <Nav className="w-100 d-flex justify-content-between align-items-center ms-lg-4 mt-3 mt-lg-0">
                 <Form className="d-flex w-100 mx-lg-3 position-relative">
-                  <Form.Control type="search" placeholder="🔍 Bạn cần tìm gì..." className="rounded-pill border-1 bg-light px-4 py-2" style={{width: '100%'}} value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)} />
+                  <Form.Control type="search" placeholder="🔍 Tìm kiếm..." className="rounded-pill border-1 bg-light px-4 py-2" style={{width: '100%'}} value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)} />
                 </Form>
                 <Link to="/cart" className="text-decoration-none ms-lg-3 mt-3 mt-lg-0">
                   <Button variant="success" className="rounded-pill fw-bold px-4 py-2 d-flex align-items-center gap-2 shadow-sm">
@@ -122,32 +116,32 @@ function App() {
         </Navbar>
       )}
 
-      {/* NỘI DUNG CHÍNH */}
       <Routes>
         <Route path="/" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
         <Route path="/product/:id" element={<ProductDetail dsSanPham={dsSanPham} themVaoGio={themVaoGio} />} />
         <Route path="/cart" element={<Cart gioHang={gioHang} handleDatHang={handleDatHang} chinhSuaSoLuong={(id, k) => setGioHang(gioHang.map(i => i.id === id ? {...i, soLuong: k==='tang'?i.soLuong+1:Math.max(1,i.soLuong-1)} : i))} xoaSanPham={(id) => setGioHang(gioHang.filter(i=>i.id!==id))} />} />
         
-        {/* --- ROUTE ADMIN: QUAN TRỌNG NHẤT --- */}
+        {/* --- PHẦN QUAN TRỌNG NHẤT ĐÂY --- */}
         <Route path="/admin" element={
           <Admin 
             dsSanPham={dsSanPham} 
             dsDanhMuc={dsDanhMuc} 
             dsDonHang={dsDonHang} 
             
-            // Các hàm xử lý dữ liệu cũ
+            // Các hàm cũ
             handleUpdateDS_SP={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"sanPham",d)):(t==='ADD'?await addDoc(collection(db,"sanPham"),d):await updateDoc(doc(db,"sanPham",d.id),d))}
             handleUpdateDS_DM={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"danhMuc",d)):(t==='ADD'?await addDoc(collection(db,"danhMuc"),d):await updateDoc(doc(db,"danhMuc",d.id),d))}
             handleUpdateStatusOrder={async (id, s) => await updateDoc(doc(db,"donHang",id),{trangThai:s})}
             handleDeleteOrder={async (id) => await deleteDoc(doc(db,"donHang",id))}
             
-            // --- HÀM MỚI: LƯU CẤU HÌNH LOGO ---
+            // --- HÀM MỚI: Xử lý Lưu Logo ---
             handleSaveConfig={async (data) => {
               try {
-                // Dùng setDoc để nếu chưa có thì tạo mới, có rồi thì ghi đè
+                // Lưu vào collection "cauHinh", document "thongTinChung"
                 await setDoc(doc(db, "cauHinh", "thongTinChung"), data);
-                alert("✅ Đã cập nhật Logo & Thông tin Shop thành công!");
+                alert("✅ Đã cập nhật Logo thành công!");
               } catch (error) {
+                console.error(error);
                 alert("Lỗi khi lưu: " + error.message);
               }
             }}
@@ -157,4 +151,5 @@ function App() {
     </div>
   );
 }
+
 export default App;
