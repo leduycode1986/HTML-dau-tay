@@ -3,7 +3,6 @@ import { Table, Button, Form, Modal, Badge, Tab, Tabs, Row, Col } from 'react-bo
 import { Link } from 'react-router-dom';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-// Import setDoc để tự lưu
 import { doc, getDoc, setDoc } from 'firebase/firestore'; 
 import { db } from './firebase'; 
 
@@ -15,26 +14,23 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginInput, setLoginInput] = useState({ username: '', password: '' });
   
+  // Thêm trường phanLoai vào state mặc định
   const [showModalSP, setShowModalSP] = useState(false);
   const [editingSP, setEditingSP] = useState(null);
   const [formDataSP, setFormDataSP] = useState({ ten: '', giaGoc: '', phanTramGiam: 0, giaBan: '', donVi: 'Cái', soLuong: 10, moTa: '', anh: '', phanLoai: '', isMoi: false, isKhuyenMai: false, isBanChay: false });
+  
   const [showModalDM, setShowModalDM] = useState(false);
   const [editingDM, setEditingDM] = useState(null);
   const [formDataDM, setFormDataDM] = useState({ ten: '', icon: '', parent: '', order: '' });
   const [showModalPass, setShowModalPass] = useState(false);
   const [passForm, setPassForm] = useState({ oldPass: '', newPass: '' });
-  
-  // State Cấu hình
   const [shopConfig, setShopConfig] = useState({ tenShop: '', slogan: '', logo: '' });
 
-  // HÀM LƯU TRỰC TIẾP
   const luuCauHinhTrucTiep = async () => {
     try {
       await setDoc(doc(db, "cauHinh", "thongTinChung"), shopConfig);
       alert("✅ Đã cập nhật Logo thành công!");
-    } catch (error) {
-      alert("❌ Lỗi: " + error.message);
-    }
+    } catch (error) { alert("❌ Lỗi: " + error.message); }
   };
 
   const handleFastImageUpload = (e, type) => {
@@ -59,6 +55,7 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
     }
   }, [isLoggedIn]);
 
+  // Sắp xếp danh mục để hiển thị đẹp
   const sortedDanhMuc = (() => {
     const s = (a, b) => parseFloat(a.order || 0) - parseFloat(b.order || 0);
     const list = dsDanhMuc || [];
@@ -98,7 +95,7 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
         </div>
       </div>
       <div className="p-4">
-        <Tabs defaultActiveKey="config" className="mb-4 bg-white p-2 rounded shadow-sm border">
+        <Tabs defaultActiveKey="products" className="mb-4 bg-white p-2 rounded shadow-sm border">
           <Tab eventKey="config" title="⚙️ CẤU HÌNH LOGO">
             <div className="bg-white p-4 rounded text-center">
               <Row>
@@ -119,24 +116,30 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
               </Row>
             </div>
           </Tab>
-          {/* TAB 2, 3, 4 GIỮ NGUYÊN NHƯ CŨ, ĐÃ ĐƯỢC TÍCH HỢP TRONG CODE TRÊN */}
+          
           <Tab eventKey="products" title="📦 SẢN PHẨM">
             <Button variant="primary" className="my-3 fw-bold" onClick={() => { setEditingSP(null); setFormDataSP({ ten: '', giaGoc: '', phanTramGiam: 0, giaBan: '', donVi: 'Cái', soLuong: 10, moTa: '', anh: '', phanLoai: '', isMoi: false, isKhuyenMai: false, isBanChay: false }); setShowModalSP(true); }}>+ THÊM SẢN PHẨM</Button>
             <Table hover responsive className="bg-white border align-middle">
-              <thead><tr><th>Ảnh</th><th>Tên SP</th><th>Giá bán</th><th>Thao tác</th></tr></thead>
-              <tbody>{dsSanPham.map(sp => (
-                <tr key={sp.id}>
-                  <td><img src={sp.anh || NO_IMAGE} width="50" height="50" style={{objectFit:'cover'}} alt=""/></td>
-                  <td><b>{sp.ten}</b></td>
-                  <td className="text-danger fw-bold">{sp.giaBan?.toLocaleString()} ¥</td>
-                  <td>
-                    <Button size="sm" variant="warning" className="me-2" onClick={() => { setEditingSP(sp); setFormDataSP(sp); setShowModalSP(true); }}>Sửa</Button>
-                    <Button size="sm" variant="danger" onClick={() => { if(confirm('Xóa?')) handleUpdateDS_SP('DELETE', sp.id) }}>Xóa</Button>
-                  </td>
-                </tr>
-              ))}</tbody>
+              <thead><tr><th>Ảnh</th><th>Tên SP</th><th>Danh mục</th><th>Giá bán</th><th>Thao tác</th></tr></thead>
+              <tbody>{dsSanPham.map(sp => {
+                // Tìm tên danh mục để hiển thị
+                const tenDM = dsDanhMuc.find(d => d.id === sp.phanLoai)?.ten || '---';
+                return (
+                  <tr key={sp.id}>
+                    <td><img src={sp.anh || NO_IMAGE} width="50" height="50" style={{objectFit:'cover'}} alt=""/></td>
+                    <td><b>{sp.ten}</b></td>
+                    <td><Badge bg="info">{tenDM}</Badge></td>
+                    <td className="text-danger fw-bold">{sp.giaBan?.toLocaleString()} ¥</td>
+                    <td>
+                      <Button size="sm" variant="warning" className="me-2" onClick={() => { setEditingSP(sp); setFormDataSP(sp); setShowModalSP(true); }}>Sửa</Button>
+                      <Button size="sm" variant="danger" onClick={() => { if(confirm('Xóa?')) handleUpdateDS_SP('DELETE', sp.id) }}>Xóa</Button>
+                    </td>
+                  </tr>
+                );
+              })}</tbody>
             </Table>
           </Tab>
+
           <Tab eventKey="menu" title="📂 DANH MỤC">
             <Button variant="success" className="my-3 fw-bold" onClick={() => { setEditingDM(null); setFormDataDM({ten:'', icon:'', parent:'', order:''}); setShowModalDM(true); }}>+ THÊM MENU</Button>
             <Table bordered hover className="align-middle bg-white">
@@ -154,6 +157,7 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
               ))}</tbody>
             </Table>
           </Tab>
+
           <Tab eventKey="orders" title={`📋 ĐƠN HÀNG (${dsDonHang.length})`}>
             <Table hover responsive className="bg-white border mt-3">
               <thead><tr><th>Ngày</th><th>Khách</th><th>Tổng</th><th>Thao tác</th></tr></thead>
@@ -172,7 +176,8 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
           </Tab>
         </Tabs>
       </div>
-      {/* CÁC MODAL GIỮ NGUYÊN - BẠN ĐÃ CÓ RỒI HOẶC COPY TỪ CODE TRƯỚC */}
+
+      {/* MODAL SẢN PHẨM - ĐÃ THÊM Ô CHỌN DANH MỤC */}
       <Modal show={showModalSP} onHide={() => setShowModalSP(false)} size="lg" centered>
         <Modal.Header closeButton><Modal.Title className="fw-bold text-success">CHI TIẾT SẢN PHẨM</Modal.Title></Modal.Header>
         <Modal.Body>
@@ -180,6 +185,21 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
             <Row>
               <Col md={8}>
                 <Form.Group className="mb-3"><Form.Label>Tên SP</Form.Label><Form.Control value={formDataSP.ten} onChange={e=>setFormDataSP({...formDataSP, ten: e.target.value})} /></Form.Group>
+                
+                {/* --- ĐÂY LÀ PHẦN MỚI THÊM: Ô CHỌN DANH MỤC --- */}
+                <Form.Group className="mb-3">
+                  <Form.Label className="fw-bold text-primary">Danh Mục Sản Phẩm</Form.Label>
+                  <Form.Select value={formDataSP.phanLoai} onChange={e => setFormDataSP({...formDataSP, phanLoai: e.target.value})}>
+                    <option value="">-- Chọn danh mục --</option>
+                    {sortedDanhMuc.map(dm => (
+                      <option key={dm.id} value={dm.id}>
+                        {dm.parent ? ' -- ' : ''}{dm.ten}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+                {/* --------------------------------------------- */}
+
                 <Row>
                   <Col md={4}><Form.Group className="mb-3"><Form.Label>Giá Gốc</Form.Label><Form.Control type="number" value={formDataSP.giaGoc} onChange={e=>setFormDataSP({...formDataSP, giaGoc: e.target.value})} /></Form.Group></Col>
                   <Col md={4}><Form.Group className="mb-3"><Form.Label>% Giảm</Form.Label><Form.Control type="number" value={formDataSP.phanTramGiam} onChange={e=>setFormDataSP({...formDataSP, phanTramGiam: e.target.value})} /></Form.Group></Col>
@@ -207,6 +227,7 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
         </Modal.Body>
       </Modal>
 
+      {/* CÁC MODAL KHÁC GIỮ NGUYÊN */}
       <Modal show={showModalDM} onHide={() => setShowModalDM(false)} centered>
         <Modal.Header closeButton><Modal.Title className="fw-bold text-success">MENU</Modal.Title></Modal.Header>
         <Modal.Body className="p-4">
