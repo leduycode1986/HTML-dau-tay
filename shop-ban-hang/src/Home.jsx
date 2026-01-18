@@ -3,19 +3,24 @@ import { Row, Col, Container } from 'react-bootstrap';
 import Product from './Product';
 
 function Home({ dsSanPham, dsDanhMuc, themVaoGio }) {
+  // Logic sắp xếp Menu 18.1, 18.2 cho Sidebar
+  const sortedMenu = [...dsDanhMuc].sort((a, b) => parseFloat(a.order || 0) - parseFloat(b.order || 0));
+
   return (
-    <Container fluid>
-      <Row>
-        <Col md={3} className="sidebar-main p-0 d-none d-md-block">
-          <div className="p-3 bg-success text-white fw-bold">DANH MỤC</div>
-          {dsDanhMuc.map(dm => (
-            <a key={dm.id} href="#" className="category-link">{dm.icon} {dm.ten}</a>
+    <Container fluid className="p-0">
+      <Row className="g-0">
+        <Col md={3} lg={2} className="sidebar-main d-none d-md-block">
+          <div className="sidebar-header">DANH MỤC</div>
+          {sortedMenu.map(dm => (
+            <a key={dm.id} href="#" className={`category-link ${dm.parent ? 'ps-4 small text-muted' : 'fw-bold'}`}>
+              {dm.parent ? '↳ ' : dm.icon + ' '} {dm.ten}
+            </a>
           ))}
         </Col>
-        <Col md={9} className="p-4">
+        <Col md={9} lg={10} className="p-4">
           <Row className="g-4">
             {dsSanPham.map(sp => (
-              <Col key={sp.id} xs={6} lg={4} xl={3}>
+              <Col key={sp.id} xs={6} sm={4} xl={3}>
                 <Product sp={sp} themVaoGio={themVaoGio} />
               </Col>
             ))}
