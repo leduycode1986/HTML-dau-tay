@@ -10,9 +10,9 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import { Link } from 'react-router-dom';
 
-// --- 1. NHẬP THƯ VIỆN SOẠN THẢO ---
+// --- NHẬP THƯ VIỆN SOẠN THẢO ---
 import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css'; // Import giao diện soạn thảo
+import 'react-quill/dist/quill.snow.css';
 
 const ICON_LIST = [
     '🔥', '⚡', '💎', '🆕', '🎁', '🏷️', '📦',
@@ -30,7 +30,7 @@ const ICON_LIST = [
 
 function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsDonHang, handleUpdateStatusOrder, handleDeleteOrder }) {
   
-  // --- STATE CONFIG & LOGIN ---
+  // --- STATE ---
   const [adminConfig, setAdminConfig] = useState(() => {
       const saved = localStorage.getItem('adminConfig');
       return saved ? JSON.parse(saved) : { username: 'admin', password: 'admin123' };
@@ -47,12 +47,12 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
   const [editingSP, setEditingSP] = useState(null);
   const [formDataSP, setFormDataSP] = useState({ 
       ten: '', giaGoc: '', phanTramGiam: 0, giaBan: '', 
-      donVi: 'Cái', soLuong: 10, moTa: '', // moTa chứa HTML
+      donVi: 'Cái', soLuong: 10, moTa: '', 
       anh: '', phanLoai: 'thitca', 
       isKhuyenMai: false, isBanChay: false, isMoi: false 
   });
 
-  // TỰ ĐỘNG TÍNH GIÁ BÁN
+  // Tự động tính giá bán
   useEffect(() => {
       if(formDataSP.giaGoc) {
           const goc = parseInt(formDataSP.giaGoc);
@@ -82,7 +82,6 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
       }
   };
 
-  // --- XỬ LÝ SẢN PHẨM ---
   function handleSaveSP() {
       if (!formDataSP.ten || !formDataSP.giaBan) return alert("Thiếu tên hoặc giá bán!");
       
@@ -120,17 +119,12 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
   function handleSaveEditDM() { handleUpdateDS_DM('UPDATE', editFormDM); setShowModalEditDM(false); setEditingDM(null); }
   function handleDeleteDM(id) { if(id === 'all') return alert("Cấm xóa gốc!"); if(window.confirm("Xóa danh mục?")) handleUpdateDS_DM('DELETE', id); }
 
-  // --- LOGIC SẮP XẾP ---
   const getSortedDanhMuc = () => {
       const sortFunc = (a, b) => (a.order || 0) - (b.order || 0);
       const roots = dsDanhMuc.filter(dm => !dm.parent).sort(sortFunc);
       const children = dsDanhMuc.filter(dm => dm.parent).sort(sortFunc);
       let result = [];
-      roots.forEach(root => {
-          result.push(root);
-          const myChildren = children.filter(child => child.parent === (root.customId || root.id));
-          result.push(...myChildren);
-      });
+      roots.forEach(root => { result.push(root); result.push(...children.filter(child => child.parent === (root.customId || root.id))); });
       return result;
   };
   const sortedDanhMuc = getSortedDanhMuc();
@@ -174,17 +168,21 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
     ],
   };
 
-  // --- UI ĐĂNG NHẬP (QUAN TRỌNG: ĐÃ KHÔI PHỤC) ---
+  // --- UI ĐĂNG NHẬP (ĐÃ KHÔI PHỤC GIAO DIỆN ĐẸP) ---
   if (!isLoggedIn) return (
       <div style={{height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'linear-gradient(135deg, #008848, #e8f5e9)'}}>
           <div style={{background: 'white', padding: '40px', borderRadius: '15px', width: '400px', textAlign: 'center', boxShadow: '0 10px 20px rgba(0,0,0,0.2)'}}>
-              <h3 style={{color: '#008848', fontWeight: 'bold'}}>ADMIN MAI VÀNG</h3>
+              <h3 style={{color: '#008848', fontWeight: 'bold', marginBottom: '20px'}}>ADMIN MAI VÀNG</h3>
               <Form onSubmit={e => {e.preventDefault(); handleLogin()}}>
-                  <Form.Control className="mb-3" placeholder="User" value={loginInput.username} onChange={e => setLoginInput({...loginInput, username: e.target.value})} />
-                  <Form.Control className="mb-3" type="password" placeholder="Pass" value={loginInput.password} onChange={e => setLoginInput({...loginInput, password: e.target.value})} />
-                  <Button variant="success" type="submit" style={{width: '100%'}}>ĐĂNG NHẬP</Button>
+                  <Form.Group className="mb-3">
+                      <Form.Control placeholder="Tên đăng nhập" value={loginInput.username} onChange={e => setLoginInput({...loginInput, username: e.target.value})} style={{padding: '12px'}} />
+                  </Form.Group>
+                  <Form.Group className="mb-4">
+                      <Form.Control type="password" placeholder="Mật khẩu" value={loginInput.password} onChange={e => setLoginInput({...loginInput, password: e.target.value})} style={{padding: '12px'}} />
+                  </Form.Group>
+                  <Button variant="success" type="submit" style={{width: '100%', padding: '12px', fontWeight: 'bold', fontSize: '16px'}}>ĐĂNG NHẬP HỆ THỐNG</Button>
               </Form>
-              <Link to="/" style={{display: 'block', marginTop: '15px', textDecoration: 'none', color: '#008848'}}>← Về trang bán hàng</Link>
+              <Link to="/" style={{display: 'block', marginTop: '20px', textDecoration: 'none', color: '#008848', fontWeight: 'bold'}}>← Về trang bán hàng</Link>
           </div>
       </div>
   );
@@ -304,7 +302,7 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
         </Tab>
       </Tabs>
 
-      {/* MODAL SP NÂNG CẤP (CÓ SOẠN THẢO) */}
+      {/* MODAL SP NÂNG CẤP */}
       <Modal show={showModalSP} onHide={() => setShowModalSP(false)} size="lg">
          <Modal.Header closeButton><Modal.Title>{editingSP ? 'Cập nhật' : 'Thêm mới'}</Modal.Title></Modal.Header>
          <Modal.Body>

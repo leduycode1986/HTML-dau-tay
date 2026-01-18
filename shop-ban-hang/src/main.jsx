@@ -1,13 +1,13 @@
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
+import { BrowserRouter } from 'react-router-dom'
 
-// 👇 1. BỔ SUNG DÒNG NÀY (Để nhập công cụ điều hướng)
-import { BrowserRouter } from 'react-router-dom' 
+// 👇 QUAN TRỌNG: BỔ SUNG DÒNG NÀY ĐỂ WEB ĐẸP LẠI
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 createRoot(document.getElementById('root')).render(
-  // 👇 2. BỔ SUNG CẶP THẺ NÀY BAO QUANH <App />
   <BrowserRouter>
-      <App />
+    <App />
   </BrowserRouter>
 )
