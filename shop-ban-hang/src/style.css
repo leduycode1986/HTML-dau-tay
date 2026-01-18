@@ -175,3 +175,67 @@ body {
   border-radius: 10px;
   border: 1px dashed #2e7d32;
 }
+.admin-main-container {
+  min-height: 100vh;
+  background-color: #f4f6f9;
+}
+
+.nav-tabs .nav-link {
+  color: #555;
+  font-weight: bold;
+}
+
+.nav-tabs .nav-link.active {
+  color: #198754 !citeimportant;
+  border-bottom: 3px solid #198754 !important;
+}
+
+.admin-navbar {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+/* --- PHẦN ĐỔI MẬT KHẨU --- */
+.password-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-toggle-icon {
+  position: absolute;
+  right: 15px;
+  cursor: pointer;
+  color: #666;
+  z-index: 10;
+}
+
+.password-toggle-icon:hover {
+  color: var(--green-main);
+}
+
+/* --- QUẢN LÝ MENU --- */
+.menu-order-input {
+  width: 60px !important;
+  text-align: center;
+  font-weight: bold;
+}
+
+.category-table-row {
+  transition: all 0.2s;
+}
+
+.category-table-row:hover {
+  background-color: #f1f8f4;
+}
+
+/* Nút Sửa nhanh trong bảng */
+.btn-edit-inline {
+  color: #ffc107;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+
+.btn-delete-inline {
+  color: #dc3545;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
