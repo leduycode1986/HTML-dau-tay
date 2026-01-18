@@ -1,37 +1,37 @@
 export const products = [
     {
       id: 1,
-      ten: "Laptop Gaming",
-      gia: "25.000.000 VNĐ",
-      anh: "/img/laptop.jpg",
-      phanLoai: "dientu" // <-- Thêm dòng này (Điện tử)
+      ten: "Thịt Ba Chỉ Heo (500g)",
+      gia: "85.000 VNĐ",
+      anh: "/img/thit-heo.jpg", // Tí mình sẽ vẽ ảnh này cho bạn
+      phanLoai: "thitca"
     },
     {
       id: 2,
-      ten: "Điện thoại iPhone",
-      gia: "30.000.000 VNĐ",
-      anh: "/img/iphone.jpg",
-      phanLoai: "dientu" // <-- Thêm dòng này
+      ten: "Cá Hồi Nauy (500g)",
+      gia: "250.000 VNĐ",
+      anh: "/img/ca-hoi.jpg",
+      phanLoai: "thitca"
     },
     {
         id: 3,
-        ten: "Áo thun Coder",
-        gia: "150.000 VNĐ",
-        anh: "/img/ao-thun.jpg",
-        phanLoai: "thoitrang" // <-- Thêm dòng này (Thời trang)
+        ten: "Bắp Cải Xanh (1kg)",
+        gia: "15.000 VNĐ",
+        anh: "/img/bap-cai.jpg",
+        phanLoai: "raucu"
     },
     {
         id: 4,
-        ten: "Bàn phím cơ",
-        gia: "500.000 VNĐ",
-        anh: "/img/ban-phim.jpg",
-        phanLoai: "phukien" // <-- Thêm dòng này (Phụ kiện)
+        ten: "Thùng Bia Tiger (24 lon)",
+        gia: "350.000 VNĐ",
+        anh: "/img/bia-tiger.jpg",
+        phanLoai: "douong"
     },
     {
         id: 5,
-        ten: "Tai nghe Bluetooth",
-        gia: "850.000 VNĐ",
-        anh: "/img/tai-nghe.jpg",
-        phanLoai: "phukien" // <-- Thêm dòng này
+        ten: "Nước Ngọt Coca (Lốc 6 lon)",
+        gia: "60.000 VNĐ",
+        anh: "/img/coca.jpg",
+        phanLoai: "douong"
     }
 ];
