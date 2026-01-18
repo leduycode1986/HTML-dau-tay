@@ -1,64 +1,86 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { Badge, Row, Col, Card, Button } from 'react-bootstrap';
+import SEO from './SEO';
 
 function Home({ dsSanPham, dsDanhMuc, themVaoGio }) {
-  const { id } = useParams(); // Lấy ID danh mục từ URL
+  const { id } = useParams(); // Lấy mã danh mục từ đường link (URL)
   const [searchParams] = useSearchParams();
   const tuKhoa = searchParams.get('search') || '';
 
-  // Logic lọc sản phẩm CỰC KỲ QUAN TRỌNG
+  // --- LOGIC LỌC SẢN PHẨM QUAN TRỌNG ---
   let list = dsSanPham.filter(sp => {
-      // 1. Lọc theo từ khóa tìm kiếm
+      // 1. Lọc theo từ khóa tìm kiếm (nếu có)
       const matchKey = sp.ten.toLowerCase().includes(tuKhoa.toLowerCase());
       if (!matchKey) return false;
 
-      // 2. Nếu ở trang chủ (không có ID) -> Lấy hết
-      if (!id) return true;
+      // 2. Nếu ở trang chủ (Tất cả sản phẩm) -> Hiện tất cả
+      if (!id || id === 'all') return true;
 
-      // 3. Nếu có ID -> Kiểm tra xem ID đó là Cha hay Con
-      // Tìm danh mục hiện tại
+      // 3. Tìm danh mục đang chọn dựa trên ID hoặc CustomID
       const currentDM = dsDanhMuc.find(d => d.id === id || d.customId === id);
       if (!currentDM) return false;
 
-      // Nếu là danh mục CHA: Lấy sản phẩm của nó + sản phẩm của các con nó
-      const childIDs = dsDanhMuc.filter(d => d.parent === (currentDM.customId || currentDM.id)).map(d => d.customId || d.id);
+      // 4. LẤY TẤT CẢ MÃ DANH MỤC CON (Để bấm cha hiện luôn cả con)
+      const danhMucLienQuan = [
+          currentDM.customId || currentDM.id, // Chính nó
+          ...dsDanhMuc
+            .filter(d => d.parent === (currentDM.customId || currentDM.id))
+            .map(d => d.customId || d.id) // Các con của nó
+      ];
       
-      // Kiểm tra: SP thuộc danh mục này HOẶC SP thuộc danh mục con của nó
-      return sp.phanLoai === (currentDM.customId || currentDM.id) || childIDs.includes(sp.phanLoai);
+      // Sản phẩm hợp lệ nếu phân loại của nó nằm trong danh sách liên quan này
+      return danhMucLienQuan.includes(sp.phanLoai);
   });
 
-  const tenDanhMuc = id 
-    ? dsDanhMuc.find(d => d.id === id || d.customId === id)?.ten 
-    : (tuKhoa ? `Tìm kiếm: "${tuKhoa}"` : 'Tất cả sản phẩm');
+  // Xác định tiêu đề hiển thị
+  const currentCategory = dsDanhMuc.find(d => d.id === id || d.customId === id);
+  const tenHienThi = id ? currentCategory?.ten : (tuKhoa ? `Kết quả: "${tuKhoa}"` : 'Tất cả sản phẩm');
 
   return (
-    <div>
-      <h4 className="text-success fw-bold text-uppercase mb-3 pb-2 border-bottom">{tenDanhMuc}</h4>
+    <div className="p-0">
+      <SEO title={tenHienThi} />
       
+      <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+          <h4 className="text-success fw-bold text-uppercase m-0">{tenHienThi}</h4>
+          <span className="text-muted small">Tìm thấy {list.length} sản phẩm</span>
+      </div>
+
       {list.length === 0 ? (
-          <div className="text-center p-5 text-muted bg-white rounded shadow-sm">
-              <i className="fa-solid fa-box-open fs-1 mb-3"></i>
-              <p>Chưa có sản phẩm nào trong mục này.</p>
-              <Link to="/" className="btn btn-primary btn-sm">Xem tất cả sản phẩm</Link>
+          <div className="text-center p-5 bg-white rounded shadow-sm border">
+              <i className="fa-solid fa-face-frown fs-1 text-muted mb-3"></i>
+              <p className="text-muted">Mục này chưa có sản phẩm nào. Bạn hãy thử chọn mục khác nhé!</p>
+              <Link to="/" className="btn btn-success btn-sm rounded-pill px-4">Xem tất cả sản phẩm</Link>
           </div>
       ) : (
-          <Row className="g-3"> 
+          /* Sử dụng Row g-3 để các sản phẩm khít nhau và tràn màn hình đẹp hơn */
+          <Row className="g-3 m-0"> 
             {list.map(sp => (
                 <Col xs={6} md={4} lg={3} xl={2} key={sp.id}>
-                    <Card className="product-card shadow-sm h-100">
-                        {sp.isMoi && <Badge bg="success" className="position-absolute top-0 start-0 m-2">Mới</Badge>}
-                        {sp.isKhuyenMai && <Badge bg="danger" className="position-absolute top-0 end-0 m-2">-{sp.phanTramGiam}%</Badge>}
+                    <Card className="product-card shadow-sm h-100 border-0">
+                        {sp.isMoi && <Badge bg="success" className="position-absolute top-0 start-0 m-2 shadow-sm">Mới</Badge>}
+                        {sp.isKhuyenMai && <Badge bg="danger" className="position-absolute top-0 end-0 m-2 shadow-sm">Giảm giá</Badge>}
+                        
                         <Link to={`/product/${sp.id}`} className="text-decoration-none text-dark">
-                            <div className="product-img-container"><Card.Img variant="top" src={sp.anh || "https://via.placeholder.com/300"} className="product-img" onError={e => e.target.src="https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg"} /></div>
+                            <div className="product-img-container">
+                                <Card.Img 
+                                    variant="top" 
+                                    src={sp.anh || "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg"} 
+                                    className="product-img"
+                                    onError={e => e.target.src="https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg"} 
+                                />
+                            </div>
                             <Card.Body className="p-2">
-                                <Card.Title className="fs-6 fw-bold text-truncate">{sp.ten}</Card.Title>
+                                <Card.Title className="fs-6 fw-bold text-truncate" title={sp.ten}>{sp.ten}</Card.Title>
                                 <div className="d-flex justify-content-between align-items-end">
-                                    <div><div className="text-danger fw-bold">{sp.giaBan?.toLocaleString()} ¥</div>{sp.isKhuyenMai && <small className="text-decoration-line-through text-muted" style={{fontSize:'11px'}}>{sp.giaGoc?.toLocaleString()} ¥</small>}</div>
+                                    <div className="text-danger fw-bold">{sp.giaBan?.toLocaleString()} ¥</div>
+                                    <small className="text-muted" style={{fontSize:'11px'}}>/{sp.donVi || 'Cái'}</small>
                                 </div>
                             </Card.Body>
                         </Link>
-                        <Card.Footer className="p-2 bg-white border-0"><Button variant="outline-success" size="sm" className="w-100 fw-bold" onClick={()=>themVaoGio(sp)}>+ Giỏ hàng</Button></Card.Footer>
+                        <Card.Footer className="p-2 bg-white border-0">
+                            <Button variant="outline-success" size="sm" className="w-100 fw-bold rounded-pill" onClick={()=>themVaoGio(sp)}>+ Giỏ hàng</Button>
+                        </Card.Footer>
                     </Card>
                 </Col>
             ))}
@@ -67,4 +89,4 @@ function Home({ dsSanPham, dsDanhMuc, themVaoGio }) {
     </div>
   )
 }
-export default Home
+export default Home;
