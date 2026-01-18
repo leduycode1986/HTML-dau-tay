@@ -32,17 +32,19 @@ function App() {
   const handleDatHang = async (khach) => {
     const tongTien = gioHang.reduce((t, s) => t + s.giaBan * s.soLuong, 0);
     await addDoc(collection(db, "donHang"), { khachHang: khach, gioHang, tongTien, trangThai: 'Mới đặt', ngayDat: serverTimestamp() });
-    setGioHang([]); alert("Thành công!"); navigate('/');
+    setGioHang([]); alert("Đặt hàng thành công!"); navigate('/');
   };
 
   return (
     <Routes>
       <Route path="/" element={<Home dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
       <Route path="/product/:id" element={<ProductDetail dsSanPham={dsSanPham} themVaoGio={themVaoGio} />} />
-      <Route path="/cart" element={<Cart gioHang={gioHang} setGioHang={setGioHang} handleDatHang={handleDatHang} />} />
+      <Route path="/cart" element={<Cart gioHang={gioHang} handleDatHang={handleDatHang} chinhSuaSoLuong={(id, k) => setGioHang(gioHang.map(i => i.id === id ? {...i, soLuong: k==='tang'?i.soLuong+1:Math.max(1,i.soLuong-1)} : i))} xoaSanPham={(id) => setGioHang(gioHang.filter(i=>i.id!==id))} />} />
       <Route path="/admin" element={<Admin dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} dsDonHang={dsDonHang} 
-        handleUpdateDS_SP={async (type, data) => type === 'DELETE' ? await deleteDoc(doc(db, "sanPham", data)) : (type === 'ADD' ? await addDoc(collection(db, "sanPham"), data) : await updateDoc(doc(db, "sanPham", data.id), data))}
-        handleUpdateDS_DM={async (type, data) => type === 'DELETE' ? await deleteDoc(doc(db, "danhMuc", data)) : (type === 'ADD' ? await addDoc(collection(db, "danhMuc"), data) : await updateDoc(doc(db, "danhMuc", data.id), data))}
+        handleUpdateDS_SP={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"sanPham",d)):(t==='ADD'?await addDoc(collection(db,"sanPham"),d):await updateDoc(doc(db,"sanPham",d.id),d))}
+        handleUpdateDS_DM={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"danhMuc",d)):(t==='ADD'?await addDoc(collection(db,"danhMuc"),d):await updateDoc(doc(db,"danhMuc",d.id),d))}
+        handleUpdateStatusOrder={async (id, s) => await updateDoc(doc(db,"donHang",id),{trangThai:s})}
+        handleDeleteOrder={async (id) => await deleteDoc(doc(db,"donHang",id))}
       />} />
     </Routes>
   );
