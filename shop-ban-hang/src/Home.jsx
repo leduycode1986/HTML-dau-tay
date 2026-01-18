@@ -1,35 +1,39 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Badge } from 'react-bootstrap';
-import { Helmet } from "react-helmet";
+import { Badge, Row, Col, Card, Button } from 'react-bootstrap';
 
-function Home({ dsSanPham, dsDanhMuc, themVaoGio, danhMuc, tuKhoa, colors }) {
+function Home({ dsSanPham, dsDanhMuc, themVaoGio, danhMuc, tuKhoa }) {
   let list = dsSanPham.filter(sp => {
       const matchKey = sp.ten.toLowerCase().includes(tuKhoa.toLowerCase());
       if(danhMuc==='all') return matchKey;
       const subs = dsDanhMuc.filter(d=>d.parent===danhMuc || d.parent===(dsDanhMuc.find(x=>x.id===danhMuc)?.customId)).map(d=>d.id);
       return matchKey && [danhMuc, ...subs].includes(sp.phanLoai);
   });
+  const tenDanhMuc = danhMuc === 'all' ? 'Tất cả sản phẩm' : dsDanhMuc.find(d => d.id === danhMuc || d.customId === danhMuc)?.ten;
 
   return (
     <div>
-      <Helmet><title>MaiVang Shop - Thực phẩm sạch</title></Helmet>
-      <h4 className="border-bottom pb-2 mb-3 text-success">{danhMuc==='all'?'Tất cả sản phẩm':dsDanhMuc.find(d=>d.id===danhMuc)?.ten}</h4>
-      <div className="d-flex flex-wrap gap-3">
+      <h4 className="text-success fw-bold text-uppercase mb-3 pb-2 border-bottom">{tenDanhMuc}</h4>
+      <Row className="g-3"> 
         {list.map(sp => (
-            <div key={sp.id} className="border rounded bg-white position-relative shadow-sm" style={{width:'220px', padding:'10px'}}>
-                {sp.isMoi && <Badge bg="success" className="position-absolute top-0 start-0 m-2">New</Badge>}
-                {sp.isKhuyenMai && <Badge bg="danger" className="position-absolute top-0 end-0 m-2">-{sp.phanTramGiam}%</Badge>}
-                <Link to={`/product/${sp.id}`} className="text-decoration-none text-dark">
-                    <img src={sp.anh} style={{width:'100%', height:'150px', objectFit:'cover', borderRadius:'5px'}} />
-                    <h6 className="mt-2 text-truncate">{sp.ten}</h6>
-                    <div className="text-danger fw-bold fs-5">{sp.giaBan?.toLocaleString()} ¥</div>
-                    {sp.isKhuyenMai && <small className="text-muted text-decoration-line-through">{sp.giaGoc?.toLocaleString()} ¥</small>}
-                </Link>
-                <button onClick={()=>themVaoGio(sp)} className="btn btn-outline-success w-100 mt-2 btn-sm fw-bold">Thêm vào giỏ</button>
-            </div>
+            <Col xs={6} md={4} lg={3} xl={2} key={sp.id}>
+                <Card className="product-card shadow-sm h-100">
+                    {sp.isMoi && <Badge bg="success" className="position-absolute top-0 start-0 m-2">Mới</Badge>}
+                    {sp.isKhuyenMai && <Badge bg="danger" className="position-absolute top-0 end-0 m-2">-{sp.phanTramGiam}%</Badge>}
+                    <Link to={`/product/${sp.id}`} className="text-decoration-none text-dark">
+                        <div className="product-img-container"><Card.Img variant="top" src={sp.anh || "https://via.placeholder.com/300"} className="product-img" onError={e => e.target.src="https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg"} /></div>
+                        <Card.Body className="p-2">
+                            <Card.Title className="fs-6 fw-bold text-truncate">{sp.ten}</Card.Title>
+                            <div className="d-flex justify-content-between align-items-end">
+                                <div><div className="text-danger fw-bold">{sp.giaBan?.toLocaleString()} ¥</div>{sp.isKhuyenMai && <small className="text-decoration-line-through text-muted" style={{fontSize:'11px'}}>{sp.giaGoc?.toLocaleString()} ¥</small>}</div>
+                            </div>
+                        </Card.Body>
+                    </Link>
+                    <Card.Footer className="p-2 bg-white border-0"><Button variant="outline-success" size="sm" className="w-100 fw-bold" onClick={()=>themVaoGio(sp)}>+ Giỏ hàng</Button></Card.Footer>
+                </Card>
+            </Col>
         ))}
-      </div>
+      </Row>
     </div>
   )
 }

@@ -1,0 +1,140 @@
+/* --- 1. CẤU HÌNH CHUNG --- */
+:root {
+  --primary-color: #198754;      /* Màu xanh chủ đạo */
+  --secondary-color: #f8f9fa;    /* Màu nền xám nhạt */
+  --accent-warning: #ffc107;     /* Màu vàng nổi bật */
+  --text-dark: #333;
+}
+
+body {
+  background-color: #fff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  overflow-x: hidden; /* Chống thanh cuộn ngang thừa */
+}
+
+/* --- 2. NAVBAR & HEADER --- */
+.navbar-custom {
+  background-color: var(--primary-color) !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 10px 20px;
+}
+
+.brand-circle {
+  background: white;
+  color: var(--primary-color);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.search-input {
+  border-radius: 50px !important;
+  border: none !important;
+  padding-left: 20px !important;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* --- 3. SIDEBAR (DANH MỤC TRÁI) --- */
+.sidebar-container {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  border-right: 1px solid #dee2e6;
+}
+
+.sidebar-header {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 15px;
+  font-weight: bold;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.category-item {
+  padding: 12px 20px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.category-item:hover {
+  background-color: #e9ecef;
+  padding-left: 25px; /* Hiệu ứng trượt nhẹ */
+}
+
+.category-item.active {
+  background-color: white;
+  color: var(--primary-color);
+  border-left: 5px solid var(--primary-color);
+  font-weight: bold;
+}
+
+/* --- 4. SẢN PHẨM (HOME) --- */
+.product-card {
+  transition: transform 0.3s, box-shadow 0.3s;
+  border: none !important;
+  height: 100%;
+}
+
+.product-card:hover {
+  transform: translateY(-5px); /* Nổi lên khi di chuột */
+  box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
+}
+
+.product-img-container {
+  overflow: hidden;
+  border-radius: 5px 5px 0 0;
+  position: relative;
+}
+
+.product-img {
+  height: 180px;
+  width: 100%;
+  object-fit: cover;
+  transition: transform 0.5s;
+}
+
+.product-card:hover .product-img {
+  transform: scale(1.1); /* Phóng to ảnh nhẹ */
+}
+
+/* --- 5. TRANG ADMIN LOGIN --- */
+.admin-login-bg {
+  height: 100vh;
+  background: linear-gradient(135deg, #008848 0%, #00b359 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  background: white;
+  padding: 40px;
+  border-radius: 15px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+  text-align: center;
+}
+
+/* --- 6. ADMIN DASHBOARD --- */
+.admin-header {
+  background: var(--primary-color);
+  color: white;
+  padding: 15px 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.admin-table-img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 5px;
+  border: 1px solid #dee2e6;
+}
