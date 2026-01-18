@@ -1,9 +1,7 @@
-/* --- 1. BIẾN SỐ --- */
-:root { --primary: #198754; --red: #dc3545; --yellow: #ffc107; --gray: #6c757d; }
+:root { --primary: #198754; --red: #dc3545; --yellow: #ffc107; --gray: #888; }
+body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; }
 
-body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f4f6f9; }
-
-/* --- 2. ADMIN & LOGIN (FIX TRẮNG TRANG) --- */
+/* ADMIN LOGIN (FIX VỠ KHUNG) */
 .admin-login-wrapper {
   position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
   display: flex !important; justify-content: center; align-items: center;
@@ -12,24 +10,30 @@ body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f4f6f9; }
 }
 .admin-login-card { background: white; padding: 40px; border-radius: 20px; width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
 
-/* --- 3. MENU PHÂN CẤP (18.1, 18.2) --- */
+/* MENU PHÂN CẤP (18.1, 18.2) */
+.sidebar-main { background-color: #f8f9fa; border-right: 1px solid #dee2e6; min-height: 100vh; }
+.category-link { padding: 12px 20px; display: block; text-decoration: none; color: #333; border-bottom: 1px solid #eee; }
 .category-row-parent { background-color: #f8f9fa; font-weight: bold; }
-.category-row-child { color: #555; font-size: 0.95rem; }
-.menu-order-input { width: 80px !important; text-align: center; font-weight: bold; border: 1px solid #ddd; }
+.category-row-child { color: #555; font-size: 0.9rem; }
+.menu-order-input { width: 80px !important; text-align: center; font-weight: bold; }
 
-/* --- 4. NHÃN SẢN PHẨM (NEW/HOT) --- */
+/* PRODUCT CARD & BADGES */
+.product-card { background: white; border-radius: 12px; overflow: hidden; transition: 0.3s; height: 100%; border: 1px solid #eee; position: relative; }
 .product-image-wrapper { position: relative; width: 100%; padding-top: 100%; background: #fff; }
 .product-image-wrapper img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; padding: 10px; }
-.badge-overlay { position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; gap: 5px; z-index: 10; }
-.badge-item { padding: 3px 8px; font-size: 0.65rem; font-weight: bold; color: white; border-radius: 4px; text-transform: uppercase; }
+.badge-overlay { position: absolute; top: 8px; left: 8px; display: flex; flex-direction: column; gap: 4px; z-index: 10; }
+.badge-item { padding: 2px 8px; font-size: 0.65rem; font-weight: bold; color: white; border-radius: 4px; text-transform: uppercase; }
 .badge-new { background-color: var(--primary); }
 .badge-hot { background-color: var(--red); }
 
-/* --- 5. GIÁ & CHI TIẾT 50/50 --- */
+/* GIÁ & CHI TIẾT 50/50 */
 .price-original { text-decoration: line-through; color: var(--gray); font-size: 0.85rem; margin-right: 8px; }
 .price-sale { color: var(--red); font-weight: bold; font-size: 1.1rem; }
 .detail-container { display: flex; flex-wrap: wrap; background: white; border-radius: 15px; overflow: hidden; }
-.detail-image-box { flex: 0 0 50%; max-width: 50%; padding: 30px; display: flex; align-items: flex-start; justify-content: center; }
-.detail-info-box { flex: 0 0 50%; max-width: 50%; padding: 40px; border-left: 1px solid #f0f0f0; }
+.detail-image-box { flex: 0 0 50%; max-width: 50%; padding: 20px; display: flex; align-items: flex-start; justify-content: center; }
+.detail-info-box { flex: 0 0 50%; max-width: 50%; padding: 30px; border-left: 1px solid #f0f0f0; }
+
+.map-container { width: 100%; height: 350px; border-radius: 12px; border: 1px solid #ddd; margin-top: 15px; overflow: hidden; }
+.map-container iframe { width: 100%; height: 100%; border: 0; }
 
 @media (max-width: 991px) { .detail-image-box, .detail-info-box { flex: 0 0 100%; max-width: 100%; border-left: none; } }
