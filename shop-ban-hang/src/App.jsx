@@ -12,6 +12,7 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import { useState, useEffect } from 'react';
 
+// Nhập Firebase
 import { db } from './firebase'; 
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 
@@ -19,10 +20,11 @@ const colors = { primaryGreen: '#008848', accentYellow: '#ffc107', bgLight: '#f0
 
 function App() {
   
-  // --- 1. SẢN PHẨM (FIREBASE) ---
+  // --- 1. QUẢN LÝ SẢN PHẨM ---
   const [dsSanPham, setDsSanPham] = useState([]);
   const sanPhamCollection = collection(db, "products");
 
+  // Hàm tải dữ liệu ban đầu
   const fetchSanPham = async () => {
     try {
         const data = await getDocs(sanPhamCollection);
@@ -30,7 +32,7 @@ function App() {
     } catch (err) { console.error("Lỗi tải SP:", err); }
   };
 
-  // --- 2. DANH MỤC (FIREBASE) ---
+  // --- 2. QUẢN LÝ DANH MỤC ---
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const danhMucCollection = collection(db, "categories");
 
@@ -39,7 +41,7 @@ function App() {
         const data = await getDocs(danhMucCollection);
         const list = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
         if (list.length === 0) {
-            // Mặc định nếu rỗng
+             // Mặc định nếu chưa có gì
             setDsDanhMuc([
                 { id: 'all', ten: 'Tất cả', icon: '🏠', parent: null },
                 { id: 'thitca', ten: 'Thịt, Cá', icon: '🥩', parent: null }
@@ -52,42 +54,60 @@ function App() {
 
   useEffect(() => { fetchSanPham(); fetchDanhMuc(); }, []);
 
-  // --- XỬ LÝ DATABASE (OPTIMISTIC UPDATE - KHÔNG CẦN CHỜ MẠNG) ---
+
+  // --- 3. HÀM XỬ LÝ DATABASE (QUAN TRỌNG: CẬP NHẬT GIAO DIỆN NGAY) ---
   
+  // Xử lý SẢN PHẨM
   const handleUpdateDS_SP = async (action, item) => {
       try {
           if (action === 'ADD') {
+              // 1. Gửi lên Firebase
               const docRef = await addDoc(sanPhamCollection, item);
-              setDsSanPham([...dsSanPham, { ...item, id: docRef.id }]);
+              // 2. Cập nhật giao diện NGAY LẬP TỨC (Dùng ID vừa tạo)
+              const newItem = { ...item, id: docRef.id };
+              setDsSanPham(prev => [...prev, newItem]);
+
           } else if (action === 'UPDATE') {
               const { id, ...data } = item;
+              // 1. Gửi lên Firebase
               await updateDoc(doc(db, "products", id), data);
-              setDsSanPham(dsSanPham.map(sp => sp.id === id ? { ...sp, ...data } : sp));
+              // 2. Cập nhật giao diện NGAY
+              setDsSanPham(prev => prev.map(sp => sp.id === id ? { ...sp, ...data } : sp));
+
           } else if (action === 'DELETE') {
-              await deleteDoc(doc(db, "products", item));
-              setDsSanPham(dsSanPham.filter(sp => sp.id !== item));
+              // 1. Xóa trên Firebase
+              await deleteDoc(doc(db, "products", item)); // item ở đây là ID
+              // 2. Xóa trên giao diện NGAY
+              setDsSanPham(prev => prev.filter(sp => sp.id !== item));
           }
       } catch (e) { alert("Lỗi xử lý SP: " + e.message); }
   };
 
+  // Xử lý DANH MỤC (MENU)
   const handleUpdateDS_DM = async (action, item) => {
       try {
           if (action === 'ADD') {
               const docRef = await addDoc(danhMucCollection, item);
-              setDsDanhMuc([...dsDanhMuc, { ...item, id: docRef.id }]);
+              const newItem = { ...item, id: docRef.id };
+              setDsDanhMuc(prev => [...prev, newItem]); // Hiện ngay
+
           } else if (action === 'UPDATE') {
                const { id, ...data } = item;
+               // Xử lý parent rỗng thành null
                const cleanData = { ...data, parent: data.parent === "" ? null : data.parent };
+               
                await updateDoc(doc(db, "categories", id), cleanData);
-               setDsDanhMuc(dsDanhMuc.map(dm => dm.id === id ? { ...item, ...cleanData } : dm));
+               setDsDanhMuc(prev => prev.map(dm => dm.id === id ? { ...item, ...cleanData } : dm)); // Hiện ngay
+
           } else if (action === 'DELETE') {
                await deleteDoc(doc(db, "categories", item));
-               setDsDanhMuc(dsDanhMuc.filter(dm => dm.id !== item));
+               setDsDanhMuc(prev => prev.filter(dm => dm.id !== item)); // Hiện ngay
           }
       } catch (e) { alert("Lỗi xử lý DM: " + e.message); }
   };
 
-  // --- LOGIC GIỎ HÀNG (LOCALSTORAGE) ---
+
+  // --- LOGIC GIỎ HÀNG & KHÁC ---
   const [gioHang, setGioHang] = useState(() => {
       const saved = localStorage.getItem('gioHangCuaDuy');
       return saved ? JSON.parse(saved) : [];
@@ -110,8 +130,22 @@ function App() {
   const location = useLocation(); 
 
   // --- RENDER ---
-  if (location.pathname === '/admin') return <Routes><Route path="/admin" element={<Admin dsSanPham={dsSanPham} handleUpdateDS_SP={handleUpdateDS_SP} dsDanhMuc={dsDanhMuc} handleUpdateDS_DM={handleUpdateDS_DM} />} /></Routes>;
+  if (location.pathname === '/admin') {
+      return (
+        <Routes>
+            <Route path="/admin" element={
+                <Admin 
+                    dsSanPham={dsSanPham} 
+                    handleUpdateDS_SP={handleUpdateDS_SP} 
+                    dsDanhMuc={dsDanhMuc} 
+                    handleUpdateDS_DM={handleUpdateDS_DM} 
+                />
+            } />
+        </Routes>
+      );
+  }
 
+  // Lọc Menu Gốc
   const danhMucGoc = dsDanhMuc.filter(dm => !dm.parent);
 
   return (
