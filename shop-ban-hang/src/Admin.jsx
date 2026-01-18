@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-// Import đầy đủ để không lỗi
 import { Table, Button, Form, Modal, Badge, Tab, Tabs, Row, Col, Container } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import ReactQuill from 'react-quill';
@@ -55,11 +54,12 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
   function handleDeleteDM(id) { if(id==='all') return alert("Cấm xóa gốc"); if(window.confirm("Xóa?")) handleUpdateDS_DM('DELETE', id); }
   const sortedDanhMuc = (() => { const s=(a,b)=>(a.order||0)-(b.order||0); const r=dsDanhMuc.filter(d=>!d.parent).sort(s); const c=dsDanhMuc.filter(d=>d.parent).sort(s); let res=[]; r.forEach(root=>{res.push(root); res.push(...c.filter(ch=>ch.parent===(root.customId||root.id)))}); return res; })();
 
-  // --- 👇 GIAO DIỆN ĐĂNG NHẬP (ĐÃ KHÔI PHỤC VỀ KIỂU CŨ ĐẸP MẮT) 👇 ---
+  // --- GIAO DIỆN ĐĂNG NHẬP NỀN XANH (NHƯ CŨ) ---
   if (!isLoggedIn) return (
-      <div style={{height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'linear-gradient(135deg, #008848, #e8f5e9)'}}>
+      <div style={{height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#008848'}}>
           <div style={{background: 'white', padding: '40px', borderRadius: '15px', width: '400px', textAlign: 'center', boxShadow: '0 10px 20px rgba(0,0,0,0.2)'}}>
               <h3 style={{color: '#008848', fontWeight: 'bold', marginBottom: '20px'}}>ADMIN MAI VÀNG</h3>
+              <p className="text-muted mb-4">Hệ thống quản trị bán hàng</p>
               <Form onSubmit={e => {e.preventDefault(); handleLogin()}}>
                   <Form.Control className="mb-3 p-3" placeholder="Tên đăng nhập" value={loginInput.username} onChange={e => setLoginInput({...loginInput, username: e.target.value})} />
                   <Form.Control className="mb-4 p-3" type="password" placeholder="Mật khẩu" value={loginInput.password} onChange={e => setLoginInput({...loginInput, password: e.target.value})} />
@@ -78,6 +78,7 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
       </div>
       
       <Tabs defaultActiveKey="products" className="mb-3">
+        {/* TAB 1: SẢN PHẨM */}
         <Tab eventKey="products" title="📦 Sản phẩm">
             <Button className="mb-3" onClick={() => {setEditingSP(null); setShowModalSP(true)}}>+ Thêm Sản Phẩm</Button>
             <Table striped bordered hover responsive>
@@ -94,7 +95,23 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
                 ))}</tbody>
             </Table>
         </Tab>
+
+        {/* TAB 2: ĐƠN HÀNG (ĐÃ THÊM LẠI) */}
+        <Tab eventKey="orders" title={`📋 Đơn hàng (${dsDonHang ? dsDonHang.length : 0})`}>
+             <Table striped bordered hover responsive>
+                <thead style={{background: '#e3f2fd'}}><tr><th>Ngày</th><th>Khách</th><th>Chi tiết</th><th>Tổng tiền</th><th>Trạng thái</th><th>Xử lý</th></tr></thead>
+                <tbody>{dsDonHang && dsDonHang.map(dh => (<tr key={dh.id}>
+                    <td>{dh.ngayDat?.toDate ? dh.ngayDat.toDate().toLocaleString('ja-JP') : 'Vừa xong'}</td>
+                    <td><b>{dh.khachHang.ten}</b><br/><small>{dh.khachHang.sdt}</small></td>
+                    <td><ul style={{margin:0, paddingLeft:'15px', fontSize:'13px'}}>{dh.gioHang.map((sp,i)=><li key={i}>{sp.ten} (x{sp.soLuong})</li>)}</ul></td>
+                    <td style={{color: 'red', fontWeight: 'bold'}}>{parseInt(dh.tongTien).toLocaleString('ja-JP')} ¥</td>
+                    <td><Badge bg={dh.trangThai === 'Mới đặt' ? 'primary' : dh.trangThai === 'Đang giao' ? 'warning' : 'success'}>{dh.trangThai}</Badge></td>
+                    <td><div style={{display:'flex', gap:'5px'}}><Button size="sm" variant="outline-primary" onClick={()=>handleUpdateStatusOrder(dh.id,'Đang giao')}>Giao</Button> <Button size="sm" variant="outline-success" onClick={()=>handleUpdateStatusOrder(dh.id,'Hoàn thành')}>Xong</Button> <Button size="sm" variant="outline-danger" onClick={()=>handleDeleteOrder(dh.id)}>Xóa</Button></div></td>
+                </tr>))}</tbody>
+            </Table>
+        </Tab>
         
+        {/* TAB 3: DANH MỤC */}
         <Tab eventKey="menu" title="📂 Danh mục">
              <div className="bg-light p-3 mb-3 d-flex gap-2">
                 <Form.Control placeholder="Tên DM" value={formDataDM.ten} onChange={e=>setFormDataDM({...formDataDM, ten:e.target.value})} />
