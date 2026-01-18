@@ -1,44 +1,49 @@
-:root { --primary: #198754; --red: #dc3545; --yellow: #ffc107; --gray: #6c757d; }
-body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: #f4f6f9; }
+/* Reset & Base */
+body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+a { text-decoration: none; color: inherit; }
 
-/* --- 1. ADMIN LOGIN (Căn giữa, full màn hình) --- */
-.admin-login-wrapper { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: flex !important; justify-content: center; align-items: center; background: linear-gradient(135deg, var(--primary) 0%, #146c43 100%) !important; z-index: 9999; }
-.admin-login-card { background: white; padding: 40px; border-radius: 20px; width: 400px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
-.admin-navbar { background-color: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+/* Navbar & Menu */
+.navbar-brand { font-weight: 800; }
+.sidebar-main { border-right: 1px solid #dee2e6; }
 
-/* --- 2. MENU DANH MỤC (Sidebar & Admin Table) --- */
-.sidebar-main { background-color: #f8f9fa; border-right: 1px solid #dee2e6; min-height: 100vh; }
-.category-link { padding: 12px 20px; display: block; text-decoration: none; color: #333; border-bottom: 1px solid #eee; transition: 0.2s; }
-.category-link.active { background: white; color: var(--primary); border-left: 5px solid var(--primary); font-weight: bold; }
-.category-row-parent { background-color: #f8f9fa; font-weight: bold; }
-.category-row-child { color: #555; font-size: 0.9rem; }
-.menu-order-input { width: 85px !important; text-align: center; font-weight: bold; border: 1px solid #ced4da; }
+/* Menu Dọc */
+.category-item { position: relative; }
+.category-link { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #f0f0f0; color: #333; font-weight: 500; font-size: 15px; transition: 0.2s; }
+.category-link:hover { background-color: #e9ecef; color: #198754; }
+.category-link.active { background-color: #d1e7dd; color: #0f5132; font-weight: 700; }
+.dropdown-toggle-btn { cursor: pointer; padding: 0 10px; font-size: 12px; color: #888; }
+.dropdown-toggle-btn:hover { color: #000; }
 
-/* --- 3. THẺ SẢN PHẨM & NHÃN OVERLAY (MỚI/HOT/SALE) --- */
-.product-card { background: white; border-radius: 12px; overflow: hidden; transition: 0.3s; height: 100%; border: 1px solid #eee; position: relative; }
-.product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-.product-image-wrapper { position: relative; width: 100%; padding-top: 100%; background: #fff; }
-.product-image-wrapper img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; padding: 12px; }
+/* Menu con trong Sidebar */
+.submenu { background: #f8f9fa; list-style: none; padding: 0; display: none; }
+.submenu.open { display: block; }
+.submenu a { display: block; padding: 8px 15px 8px 35px; font-size: 14px; color: #555; }
+.submenu a:hover { color: #198754; background: #fff; }
 
-/* Nhãn đè lên ảnh */
-.badge-overlay { position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; gap: 5px; z-index: 10; }
-.badge-item { padding: 3px 8px; font-size: 0.65rem; font-weight: 800; color: white; border-radius: 4px; text-transform: uppercase; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-.badge-new { background-color: var(--primary); }
-.badge-hot { background-color: var(--red); }
-.badge-promo-tag { background-color: var(--yellow); color: #000; }
+/* Menu Ngang (Khi vào danh mục cha) */
+.horizontal-submenu { white-space: nowrap; overflow-x: auto; padding-bottom: 10px; margin-bottom: 20px; }
+.horizontal-submenu::-webkit-scrollbar { height: 6px; }
+.horizontal-submenu::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+.sub-pill { display: inline-block; padding: 8px 20px; background: #fff; border: 1px solid #dee2e6; border-radius: 50px; margin-right: 10px; font-size: 14px; font-weight: 500; transition: 0.2s; }
+.sub-pill:hover, .sub-pill.active { background: #198754; color: #fff; border-color: #198754; }
 
-/* --- 4. GIÁ & CHI TIẾT (Bố cục 50/50) --- */
-.price-original { text-decoration: line-through; color: var(--gray); font-size: 0.85rem; margin-right: 8px; }
-.price-sale { color: var(--red); font-weight: bold; font-size: 1.15rem; }
-.detail-container { display: flex; flex-wrap: wrap; background: white; border-radius: 15px; overflow: hidden; border: 1px solid #eee; }
-.detail-image-box { flex: 0 0 50%; max-width: 50%; padding: 30px; display: flex; align-items: flex-start; justify-content: center; }
-.detail-info-box { flex: 0 0 50%; max-width: 50%; padding: 40px; border-left: 1px solid #f0f0f0; }
+/* Product Card */
+.product-card { transition: transform 0.2s, box-shadow 0.2s; border-radius: 12px; overflow: hidden; background: #fff; height: 100%; display: flex; flex-direction: column; }
+.product-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; }
+.product-image-wrapper { position: relative; padding-top: 100%; /* Vuông */ overflow: hidden; }
+.product-image-wrapper img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+.badge-overlay { position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; gap: 5px; }
+.badge-item { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; text-transform: uppercase; }
+.badge-new { background: #198754; } .badge-hot { background: #dc3545; } .badge-promo-tag { background: #ffc107; color: #000; }
 
-/* --- 5. GIỎ HÀNG & BẢN ĐỒ --- */
-.map-container { width: 100%; height: 350px; border-radius: 12px; border: 1px solid #ddd; margin-top: 15px; overflow: hidden; }
-.map-container iframe { width: 100%; height: 100%; border: 0; }
-.password-input-wrapper { position: relative; display: flex; align-items: center; }
-.password-eye-icon { position: absolute; right: 15px; cursor: pointer; color: var(--gray); z-index: 10; }
+/* Tiêu đề Section */
+.section-title { position: relative; font-weight: 800; color: #198754; text-transform: uppercase; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #e9ecef; }
+.section-title::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 60px; height: 2px; background: #198754; }
 
-/* Responsive Mobile */
-@media (max-width: 991px) { .detail-image-box, .detail-info-box { flex: 0 0 100%; max-width: 100%; border-left: none; } }
+/* Sidebars (Trang chi tiết) */
+.promo-sidebar-item { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; }
+.promo-sidebar-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
+.promo-info { font-size: 13px; line-height: 1.3; }
+
+/* Admin */
+.stats-box { padding: 20px; border-radius: 10px; color: white; margin-bottom: 15px; }
