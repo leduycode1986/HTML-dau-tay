@@ -8,7 +8,7 @@ function Home({ dsSanPham, dsDanhMuc, themVaoGio }) {
     <Container fluid className="p-0">
       <Row className="g-0">
         <Col md={3} lg={2} className="sidebar-main d-none d-md-block shadow-sm">
-          <div className="bg-success text-white p-3 fw-bold text-center border-bottom">DANH MỤC SẢN PHẨM</div>
+          <div className="bg-success text-white p-3 fw-bold text-center border-bottom">DANH MỤC</div>
           {sortedMenu.map(dm => (
             <a key={dm.id} href="#" className={`category-link ${dm.parent ? 'ps-4 small text-muted' : 'fw-bold border-bottom bg-white'}`}>
               {dm.parent ? '↳ ' : dm.icon + ' '} {dm.ten}

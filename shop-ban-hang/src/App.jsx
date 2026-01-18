@@ -14,6 +14,7 @@ function App() {
   const [dsDonHang, setDsDonHang] = useState([]);
   const [gioHang, setGioHang] = useState(() => JSON.parse(localStorage.getItem('cart') || '[]'));
 
+  // Kết nối Firebase Realtime
   useEffect(() => {
     const unsubSP = onSnapshot(collection(db, "sanPham"), (sn) => setDsSanPham(sn.docs.map(d => ({id: d.id, ...d.data()}))));
     const unsubDM = onSnapshot(collection(db, "danhMuc"), (sn) => setDsDanhMuc(sn.docs.map(d => ({id: d.id, ...d.data()}))));
@@ -21,6 +22,7 @@ function App() {
     return () => { unsubSP(); unsubDM(); unsubDH(); };
   }, []);
 
+  // Lưu giỏ hàng
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
 
   const themVaoGio = (sp) => {

@@ -6,7 +6,7 @@ function Cart({ gioHang, handleDatHang, chinhSuaSoLuong, xoaSanPham }) {
   const tongTien = gioHang.reduce((t, s) => t + (s.giaBan || s.giaGoc) * s.soLuong, 0);
   return (
     <Container className="py-5 bg-white shadow-lg mt-3 rounded-4">
-      <h3 className="fw-bold text-success mb-5 text-center text-uppercase border-bottom pb-3">Thanh toán giỏ hàng</h3>
+      <h3 className="fw-bold text-success mb-5 text-center text-uppercase border-bottom pb-3">Giỏ hàng của bạn</h3>
       <Row className="g-5">
         <Col lg={7}>
           <Table hover responsive className="align-middle border-bottom">
