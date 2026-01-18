@@ -8,27 +8,28 @@ import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import Badge from 'react-bootstrap/Badge';
 import Form from 'react-bootstrap/Form';
+import Row from 'react-bootstrap/Row';
+import Col from 'react-bootstrap/Col';
 import { useState, useEffect } from 'react';
 import { products as khoHangBanDau } from './products'
 
-const colors = { primaryGreen: '#008848', accentYellow: '#ffc107', bgLight: '#f0fdf4', textDark: '#333' };
+const colors = { 
+    primaryGreen: '#008848', 
+    accentYellow: '#ffc107', 
+    bgLight: '#f0fdf4', 
+    textDark: '#333',
+    menuActiveBg: '#e6f7eb' 
+};
 
 function App() {
   
   // 1. DỮ LIỆU SẢN PHẨM (CÓ LƯU BỘ NHỚ)
   const [dsSanPham, setDsSanPham] = useState(() => {
-      // Thử lấy dữ liệu cũ từ bộ nhớ
       const saved = localStorage.getItem('dsSanPham');
-      // Nếu có thì dùng, không thì dùng kho hàng mặc định
       return saved ? JSON.parse(saved) : khoHangBanDau;
   });
+  useEffect(() => { localStorage.setItem('dsSanPham', JSON.stringify(dsSanPham)); }, [dsSanPham]);
 
-  // Mỗi khi dsSanPham thay đổi, lưu ngay vào bộ nhớ
-  useEffect(() => {
-      localStorage.setItem('dsSanPham', JSON.stringify(dsSanPham));
-  }, [dsSanPham]);
-
-  
   // 2. DỮ LIỆU DANH MỤC (CÓ LƯU BỘ NHỚ)
   const [dsDanhMuc, setDsDanhMuc] = useState(() => {
       const saved = localStorage.getItem('dsDanhMuc');
@@ -39,18 +40,14 @@ function App() {
         { id: 'douong', ten: 'Đồ Uống', icon: '🍺' }
       ];
   });
-
-  useEffect(() => {
-      localStorage.setItem('dsDanhMuc', JSON.stringify(dsDanhMuc));
-  }, [dsDanhMuc]);
-
+  useEffect(() => { localStorage.setItem('dsDanhMuc', JSON.stringify(dsDanhMuc)); }, [dsDanhMuc]);
 
   const [danhMucHienTai, setDanhMucHienTai] = useState('all'); 
   const [tuKhoa, setTuKhoa] = useState('');
   const navigate = useNavigate();
   const location = useLocation(); 
 
-  // 3. GIỎ HÀNG (GIỮ NGUYÊN)
+  // 3. GIỎ HÀNG
   const [gioHang, setGioHang] = useState(() => {
       const duLieuCu = localStorage.getItem('gioHangCuaDuy');
       return duLieuCu ? JSON.parse(duLieuCu) : [];
@@ -78,7 +75,7 @@ function App() {
   function xoaSanPham(id) { setGioHang(gioHang.filter(sp => sp.id !== id)); }
   function xoaHetGioHang() { setGioHang([]); }
 
-  // --- TRANG ADMIN ---
+  // --- NẾU LÀ TRANG ADMIN ---
   if (location.pathname === '/admin') {
       return (
         <Routes>
@@ -96,25 +93,26 @@ function App() {
   return (
     <div style={{ backgroundColor: colors.bgLight, minHeight: '100vh', fontFamily: 'Segoe UI, sans-serif' }}>
       
-      {/* Navbar */}
+      {/* HEADER */}
       <Navbar style={{ backgroundColor: colors.primaryGreen, borderBottom: `4px solid ${colors.accentYellow}` }} variant="dark" expand="lg" sticky="top">
-        <Container>
+        <Container fluid>
           <Navbar.Brand as={Link} to="/" onClick={() => { setDanhMucHienTai('all'); setTuKhoa('') }} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ backgroundColor: 'white', borderRadius: '50%', padding: '2px', width: '50px', height: '50px', border: `2px solid ${colors.accentYellow}` }}>
+            <div style={{ backgroundColor: 'white', borderRadius: '50%', padding: '2px', width: '45px', height: '45px', border: `2px solid ${colors.accentYellow}` }}>
                 <img src="/img/logo.jpg" alt="Logo" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'contain' }} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1' }}>
                 <span style={{ color: '#fff', fontSize: '12px' }}>Thực phẩm sạch</span>
-                <span style={{ color: colors.accentYellow, fontWeight: '900', fontSize: '24px' }}>MAIVANG</span>
+                <span style={{ color: colors.accentYellow, fontWeight: '900', fontSize: '20px' }}>MAIVANG</span>
             </div>
           </Navbar.Brand>
+          
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
-            <div className="mx-auto my-2" style={{ width: '100%', maxWidth: '500px' }}>
+            <div className="mx-auto my-2" style={{ width: '100%', maxWidth: '600px' }}>
                 <Form className="d-flex">
                     <Form.Control 
                         type="search" 
-                        placeholder="🔍 Tìm kiếm..." 
+                        placeholder="🔍 Tìm kiếm thịt, cá, rau củ..." 
                         className="me-2" 
                         style={{ borderRadius: '20px' }} 
                         value={tuKhoa} 
@@ -123,12 +121,14 @@ function App() {
                 </Form>
             </div>
             <Nav className="ms-auto" style={{alignItems: 'center', gap: '15px'}}>
-                <Link to="/admin" style={{color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '13px'}}>🔧 Admin</Link>
+                <Link to="/admin" style={{color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '14px', fontWeight: 'bold'}}>🔧 Admin</Link>
 
                 <Nav.Link as={Link} to="/cart" className="d-flex align-items-center gap-2 text-white">
                     <div style={{ position: 'relative' }}>
-                        <span style={{fontSize: '28px'}}>🛒</span> 
-                        <Badge bg="warning" text="dark" style={{ position: 'absolute', top: '-5px', right: '-10px', borderRadius: '50%' }}>{gioHang.reduce((t, sp) => t + sp.soLuong, 0)}</Badge>
+                        <span style={{fontSize: '24px'}}>🛒</span> 
+                        <Badge bg="warning" text="dark" style={{ position: 'absolute', top: '-8px', right: '-10px', borderRadius: '50%' }}>
+                        {gioHang.reduce((tong, sp) => tong + sp.soLuong, 0)}
+                        </Badge>
                     </div>
                 </Nav.Link>
             </Nav>
@@ -136,36 +136,70 @@ function App() {
         </Container>
       </Navbar>
 
-      {/* Menu Danh Mục */}
-      <div style={{ backgroundColor: 'white', padding: '12px 0', borderBottom: '1px solid #eee' }}>
-        <Container style={{ display: 'flex', gap: '10px', overflowX: 'auto', whiteSpace: 'nowrap', justifyContent: 'center' }}>
-            {dsDanhMuc.map(dm => (
-                <button key={dm.id} onClick={() => setDanhMucHienTai(dm.id)}
-                    style={{ 
-                        padding: '8px 16px', borderRadius: '20px', 
-                        border: danhMucHienTai === dm.id ? `2px solid ${colors.accentYellow}` : '1px solid #ddd', 
-                        backgroundColor: danhMucHienTai === dm.id ? colors.accentYellow : 'white', 
-                        color: danhMucHienTai === dm.id ? 'black' : '#555', fontWeight: 'bold', 
-                        cursor: 'pointer', display: 'flex', gap: '5px', alignItems: 'center'
-                    }}>
-                    <span>{dm.icon}</span> {dm.ten}
-                </button>
-            ))}
-        </Container>
-      </div>
+      {/* --- PHẦN THÂN TRANG (BỐ CỤC 2 CỘT) --- */}
+      <Container fluid style={{ marginTop: '20px' }}>
+        <Row>
+            {/* 1. CỘT TRÁI: MENU DỌC (Chỉ hiện trên Desktop) */}
+            <Col md={3} lg={2} className="d-none d-md-block" style={{ marginBottom: '20px' }}>
+                <div style={{ backgroundColor: 'white', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden', position: 'sticky', top: '90px' }}>
+                    <h5 style={{ backgroundColor: colors.primaryGreen, color: 'white', padding: '15px', margin: 0, textAlign: 'center', fontWeight: 'bold', fontSize: '16px' }}>
+                        ☰ DANH MỤC
+                    </h5>
+                    <div style={{ padding: '10px' }}>
+                        {dsDanhMuc.map((dm) => (
+                            <button 
+                                key={dm.id}
+                                onClick={() => {
+                                    setDanhMucHienTai(dm.id);
+                                    navigate('/');
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
+                                style={{
+                                    width: '100%', textAlign: 'left', padding: '12px 15px', border: 'none', borderRadius: '8px', marginBottom: '5px',
+                                    backgroundColor: danhMucHienTai === dm.id ? colors.menuActiveBg : 'transparent',
+                                    color: danhMucHienTai === dm.id ? colors.primaryGreen : colors.textDark,
+                                    fontWeight: danhMucHienTai === dm.id ? 'bold' : 'normal',
+                                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', transition: 'all 0.2s'
+                                }}
+                            >
+                                <span style={{fontSize: '18px'}}>{dm.icon}</span> {dm.ten}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </Col>
 
-      <Container style={{ marginTop: '25px', marginBottom: '40px' }}>
-         <Routes>
-            <Route path="/" element={<Home dsSanPham={dsSanPham} themVaoGio={themVaoGio} danhMuc={danhMucHienTai} tuKhoa={tuKhoa} colors={colors} />} />
-            <Route path="/product/:id" element={<ProductDetail dsSanPham={dsSanPham} themVaoGio={themVaoGio} colors={colors} />} />
-            <Route path="/cart" element={<Cart gioHang={gioHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} xoaHetGioHang={xoaHetGioHang} colors={colors} />} />
-         </Routes>
+            {/* 2. CỘT PHẢI: NỘI DUNG CHÍNH */}
+            <Col md={9} lg={10}>
+                 {/* Menu ngang cho Mobile (Chỉ hiện khi màn hình nhỏ) */}
+                 <div className="d-md-none" style={{ overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: '10px', marginBottom: '15px' }}>
+                    {dsDanhMuc.map(dm => (
+                         <button key={dm.id} onClick={() => setDanhMucHienTai(dm.id)} style={{
+                             padding: '8px 15px', marginRight: '10px', borderRadius: '20px', 
+                             border: danhMucHienTai === dm.id ? `2px solid ${colors.accentYellow}` : '1px solid #ccc',
+                             backgroundColor: danhMucHienTai === dm.id ? colors.accentYellow : 'white',
+                             color: danhMucHienTai === dm.id ? 'black' : '#555', fontWeight: 'bold'
+                         }}>
+                             {dm.icon} {dm.ten}
+                         </button>
+                    ))}
+                 </div>
+
+                 <Routes>
+                    <Route path="/" element={<Home dsSanPham={dsSanPham} themVaoGio={themVaoGio} danhMuc={danhMucHienTai} tuKhoa={tuKhoa} colors={colors} />} />
+                    <Route path="/product/:id" element={<ProductDetail dsSanPham={dsSanPham} themVaoGio={themVaoGio} colors={colors} />} />
+                    <Route path="/cart" element={<Cart gioHang={gioHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} xoaHetGioHang={xoaHetGioHang} colors={colors} />} />
+                 </Routes>
+            </Col>
+        </Row>
       </Container>
       
-      <footer style={{ textAlign: 'center', padding: '30px', backgroundColor: colors.primaryGreen, color: 'white', marginTop: 'auto' }}>
+      {/* Footer */}
+      <footer style={{ textAlign: 'center', padding: '30px', backgroundColor: colors.primaryGreen, color: 'white', marginTop: '50px' }}>
         <p>© 2024 Thực phẩm MaiVang</p>
       </footer>
     </div>
   )
 }
+
 export default App
