@@ -14,22 +14,43 @@ import { products as khoHangBanDau } from './products'
 const colors = { primaryGreen: '#008848', accentYellow: '#ffc107', bgLight: '#f0fdf4', textDark: '#333' };
 
 function App() {
-  // 1. DỮ LIỆU TẬP TRUNG
-  const [dsSanPham, setDsSanPham] = useState(khoHangBanDau);
   
-  const [dsDanhMuc, setDsDanhMuc] = useState([
-    { id: 'all', ten: 'Tất cả', icon: '🏠' },
-    { id: 'thitca', ten: 'Thịt, Cá', icon: '🥩' },
-    { id: 'raucu', ten: 'Rau Củ', icon: '🥦' },
-    { id: 'douong', ten: 'Đồ Uống', icon: '🍺' }
-  ]);
+  // 1. DỮ LIỆU SẢN PHẨM (CÓ LƯU BỘ NHỚ)
+  const [dsSanPham, setDsSanPham] = useState(() => {
+      // Thử lấy dữ liệu cũ từ bộ nhớ
+      const saved = localStorage.getItem('dsSanPham');
+      // Nếu có thì dùng, không thì dùng kho hàng mặc định
+      return saved ? JSON.parse(saved) : khoHangBanDau;
+  });
+
+  // Mỗi khi dsSanPham thay đổi, lưu ngay vào bộ nhớ
+  useEffect(() => {
+      localStorage.setItem('dsSanPham', JSON.stringify(dsSanPham));
+  }, [dsSanPham]);
+
+  
+  // 2. DỮ LIỆU DANH MỤC (CÓ LƯU BỘ NHỚ)
+  const [dsDanhMuc, setDsDanhMuc] = useState(() => {
+      const saved = localStorage.getItem('dsDanhMuc');
+      return saved ? JSON.parse(saved) : [
+        { id: 'all', ten: 'Tất cả', icon: '🏠' },
+        { id: 'thitca', ten: 'Thịt, Cá', icon: '🥩' },
+        { id: 'raucu', ten: 'Rau Củ', icon: '🥦' },
+        { id: 'douong', ten: 'Đồ Uống', icon: '🍺' }
+      ];
+  });
+
+  useEffect(() => {
+      localStorage.setItem('dsDanhMuc', JSON.stringify(dsDanhMuc));
+  }, [dsDanhMuc]);
+
 
   const [danhMucHienTai, setDanhMucHienTai] = useState('all'); 
   const [tuKhoa, setTuKhoa] = useState('');
   const navigate = useNavigate();
   const location = useLocation(); 
 
-  // Giỏ hàng
+  // 3. GIỎ HÀNG (GIỮ NGUYÊN)
   const [gioHang, setGioHang] = useState(() => {
       const duLieuCu = localStorage.getItem('gioHangCuaDuy');
       return duLieuCu ? JSON.parse(duLieuCu) : [];
@@ -57,7 +78,7 @@ function App() {
   function xoaSanPham(id) { setGioHang(gioHang.filter(sp => sp.id !== id)); }
   function xoaHetGioHang() { setGioHang([]); }
 
-  // NẾU ĐANG Ở TRANG ADMIN -> Ẩn Header/Footer khách hàng
+  // --- TRANG ADMIN ---
   if (location.pathname === '/admin') {
       return (
         <Routes>
@@ -71,7 +92,7 @@ function App() {
       );
   }
 
-  // GIAO DIỆN KHÁCH HÀNG
+  // --- GIAO DIỆN KHÁCH HÀNG ---
   return (
     <div style={{ backgroundColor: colors.bgLight, minHeight: '100vh', fontFamily: 'Segoe UI, sans-serif' }}>
       
@@ -90,7 +111,6 @@ function App() {
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
             <div className="mx-auto my-2" style={{ width: '100%', maxWidth: '500px' }}>
-                {/* --- ĐÃ SỬA LỖI TẠI ĐÂY --- */}
                 <Form className="d-flex">
                     <Form.Control 
                         type="search" 
@@ -116,7 +136,7 @@ function App() {
         </Container>
       </Navbar>
 
-      {/* Menu Danh Mục Động */}
+      {/* Menu Danh Mục */}
       <div style={{ backgroundColor: 'white', padding: '12px 0', borderBottom: '1px solid #eee' }}>
         <Container style={{ display: 'flex', gap: '10px', overflowX: 'auto', whiteSpace: 'nowrap', justifyContent: 'center' }}>
             {dsDanhMuc.map(dm => (
