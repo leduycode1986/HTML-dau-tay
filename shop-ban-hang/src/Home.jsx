@@ -1,6 +1,7 @@
 import React from 'react'
 import SanPham from './Product'
 import { useState } from 'react'
+import { products } from './products' // Giờ ta nhập kho hàng từ file database.js
 
 // 1. NHẬN CÔNG CỤ TỪ SẾP (biến props)
 function Home(props) {
@@ -9,40 +10,8 @@ function Home(props) {
 
   const [tuKhoa, setTuKhoa] = useState(""); 
 
-  const database = [
-    {
-      id: 1,
-      ten: "Laptop Gaming",
-      gia: "25.000.000 VNĐ",
-      anh: "https://images.unsplash.com/photo-1603302576837-37561b2e2302?auto=format&fit=crop&w=500&q=60"
-    },
-    {
-      id: 2,
-      ten: "Điện thoại iPhone",
-      gia: "30.000.000 VNĐ",
-      anh: "https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?auto=format&fit=crop&w=500&q=60"
-    },
-    {
-      id: 3,
-      ten: "Áo thun Coder",
-      gia: "150.000 VNĐ",
-      anh: "https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&w=500&q=60"
-    },
-    {
-      id: 4,
-      ten: "Bàn phím cơ",
-      gia: "500.000 VNĐ",
-      anh: "https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=500&q=60"
-    },
-     {
-      id: 5,
-      ten: "Tai nghe Bluetooth",
-      gia: "600.000 VNĐ",
-      anh: "https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=500&q=60"
-    }
-  ];
 
-  const danhSachLoc = database.filter((item) => 
+  const danhSachLoc = products.filter((item) => 
     item.ten.toLowerCase().includes(tuKhoa.toLowerCase())
   );
 

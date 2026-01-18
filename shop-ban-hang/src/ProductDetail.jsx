@@ -1,47 +1,13 @@
 import React from 'react'
 import { useParams } from 'react-router-dom'
+import { products } from './products' // Nhập kho hàng từ database.js
 
 function ProductDetail({ themVaoGio }) {  // <-- Thêm chữ này vào giữa 2 ngoặc tròn
   const { id } = useParams();
-
-  // --- BƯỚC 1: KHO HÀNG (Bạn copy y chang cái biến database bên file Home.jsx dán đè vào đây nhé) ---
-  const database = [
-    {
-      id: 1,
-      ten: "Laptop Gaming",
-      gia: "25.000.000 VNĐ",
-      anh: "https://images.unsplash.com/photo-1603302576837-37561b2e2302?auto=format&fit=crop&w=500&q=60"
-    },
-    {
-      id: 2,
-      ten: "Điện thoại iPhone",
-      gia: "30.000.000 VNĐ",
-      anh: "https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?auto=format&fit=crop&w=500&q=60"
-    },
-    {
-      id: 3,
-      ten: "Áo thun Coder",
-      gia: "150.000 VNĐ",
-      anh: "https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&w=500&q=60"
-    },
-    {
-      id: 4,
-      ten: "Bàn phím cơ",
-      gia: "500.000 VNĐ",
-      anh: "https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=500&q=60"
-    },
-     {
-      id: 5,
-      ten: "Tai nghe Bluetooth",
-      gia: "600.000 VNĐ",
-      anh: "https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=500&q=60"
-    }
-  ];
-
+ 
   // --- BƯỚC 2: TRA CỨU SẢN PHẨM ---
   // Tìm xem món nào trong kho có id trùng với id trên link
-  const sanPham = database.find(item => item.id == id);
-
+  const sanPham = products.find(item => item.id == id);
   // Nếu khách gõ link bậy bạ (ví dụ /product/999) thì báo lỗi
   if (!sanPham) {
     return <h2 style={{textAlign: 'center', marginTop: '50px'}}>❌ Không tìm thấy sản phẩm này!</h2>
