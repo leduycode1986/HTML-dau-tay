@@ -69,10 +69,11 @@ function App() {
             <Navbar.Toggle aria-controls="basic-navbar-nav" />
             <Navbar.Collapse id="basic-navbar-nav">
               <Nav className="w-100 d-flex justify-content-between align-items-center ms-lg-4 mt-3 mt-lg-0">
-                {/* ĐÃ SỬA LỖI Ở ĐÂY: Thẻ Form đóng mở chuẩn xác */}
+                {/* --- CHỖ NÀY ĐÃ CHUẨN --- */}
                 <Form className="d-flex w-100 mx-lg-3">
                   <Form.Control type="search" placeholder="🔍 Tìm kiếm sản phẩm..." className="rounded-pill border-1 bg-light px-4 py-2" style={{width: '100%'}} value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)} />
                 </Form>
+                {/* ----------------------- */}
                 <Link to="/cart" className="text-decoration-none ms-lg-3 mt-3 mt-lg-0">
                   <Button variant="success" className="rounded-pill fw-bold px-4 py-2 d-flex align-items-center gap-2 shadow-sm">
                     <i className="fa-solid fa-cart-shopping"></i> Giỏ <Badge bg="warning" text="dark" pill>{gioHang.reduce((acc, item) => acc + item.soLuong, 0)}</Badge>
@@ -89,7 +90,6 @@ function App() {
         <Route path="/product/:id" element={<ProductDetail dsSanPham={dsSanPham} themVaoGio={themVaoGio} />} />
         <Route path="/cart" element={<Cart gioHang={gioHang} handleDatHang={handleDatHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} />} />
         
-        {/* Route Admin - Không cần truyền hàm handleSaveConfig nữa vì Admin tự lo */}
         <Route path="/admin" element={
           <Admin 
             dsSanPham={dsSanPham} 
