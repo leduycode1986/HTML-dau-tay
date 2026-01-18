@@ -39,7 +39,9 @@ function App() {
     <Routes>
       <Route path="/" element={<Home dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
       <Route path="/product/:id" element={<ProductDetail dsSanPham={dsSanPham} themVaoGio={themVaoGio} />} />
-      <Route path="/cart" element={<Cart gioHang={gioHang} handleDatHang={handleDatHang} chinhSuaSoLuong={(id, k) => setGioHang(gioHang.map(i => i.id === id ? {...i, soLuong: k==='tang'?i.soLuong+1:Math.max(1,i.soLuong-1)} : i))} xoaSanPham={(id) => setGioHang(gioHang.filter(i=>i.id!==id))} />} />
+      <Route path="/cart" element={<Cart gioHang={gioHang} handleDatHang={handleDatHang} 
+        chinhSuaSoLuong={(id, k) => setGioHang(gioHang.map(i => i.id === id ? {...i, soLuong: k==='tang'?i.soLuong+1:Math.max(1,i.soLuong-1)} : i))} 
+        xoaSanPham={(id) => setGioHang(gioHang.filter(i=>i.id!==id))} />} />
       <Route path="/admin" element={<Admin dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} dsDonHang={dsDonHang} 
         handleUpdateDS_SP={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"sanPham",d)):(t==='ADD'?await addDoc(collection(db,"sanPham"),d):await updateDoc(doc(db,"sanPham",d.id),d))}
         handleUpdateDS_DM={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"danhMuc",d)):(t==='ADD'?await addDoc(collection(db,"danhMuc"),d):await updateDoc(doc(db,"danhMuc",d.id),d))}

@@ -4,7 +4,6 @@ import Product from './Product';
 
 function Home({ dsSanPham, dsDanhMuc, themVaoGio }) {
   const sortedMenu = [...dsDanhMuc].sort((a, b) => parseFloat(a.order || 0) - parseFloat(b.order || 0));
-
   return (
     <Container fluid className="p-0">
       <Row className="g-0">
@@ -16,15 +15,7 @@ function Home({ dsSanPham, dsDanhMuc, themVaoGio }) {
             </a>
           ))}
         </Col>
-        <Col md={9} lg={10} className="p-4">
-          <Row className="g-4">
-            {dsSanPham.map(sp => (
-              <Col key={sp.id} xs={6} sm={4} xl={3}>
-                <Product sp={sp} themVaoGio={themVaoGio} />
-              </Col>
-            ))}
-          </Row>
-        </Col>
+        <Col md={9} lg={10} className="p-4"><Row className="g-4">{(dsSanPham || []).map(sp => (<Col key={sp.id} xs={6} sm={4} xl={3}><Product sp={sp} themVaoGio={themVaoGio} /></Col>))}</Row></Col>
       </Row>
     </Container>
   );
