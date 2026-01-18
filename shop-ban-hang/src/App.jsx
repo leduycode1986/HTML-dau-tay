@@ -60,19 +60,11 @@ function App() {
         <Navbar bg="white" variant="light" expand="lg" className="sticky-top shadow-sm py-2 border-bottom">
           <Container>
             <Navbar.Brand as={Link} to="/" className="d-flex align-items-center">
-              
-              {/* --- ĐÃ SỬA: Dùng class "shop-logo" chuẩn CSS --- */}
               {shopConfig.logo ? (
-                <img 
-                  src={shopConfig.logo} 
-                  alt="Logo" 
-                  className="me-2 rounded shop-logo" 
-                />
+                <img src={shopConfig.logo} alt="Logo" className="me-2 rounded shop-logo" />
               ) : (
                 <span className="fs-2 me-2">🦁</span>
               )}
-              {/* ----------------------------------------------- */}
-
               <div className="d-flex flex-column">
                 <span className="fw-bold text-success text-uppercase" style={{fontSize: '1.1rem'}}>{shopConfig.tenShop}</span>
                 <span className="text-warning small fw-bold" style={{fontSize: '0.7rem'}}>⭐ {shopConfig.slogan} ⭐</span>
@@ -97,8 +89,14 @@ function App() {
 
       <Routes>
         <Route path="/" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
+        
+        {/* --- DÒNG NÀY ĐÃ ĐƯỢC SỬA: Thêm dsDanhMuc vào ProductDetail --- */}
+        <Route path="/product/:id" element={<ProductDetail dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
+        {/* --------------------------------------------------------------- */}
+
         <Route path="/category/:id" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
-        <Route path="/product/:id" element={<ProductDetail dsSanPham={dsSanPham} themVaoGio={themVaoGio} />} />
+        
+        <Route path="/cart" element={<Cart gioHang={gioHang} handleDatHang={handleDatHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} />} />
         
         <Route path="/admin" element={
           <Admin 
