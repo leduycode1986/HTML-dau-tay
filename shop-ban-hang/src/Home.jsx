@@ -1,37 +1,29 @@
 import React from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { Badge, Row, Col, Card, Button } from 'react-bootstrap';
+import { Row, Col, Container } from 'react-bootstrap';
+import Product from './Product';
 
 function Home({ dsSanPham, dsDanhMuc, themVaoGio }) {
-  const { id } = useParams();
-  
-  // Logic lọc giữ nguyên như ban đầu
-  let list = dsSanPham.filter(sp => {
-      if (!id || id === 'all') return true;
-      return sp.phanLoai === id;
-  });
-
   return (
-    <Row className="g-3">
-      {list.map(sp => (
-        <Col xs={6} md={4} lg={3} xl={2} key={sp.id}>
-          <Card className="product-card shadow-sm border-0 h-100">
-            <Link to={`/product/${sp.id}`} className="text-decoration-none text-dark">
-              <div className="product-img-container">
-                <Card.Img src={sp.anh} className="product-img" />
-              </div>
-              <Card.Body className="p-2">
-                <Card.Title className="fs-6 fw-bold text-truncate">{sp.ten}</Card.Title>
-                <div className="text-danger fw-bold">{sp.giaBan?.toLocaleString()} ¥</div>
-              </Card.Body>
-            </Link>
-            <Card.Footer className="bg-white border-0 p-2">
-              <Button variant="outline-success" size="sm" className="w-100 fw-bold" onClick={() => themVaoGio(sp)}>+ Giỏ hàng</Button>
-            </Card.Footer>
-          </Card>
+    <Container fluid>
+      <Row>
+        <Col md={3} className="sidebar-main p-0 d-none d-md-block">
+          <div className="p-3 bg-success text-white fw-bold">DANH MỤC</div>
+          {dsDanhMuc.map(dm => (
+            <a key={dm.id} href="#" className="category-link">{dm.icon} {dm.ten}</a>
+          ))}
         </Col>
-      ))}
-    </Row>
+        <Col md={9} className="p-4">
+          <Row className="g-4">
+            {dsSanPham.map(sp => (
+              <Col key={sp.id} xs={6} lg={4} xl={3}>
+                <Product sp={sp} themVaoGio={themVaoGio} />
+              </Col>
+            ))}
+          </Row>
+        </Col>
+      </Row>
+    </Container>
   );
 }
+
 export default Home;

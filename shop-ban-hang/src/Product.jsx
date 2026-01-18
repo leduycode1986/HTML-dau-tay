@@ -1,48 +1,48 @@
-import './App.css'
-import { useState } from 'react'
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from 'react-bootstrap';
 
-// 👇 1. QUAN TRỌNG: Nhập khẩu thẻ Link
-import { Link } from 'react-router-dom' 
-
-function SanPham(props) {
+function Product({ sp, themVaoGio }) {
   const [daThich, setDaThich] = useState(false);
 
-  function xuLyThich() {
-    setDaThich(!daThich);
-  }
-
   return (
-    <div className="card">
-      
-      {/* 👇 2. Bọc cái ẢNH bằng thẻ Link */}
-      {/* Khi bấm vào ảnh -> Nó sẽ bay tới đường dẫn /product/kèm-theo-id */}
-      <Link to={`/product/${props.id}`}>
-        <img 
-            src={props.anh} 
-            alt="Sản phẩm" 
-            width="200" height="200" 
-            style={{ objectFit: 'cover', cursor: 'pointer' }} 
-        />
-      </Link>
-      
-      {/* 👇 3. Bọc cái TÊN bằng thẻ Link (để bấm vào tên cũng chuyển trang luôn) */}
-      <Link to={`/product/${props.id}`} style={{textDecoration: 'none', color: 'black'}}>
-         <h3>{props.ten}</h3>
-      </Link>
+    <div className="product-card shadow-sm">
+      <div className="product-image-wrapper">
+        <div className="badge-overlay">
+          {sp.isMoi && <span className="badge-item badge-new">MỚI</span>}
+          {sp.isBanChay && <span className="badge-item badge-hot">HOT</span>}
+          {sp.phanTramGiam > 0 && <span className="badge-item badge-promo">-{sp.phanTramGiam}%</span>}
+        </div>
+        <Link to={`/product/${sp.id}`}>
+          <img src={sp.anh || "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg"} alt={sp.ten} />
+        </Link>
+      </div>
 
-      <p>Giá: {props.gia}</p>
-      
-      <div style={{display: 'flex', justifyContent: 'center', gap: '10px'}}>
-        <button onClick={props.muaHang}>Mua Hàng</button>
-        <button 
-          onClick={xuLyThich} 
-          style={{ backgroundColor: daThich ? 'pink' : 'white' }}
-        >
-          {daThich ? '❤️' : '🤍'} 
-        </button>
+      <div className="product-info p-3 text-center">
+        <Link to={`/product/${sp.id}`} className="text-decoration-none text-dark">
+          <h6 className="fw-bold text-truncate">{sp.ten}</h6>
+        </Link>
+
+        <div className="price-block mb-3">
+          {sp.phanTramGiam > 0 ? (
+            <>
+              <span className="price-original">{sp.giaGoc?.toLocaleString()} ¥</span>
+              <span className="price-sale">{sp.giaBan?.toLocaleString()} ¥</span>
+            </>
+          ) : (
+            <span className="price-sale">{sp.giaGoc?.toLocaleString()} ¥</span>
+          )}
+        </div>
+
+        <div className="d-flex gap-2 justify-content-center">
+          <Button variant="success" size="sm" className="rounded-pill px-3 fw-bold" onClick={() => themVaoGio(sp)}>MUA HÀNG</Button>
+          <Button variant="outline-danger" size="sm" className="rounded-circle" onClick={() => setDaThich(!daThich)} style={{backgroundColor: daThich ? '#ffebee' : 'white'}}>
+            {daThich ? '❤️' : '🤍'}
+          </Button>
+        </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default SanPham
+export default Product;
