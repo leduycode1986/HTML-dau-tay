@@ -3,7 +3,7 @@ import { Table, Button, Form, Modal, Badge, Tab, Tabs, Row, Col } from 'react-bo
 import { Link } from 'react-router-dom';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-// QUAN TRỌNG: Import thêm setDoc
+// Import setDoc để tự lưu
 import { doc, getDoc, setDoc } from 'firebase/firestore'; 
 import { db } from './firebase'; 
 
@@ -18,33 +18,29 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
   const [showModalSP, setShowModalSP] = useState(false);
   const [editingSP, setEditingSP] = useState(null);
   const [formDataSP, setFormDataSP] = useState({ ten: '', giaGoc: '', phanTramGiam: 0, giaBan: '', donVi: 'Cái', soLuong: 10, moTa: '', anh: '', phanLoai: '', isMoi: false, isKhuyenMai: false, isBanChay: false });
-  
   const [showModalDM, setShowModalDM] = useState(false);
   const [editingDM, setEditingDM] = useState(null);
   const [formDataDM, setFormDataDM] = useState({ ten: '', icon: '', parent: '', order: '' });
-  
   const [showModalPass, setShowModalPass] = useState(false);
   const [passForm, setPassForm] = useState({ oldPass: '', newPass: '' });
-
-  // State Cấu hình Shop
+  
+  // State Cấu hình
   const [shopConfig, setShopConfig] = useState({ tenShop: '', slogan: '', logo: '' });
 
-  // --- HÀM LƯU CẤU HÌNH TRỰC TIẾP (KHÔNG CẦN QUA APP) ---
+  // HÀM LƯU TRỰC TIẾP
   const luuCauHinhTrucTiep = async () => {
     try {
       await setDoc(doc(db, "cauHinh", "thongTinChung"), shopConfig);
-      alert("✅ Đã cập nhật Logo & Thông tin Shop thành công!");
+      alert("✅ Đã cập nhật Logo thành công!");
     } catch (error) {
-      alert("❌ Lỗi khi lưu: " + error.message);
+      alert("❌ Lỗi: " + error.message);
     }
   };
 
-  // Logic Upload ảnh siêu tốc (Base64)
   const handleFastImageUpload = (e, type) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 2000000) { alert("Ảnh quá lớn! Chọn ảnh < 2MB"); return; }
-
+    if (file.size > 2000000) { alert("Ảnh quá lớn! < 2MB thôi"); return; }
     const reader = new FileReader();
     reader.onloadend = () => {
       if (type === 'LOGO') setShopConfig({ ...shopConfig, logo: reader.result });
@@ -101,11 +97,8 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
           <Link to="/"><Button variant="danger" size="sm">THOÁT</Button></Link>
         </div>
       </div>
-
       <div className="p-4">
         <Tabs defaultActiveKey="config" className="mb-4 bg-white p-2 rounded shadow-sm border">
-          
-          {/* TAB 1: CẤU HÌNH LOGO */}
           <Tab eventKey="config" title="⚙️ CẤU HÌNH LOGO">
             <div className="bg-white p-4 rounded text-center">
               <Row>
@@ -121,14 +114,12 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
                 <Col md={8} className="text-start">
                   <Form.Group className="mb-3"><Form.Label className="fw-bold">Tên Shop</Form.Label><Form.Control value={shopConfig.tenShop} onChange={e => setShopConfig({...shopConfig, tenShop: e.target.value})} /></Form.Group>
                   <Form.Group className="mb-3"><Form.Label className="fw-bold">Slogan</Form.Label><Form.Control value={shopConfig.slogan} onChange={e => setShopConfig({...shopConfig, slogan: e.target.value})} /></Form.Group>
-                  {/* GỌI HÀM TRỰC TIẾP TẠI ĐÂY */}
                   <Button variant="success" className="w-100 fw-bold py-3" onClick={luuCauHinhTrucTiep}>💾 LƯU CẤU HÌNH</Button>
                 </Col>
               </Row>
             </div>
           </Tab>
-
-          {/* TAB 2: SẢN PHẨM */}
+          {/* TAB 2, 3, 4 GIỮ NGUYÊN NHƯ CŨ, ĐÃ ĐƯỢC TÍCH HỢP TRONG CODE TRÊN */}
           <Tab eventKey="products" title="📦 SẢN PHẨM">
             <Button variant="primary" className="my-3 fw-bold" onClick={() => { setEditingSP(null); setFormDataSP({ ten: '', giaGoc: '', phanTramGiam: 0, giaBan: '', donVi: 'Cái', soLuong: 10, moTa: '', anh: '', phanLoai: '', isMoi: false, isKhuyenMai: false, isBanChay: false }); setShowModalSP(true); }}>+ THÊM SẢN PHẨM</Button>
             <Table hover responsive className="bg-white border align-middle">
@@ -146,8 +137,6 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
               ))}</tbody>
             </Table>
           </Tab>
-
-          {/* TAB 3: DANH MỤC */}
           <Tab eventKey="menu" title="📂 DANH MỤC">
             <Button variant="success" className="my-3 fw-bold" onClick={() => { setEditingDM(null); setFormDataDM({ten:'', icon:'', parent:'', order:''}); setShowModalDM(true); }}>+ THÊM MENU</Button>
             <Table bordered hover className="align-middle bg-white">
@@ -165,8 +154,6 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
               ))}</tbody>
             </Table>
           </Tab>
-
-          {/* TAB 4: ĐƠN HÀNG */}
           <Tab eventKey="orders" title={`📋 ĐƠN HÀNG (${dsDonHang.length})`}>
             <Table hover responsive className="bg-white border mt-3">
               <thead><tr><th>Ngày</th><th>Khách</th><th>Tổng</th><th>Thao tác</th></tr></thead>
@@ -185,7 +172,7 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
           </Tab>
         </Tabs>
       </div>
-
+      {/* CÁC MODAL GIỮ NGUYÊN - BẠN ĐÃ CÓ RỒI HOẶC COPY TỪ CODE TRƯỚC */}
       <Modal show={showModalSP} onHide={() => setShowModalSP(false)} size="lg" centered>
         <Modal.Header closeButton><Modal.Title className="fw-bold text-success">CHI TIẾT SẢN PHẨM</Modal.Title></Modal.Header>
         <Modal.Body>
