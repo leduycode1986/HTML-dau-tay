@@ -9,15 +9,14 @@ function ProductDetail({ dsSanPham, dsDanhMuc, themVaoGio }) {
 
   if (!sp) return <div className="p-5 text-center"><h5>Không tìm thấy sản phẩm này</h5></div>;
 
-  // Lấy sản phẩm liên quan (cùng danh mục)
+  // Lấy sản phẩm liên quan & khuyến mãi
   const relatedProducts = dsSanPham.filter(p => p.phanLoai === sp.phanLoai && p.id !== sp.id).slice(0, 4);
-  // Lấy sản phẩm khuyến mãi cho cột bên phải
   const promoProducts = dsSanPham.filter(p => p.isKhuyenMai && p.id !== sp.id).slice(0, 5);
 
   return (
-    <Container fluid className="py-4">
+    <Container fluid className="py-3 py-md-4">
       <Row>
-        {/* CỘT TRÁI: MENU DANH MỤC (Ẩn trên mobile) */}
+        {/* CỘT TRÁI: MENU (Ẩn trên mobile và tablet nhỏ, chỉ hiện trên PC lớn) */}
         <Col lg={2} className="d-none d-lg-block">
           <div className="bg-white rounded shadow-sm p-3">
             <h6 className="fw-bold text-success border-bottom pb-2">DANH MỤC</h6>
@@ -30,34 +29,34 @@ function ProductDetail({ dsSanPham, dsDanhMuc, themVaoGio }) {
         </Col>
 
         {/* CỘT GIỮA: CHI TIẾT SẢN PHẨM */}
-        <Col lg={7}>
-          <div className="bg-white rounded p-4 shadow-sm mb-4">
+        <Col xs={12} lg={7}>
+          <div className="bg-white rounded p-3 p-md-4 shadow-sm mb-4">
             <Row>
-              <Col md={5}><img src={sp.anh} alt={sp.ten} className="img-fluid rounded border" /></Col>
-              <Col md={7}>
-                <h2 className="fw-bold text-success">{sp.ten}</h2>
-                <div className="mb-3">
+              <Col xs={12} md={5} className="mb-3 mb-md-0"><img src={sp.anh} alt={sp.ten} className="img-fluid rounded border w-100" /></Col>
+              <Col xs={12} md={7}>
+                <h2 className="fw-bold text-success fs-3">{sp.ten}</h2>
+                <div className="mb-2">
                   {sp.isMoi && <Badge bg="success" className="me-1">NEW</Badge>}
                   {sp.isBanChay && <Badge bg="danger" className="me-1">HOT</Badge>}
                 </div>
-                <h3 className="text-danger fw-bold my-3">{sp.giaBan?.toLocaleString()} ¥</h3>
+                <h3 className="text-danger fw-bold my-2">{sp.giaBan?.toLocaleString()} ¥</h3>
                 <div className="text-muted mb-4 small" dangerouslySetInnerHTML={{ __html: sp.moTa || 'Đang cập nhật mô tả...' }}></div>
                 <Button variant="success" size="lg" className="w-100 fw-bold rounded-pill" onClick={() => themVaoGio(sp)}>THÊM VÀO GIỎ</Button>
               </Col>
             </Row>
           </div>
 
-          {/* SẢN PHẨM CÙNG LOẠI */}
+          {/* SẢN PHẨM CÙNG LOẠI (Mobile hiện 2 cột) */}
           <h5 className="fw-bold text-uppercase border-bottom pb-2 mb-3">Sản phẩm cùng loại</h5>
-          <Row className="g-3">
+          <Row className="g-2 g-md-3">
             {relatedProducts.length > 0 ? relatedProducts.map(p => (
               <Col key={p.id} xs={6} md={3}><Product sp={p} themVaoGio={themVaoGio} /></Col>
             )) : <p className="text-muted">Chưa có sản phẩm liên quan.</p>}
           </Row>
         </Col>
 
-        {/* CỘT PHẢI: KHUYẾN MÃI */}
-        <Col lg={3}>
+        {/* CỘT PHẢI: KHUYẾN MÃI (Trên mobile đẩy xuống dưới cùng) */}
+        <Col xs={12} lg={3} className="mt-4 mt-lg-0">
           <div className="bg-white rounded shadow-sm p-3">
             <h6 className="fw-bold text-danger border-bottom pb-2">⚡ ĐANG GIẢM GIÁ</h6>
             {promoProducts.map(p => (

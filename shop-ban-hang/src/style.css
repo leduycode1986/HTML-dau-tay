@@ -1,49 +1,73 @@
-/* Reset & Base */
-body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+/* --- 1. BASE --- */
+body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 14px; }
 a { text-decoration: none; color: inherit; }
+img { max-width: 100%; height: auto; }
 
-/* Navbar & Menu */
-.navbar-brand { font-weight: 800; }
+/* --- 2. LAYOUT & RESPONSIVE --- */
 .sidebar-main { border-right: 1px solid #dee2e6; }
 
-/* Menu Dọc */
-.category-item { position: relative; }
-.category-link { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #f0f0f0; color: #333; font-weight: 500; font-size: 15px; transition: 0.2s; }
-.category-link:hover { background-color: #e9ecef; color: #198754; }
-.category-link.active { background-color: #d1e7dd; color: #0f5132; font-weight: 700; }
-.dropdown-toggle-btn { cursor: pointer; padding: 0 10px; font-size: 12px; color: #888; }
-.dropdown-toggle-btn:hover { color: #000; }
+/* MENU DANH MỤC TRÊN MOBILE */
+@media (max-width: 768px) {
+  .sidebar-main { 
+    border-right: none; 
+    border-bottom: 1px solid #dee2e6;
+    min-height: auto !important;
+    padding-bottom: 10px;
+  }
+  .sidebar-main .category-link {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  /* Ẩn bớt danh mục con trên mobile nếu quá dài, hoặc chuyển thành lướt ngang */
+  .category-container-mobile {
+    display: flex;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 5px;
+  }
+  .category-container-mobile .category-item {
+    display: inline-block;
+    min-width: 120px;
+    margin-right: 10px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background: white;
+  }
+  .navbar-brand span { font-size: 1rem !important; }
+}
 
-/* Menu con trong Sidebar */
-.submenu { background: #f8f9fa; list-style: none; padding: 0; display: none; }
-.submenu.open { display: block; }
-.submenu a { display: block; padding: 8px 15px 8px 35px; font-size: 14px; color: #555; }
-.submenu a:hover { color: #198754; background: #fff; }
-
-/* Menu Ngang (Khi vào danh mục cha) */
-.horizontal-submenu { white-space: nowrap; overflow-x: auto; padding-bottom: 10px; margin-bottom: 20px; }
-.horizontal-submenu::-webkit-scrollbar { height: 6px; }
-.horizontal-submenu::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
-.sub-pill { display: inline-block; padding: 8px 20px; background: #fff; border: 1px solid #dee2e6; border-radius: 50px; margin-right: 10px; font-size: 14px; font-weight: 500; transition: 0.2s; }
-.sub-pill:hover, .sub-pill.active { background: #198754; color: #fff; border-color: #198754; }
-
+/* --- 3. COMPONENTS --- */
 /* Product Card */
-.product-card { transition: transform 0.2s, box-shadow 0.2s; border-radius: 12px; overflow: hidden; background: #fff; height: 100%; display: flex; flex-direction: column; }
-.product-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; }
-.product-image-wrapper { position: relative; padding-top: 100%; /* Vuông */ overflow: hidden; }
+.product-card { border-radius: 8px; overflow: hidden; background: #fff; height: 100%; display: flex; flex-direction: column; transition: 0.2s; }
+.product-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+.product-image-wrapper { position: relative; padding-top: 100%; overflow: hidden; }
 .product-image-wrapper img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
-.badge-overlay { position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; gap: 5px; }
-.badge-item { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; text-transform: uppercase; }
+.badge-overlay { position: absolute; top: 5px; left: 5px; display: flex; flex-direction: column; gap: 3px; }
+.badge-item { padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; color: white; text-transform: uppercase; }
 .badge-new { background: #198754; } .badge-hot { background: #dc3545; } .badge-promo-tag { background: #ffc107; color: #000; }
 
 /* Tiêu đề Section */
-.section-title { position: relative; font-weight: 800; color: #198754; text-transform: uppercase; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #e9ecef; }
-.section-title::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 60px; height: 2px; background: #198754; }
+.section-title { font-weight: 800; color: #198754; text-transform: uppercase; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #e9ecef; font-size: 1.1rem; position: relative; }
+.section-title::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 50px; height: 2px; background: #198754; }
 
-/* Sidebars (Trang chi tiết) */
-.promo-sidebar-item { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; }
-.promo-sidebar-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
-.promo-info { font-size: 13px; line-height: 1.3; }
+/* Menu Ngang (Trong trang danh mục) */
+.horizontal-submenu { white-space: nowrap; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; -webkit-overflow-scrolling: touch; }
+.sub-pill { display: inline-block; padding: 6px 15px; background: #fff; border: 1px solid #dee2e6; border-radius: 50px; margin-right: 8px; font-size: 13px; font-weight: 500; }
+.sub-pill:hover, .sub-pill.active { background: #198754; color: #fff; border-color: #198754; }
 
-/* Admin */
-.stats-box { padding: 20px; border-radius: 10px; color: white; margin-bottom: 15px; }
+/* --- 4. ADMIN --- */
+.admin-login-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #e9ecef; padding: 15px; }
+.admin-login-card { width: 100%; max-width: 400px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+.admin-navbar { background-color: #198754; color: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+.admin-navbar h4 { font-size: 1.1rem; margin: 0; }
+.stats-box { padding: 15px; border-radius: 8px; color: white; margin-bottom: 10px; }
+.stats-box h3 { font-size: 1.5rem; margin: 0; }
+
+/* Fix bảng Admin trên mobile */
+.table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.admin-content-container { max-width: 1400px; margin: 0 auto; padding: 15px; }
+
+/* Modal full width on mobile */
+@media (max-width: 576px) {
+  .modal-dialog { margin: 10px; }
+}
