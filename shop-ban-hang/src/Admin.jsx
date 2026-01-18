@@ -14,8 +14,8 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
   const [showModalSP, setShowModalSP] = useState(false);
   const [editingSP, setEditingSP] = useState(null);
   const [formDataSP, setFormDataSP] = useState({ ten: '', giaGoc: '', phanTramGiam: 0, giaBan: '', donVi: 'Cái', soLuong: 10, moTa: '', anh: '', phanLoai: 'thitca', isKhuyenMai: false, isBanChay: false, isMoi: false });
+  const [formDataDM, setFormDataDM] = useState({ ten: '', icon: '', parent: '' });
   
-  // Logic tính giá
   useEffect(() => {
       if(formDataSP.giaGoc) {
           const goc = parseInt(formDataSP.giaGoc) || 0;
@@ -29,7 +29,6 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
       else alert("Sai thông tin!"); 
   }
 
-  // --- HÀM UPLOAD ẢNH TỪ MÁY TÍNH ---
   const handleImageUpload = (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -47,76 +46,84 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
       setShowModalSP(false); setEditingSP(null); setFormDataSP({ ten: '', giaGoc: '', phanTramGiam: 0, giaBan: '', donVi: 'Cái', soLuong: 10, moTa: '', anh: '', phanLoai: 'thitca', isKhuyenMai: false, isBanChay: false, isMoi: false });
   }
 
+  function handleAddDM() { if (!formDataDM.ten) return alert("Nhập tên!"); handleUpdateDS_DM('ADD', { ...formDataDM, order: dsDanhMuc.length }); setFormDataDM({ ten: '', icon: '', parent: '' }); }
   function handleDeleteSP(id) { if(window.confirm("Xóa?")) handleUpdateDS_SP('DELETE', id); }
 
-  // --- GIAO DIỆN ĐĂNG NHẬP NỀN XANH CĂN GIỮA (CHUẨN CŨ) ---
   if (!isLoggedIn) return (
-      <div style={{height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'linear-gradient(135deg, #008848, #00b359)'}}>
+      <div style={{height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#008848'}}>
           <div className="bg-white p-5 rounded shadow text-center" style={{width: '400px'}}>
               <h2 className="text-success fw-bold mb-3">ADMIN LOGIN</h2>
-              <p className="text-muted mb-4">Hệ thống quản lý MaiVang Shop</p>
               <Form onSubmit={e => {e.preventDefault(); handleLogin()}}>
-                  <Form.Control className="mb-3 p-3 bg-light" placeholder="Username" value={loginInput.username} onChange={e => setLoginInput({...loginInput, username: e.target.value})} />
-                  <Form.Control className="mb-4 p-3 bg-light" type="password" placeholder="Password" value={loginInput.password} onChange={e => setLoginInput({...loginInput, password: e.target.value})} />
-                  <Button variant="success" type="submit" className="w-100 py-3 fw-bold shadow">ĐĂNG NHẬP</Button>
+                  <Form.Control className="mb-3 p-3" placeholder="Username" value={loginInput.username} onChange={e => setLoginInput({...loginInput, username: e.target.value})} />
+                  <Form.Control className="mb-4 p-3" type="password" placeholder="Password" value={loginInput.password} onChange={e => setLoginInput({...loginInput, password: e.target.value})} />
+                  <Button variant="success" type="submit" className="w-100 py-3 fw-bold">ĐĂNG NHẬP</Button>
               </Form>
-              <Link to="/" className="d-block mt-4 text-decoration-none text-success fw-bold">← Về trang chủ</Link>
+              <Link to="/" className="d-block mt-4 text-decoration-none text-success">← Về trang chủ</Link>
           </div>
       </div>
   );
 
-  // --- GIAO DIỆN QUẢN TRỊ ---
   return (
-    <Container className="my-5 p-4 bg-white rounded shadow" style={{minHeight:'80vh'}}>
-      <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
-          <h2 className="text-success fw-bold m-0">QUẢN TRỊ HỆ THỐNG</h2>
-          <Link to="/"><Button variant="outline-danger">Đăng xuất</Button></Link>
+    // DÙNG CONTAINER FLUID ĐỂ TRÀN MÀN HÌNH
+    <Container fluid className="p-0 bg-light min-vh-100">
+      <div className="bg-success text-white p-3 d-flex justify-content-between align-items-center shadow-sm">
+          <h4 className="m-0 fw-bold">QUẢN TRỊ HỆ THỐNG</h4>
+          <div>
+            <Button variant="outline-light" size="sm" className="me-2">Đổi Pass</Button>
+            <Link to="/"><Button variant="danger" size="sm">Thoát</Button></Link>
+          </div>
       </div>
 
-      <Tabs defaultActiveKey="products" className="mb-4">
-        <Tab eventKey="products" title="📦 Quản lý Sản phẩm">
-            <Button className="mb-3 btn-lg shadow-sm" variant="primary" onClick={() => {setEditingSP(null); setShowModalSP(true)}}>+ Thêm Sản Phẩm Mới</Button>
-            <Table hover responsive className="align-middle border">
-                <thead className="table-success text-center"><tr><th>Hình ảnh</th><th>Tên sản phẩm</th><th>Giá bán</th><th>Kho</th><th>Thao tác</th></tr></thead>
-                <tbody>{dsSanPham.map(sp => (
-                    <tr key={sp.id}>
-                        <td className="text-center"><img src={sp.anh || NO_IMAGE} width="60" height="60" className="rounded border shadow-sm" style={{objectFit:'cover'}} onError={e=>e.target.src=NO_IMAGE}/></td>
-                        <td><div className="fw-bold">{sp.ten}</div><small className="text-muted">{sp.phanLoai}</small></td>
-                        <td className="text-center"><span className="text-danger fw-bold">{sp.giaBan?.toLocaleString()} ¥</span></td>
-                        <td className="text-center">{sp.soLuong}</td>
-                        <td className="text-center"><Button size="sm" variant="warning" className="me-2" onClick={()=>{setEditingSP(sp); setFormDataSP(sp); setShowModalSP(true)}}>Sửa</Button><Button size="sm" variant="danger" onClick={() => handleDeleteSP(sp.id)}>Xóa</Button></td>
-                    </tr>
-                ))}</tbody>
-            </Table>
-        </Tab>
-        <Tab eventKey="orders" title={`📋 Đơn hàng (${dsDonHang ? dsDonHang.length : 0})`}>
-             <Table bordered hover responsive><thead className="table-primary"><tr><th>Ngày</th><th>Khách hàng</th><th>Tổng tiền</th><th>Trạng thái</th><th>Xử lý</th></tr></thead><tbody>{dsDonHang?.map(dh=><tr key={dh.id}><td>{dh.ngayDat?.toDate ? dh.ngayDat.toDate().toLocaleString('vi-VN') : 'Mới'}</td><td>{dh.khachHang.ten}<br/><small>{dh.khachHang.sdt}</small></td><td className="fw-bold text-danger">{parseInt(dh.tongTien).toLocaleString()} ¥</td><td><Badge bg={dh.trangThai==='Mới đặt'?'primary':'success'}>{dh.trangThai}</Badge></td><td><Button size="sm" variant="success" onClick={()=>handleUpdateStatusOrder(dh.id,'Hoàn thành')}>Xong</Button> <Button size="sm" variant="danger" onClick={()=>handleDeleteOrder(dh.id)}>Xóa</Button></td></tr>)}</tbody></Table>
-        </Tab>
-      </Tabs>
+      <div className="p-3">
+          <Tabs defaultActiveKey="products" className="mb-3 bg-white rounded shadow-sm p-2">
+            <Tab eventKey="products" title="📦 Quản lý Sản phẩm">
+                <Button className="mb-3" variant="success" onClick={() => {setEditingSP(null); setShowModalSP(true)}}>+ Thêm Sản Phẩm</Button>
+                <div className="bg-white rounded shadow-sm">
+                    <Table hover responsive className="m-0 align-middle">
+                        <thead className="table-light"><tr><th>Ảnh</th><th>Tên sản phẩm</th><th>Giá bán</th><th>Kho</th><th>Thao tác</th></tr></thead>
+                        <tbody>{dsSanPham.map(sp => (
+                            <tr key={sp.id}>
+                                <td><img src={sp.anh || NO_IMAGE} width="50" height="50" className="rounded border" style={{objectFit:'cover'}} onError={e=>e.target.src=NO_IMAGE}/></td>
+                                <td><span className="fw-bold">{sp.ten}</span><br/><small className="text-muted">{sp.phanLoai}</small></td>
+                                <td className="text-danger fw-bold">{sp.giaBan?.toLocaleString()} ¥</td>
+                                <td>{sp.soLuong}</td>
+                                <td><Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditingSP(sp); setFormDataSP(sp); setShowModalSP(true)}}>Sửa</Button><Button size="sm" variant="danger" onClick={() => handleDeleteSP(sp.id)}>Xóa</Button></td>
+                            </tr>
+                        ))}</tbody>
+                    </Table>
+                </div>
+            </Tab>
+            <Tab eventKey="orders" title="📋 Đơn hàng">
+                 <div className="bg-white rounded shadow-sm p-3 text-center text-muted">Chức năng quản lý đơn hàng đang phát triển</div>
+            </Tab>
+            <Tab eventKey="menu" title="📂 Danh mục">
+                 <div className="bg-white rounded shadow-sm p-3">
+                    <div className="d-flex gap-2 mb-3">
+                        <Form.Control placeholder="Tên danh mục" value={formDataDM.ten} onChange={e=>setFormDataDM({...formDataDM, ten:e.target.value})} />
+                        <Button variant="success" onClick={handleAddDM}>Thêm</Button>
+                    </div>
+                    {/* BẢNG DANH MỤC TRÀN RỘNG */}
+                    <Table bordered>
+                        <thead className="table-light"><tr><th>Tên danh mục</th><th>Thao tác</th></tr></thead>
+                        <tbody>{dsDanhMuc.map(dm => (<tr key={dm.id}><td>{dm.ten}</td><td><Button size="sm" variant="danger">Xóa</Button></td></tr>))}</tbody>
+                    </Table>
+                 </div>
+            </Tab>
+          </Tabs>
+      </div>
 
-      {/* MODAL THÊM/SỬA SẢN PHẨM */}
-      <Modal show={showModalSP} onHide={()=>setShowModalSP(false)} size="lg" centered>
-         <Modal.Header closeButton className="bg-primary text-white"><Modal.Title>{editingSP?'Cập nhật sản phẩm':'Thêm sản phẩm mới'}</Modal.Title></Modal.Header>
+      {/* MODAL GIỮ NGUYÊN */}
+      <Modal show={showModalSP} onHide={()=>setShowModalSP(false)} size="lg">
+         <Modal.Header closeButton><Modal.Title>{editingSP?'Sửa Sản Phẩm':'Thêm Sản Phẩm'}</Modal.Title></Modal.Header>
          <Modal.Body>
              <Form>
-                <Row className="mb-3"><Col md={8}><Form.Label>Tên sản phẩm</Form.Label><Form.Control value={formDataSP.ten} onChange={e=>setFormDataSP({...formDataSP, ten:e.target.value})} /></Col><Col md={4}><Form.Label>Loại</Form.Label><Form.Control value={formDataSP.phanLoai} onChange={e=>setFormDataSP({...formDataSP, phanLoai:e.target.value})} /></Col></Row>
-                <Row className="mb-3 p-3 bg-light rounded mx-0 border">
-                    <Col><Form.Label>Giá Gốc</Form.Label><Form.Control type="number" value={formDataSP.giaGoc} onChange={e=>setFormDataSP({...formDataSP, giaGoc:e.target.value})} /></Col>
-                    <Col><Form.Label>% Giảm</Form.Label><Form.Control type="number" value={formDataSP.phanTramGiam} onChange={e=>setFormDataSP({...formDataSP, phanTramGiam:e.target.value})} /></Col>
-                    <Col><Form.Label className="text-danger fw-bold">Giá Bán</Form.Label><Form.Control value={formDataSP.giaBan} readOnly className="fw-bold text-danger"/></Col>
-                </Row>
-                <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold text-primary">Hình ảnh (Upload từ máy)</Form.Label>
-                    <div className="d-flex align-items-center gap-3">
-                        <Form.Control type="file" onChange={handleImageUpload} />
-                        {formDataSP.anh && <img src={formDataSP.anh} width="80" height="80" className="rounded border shadow-sm" />}
-                    </div>
-                </Form.Group>
-                <Form.Group className="mb-3"><Form.Label>Mô tả (SEO)</Form.Label><ReactQuill theme="snow" value={formDataSP.moTa} onChange={v=>setFormDataSP({...formDataSP, moTa:v})} /></Form.Group>
-                <div className="d-flex gap-3"><Form.Check label="Khuyến mãi" checked={formDataSP.isKhuyenMai} onChange={e=>setFormDataSP({...formDataSP, isKhuyenMai:e.target.checked})} /><Form.Check label="Sản phẩm mới" checked={formDataSP.isMoi} onChange={e=>setFormDataSP({...formDataSP, isMoi:e.target.checked})} /></div>
+                <Row className="mb-3"><Col><Form.Label>Tên</Form.Label><Form.Control value={formDataSP.ten} onChange={e=>setFormDataSP({...formDataSP, ten:e.target.value})} /></Col><Col><Form.Label>Loại</Form.Label><Form.Select value={formDataSP.phanLoai} onChange={e=>setFormDataSP({...formDataSP, phanLoai:e.target.value})}>{dsDanhMuc.map(d=><option key={d.id} value={d.customId||d.id}>{d.ten}</option>)}</Form.Select></Col></Row>
+                <Row className="mb-3"><Col><Form.Label>Giá Gốc</Form.Label><Form.Control type="number" value={formDataSP.giaGoc} onChange={e=>setFormDataSP({...formDataSP, giaGoc:e.target.value})} /></Col><Col><Form.Label>Giá Bán</Form.Label><Form.Control value={formDataSP.giaBan} readOnly /></Col></Row>
+                <Form.Group className="mb-3"><Form.Label>Ảnh</Form.Label><Form.Control type="file" onChange={handleImageUpload} /></Form.Group>
+                <Form.Group className="mb-3"><Form.Label>Mô tả</Form.Label><ReactQuill theme="snow" value={formDataSP.moTa} onChange={v=>setFormDataSP({...formDataSP, moTa:v})} /></Form.Group>
              </Form>
          </Modal.Body>
-         <Modal.Footer><Button variant="secondary" onClick={()=>setShowModalSP(false)}>Hủy</Button><Button variant="primary" onClick={handleSaveSP}>Lưu lại</Button></Modal.Footer>
+         <Modal.Footer><Button onClick={handleSaveSP}>Lưu</Button></Modal.Footer>
       </Modal>
     </Container>
   );
