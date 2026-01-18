@@ -14,17 +14,22 @@ import { useState, useEffect } from 'react';
 
 // Nhập Firebase
 import { db } from './firebase'; 
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, Timestamp, query, orderBy } from 'firebase/firestore';
 
 const colors = { primaryGreen: '#008848', accentYellow: '#ffc107', bgLight: '#f0fdf4', textDark: '#333', menuActiveBg: '#e6f7eb' };
 
 function App() {
   
-  // --- 1. QUẢN LÝ SẢN PHẨM ---
+  // --- QUẢN LÝ DỮ LIỆU ---
   const [dsSanPham, setDsSanPham] = useState([]);
   const sanPhamCollection = collection(db, "products");
 
-  // Hàm tải dữ liệu ban đầu
+  const [dsDanhMuc, setDsDanhMuc] = useState([]);
+  const danhMucCollection = collection(db, "categories");
+
+  const [dsDonHang, setDsDonHang] = useState([]);
+  const donHangCollection = collection(db, "orders");
+
   const fetchSanPham = async () => {
     try {
         const data = await getDocs(sanPhamCollection);
@@ -32,16 +37,11 @@ function App() {
     } catch (err) { console.error("Lỗi tải SP:", err); }
   };
 
-  // --- 2. QUẢN LÝ DANH MỤC ---
-  const [dsDanhMuc, setDsDanhMuc] = useState([]);
-  const danhMucCollection = collection(db, "categories");
-
   const fetchDanhMuc = async () => {
     try {
         const data = await getDocs(danhMucCollection);
         const list = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
         if (list.length === 0) {
-             // Mặc định nếu chưa có gì
             setDsDanhMuc([
                 { id: 'all', ten: 'Tất cả', icon: '🏠', parent: null },
                 { id: 'thitca', ten: 'Thịt, Cá', icon: '🥩', parent: null }
@@ -52,62 +52,82 @@ function App() {
     } catch (err) { console.error("Lỗi tải DM:", err); }
   };
 
-  useEffect(() => { fetchSanPham(); fetchDanhMuc(); }, []);
+  const fetchDonHang = async () => {
+    try {
+        const q = query(donHangCollection, orderBy("ngayDat", "desc"));
+        const data = await getDocs(q);
+        setDsDonHang(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
+    } catch (err) { console.error("Lỗi tải đơn:", err); }
+  };
+
+  useEffect(() => { fetchSanPham(); fetchDanhMuc(); fetchDonHang(); }, []);
 
 
-  // --- 3. HÀM XỬ LÝ DATABASE (QUAN TRỌNG: CẬP NHẬT GIAO DIỆN NGAY) ---
-  
-  // Xử lý SẢN PHẨM
+  // --- XỬ LÝ DATABASE (OPTIMISTIC UPDATE) ---
   const handleUpdateDS_SP = async (action, item) => {
       try {
           if (action === 'ADD') {
-              // 1. Gửi lên Firebase
               const docRef = await addDoc(sanPhamCollection, item);
-              // 2. Cập nhật giao diện NGAY LẬP TỨC (Dùng ID vừa tạo)
-              const newItem = { ...item, id: docRef.id };
-              setDsSanPham(prev => [...prev, newItem]);
-
+              setDsSanPham(prev => [...prev, { ...item, id: docRef.id }]);
           } else if (action === 'UPDATE') {
               const { id, ...data } = item;
-              // 1. Gửi lên Firebase
               await updateDoc(doc(db, "products", id), data);
-              // 2. Cập nhật giao diện NGAY
               setDsSanPham(prev => prev.map(sp => sp.id === id ? { ...sp, ...data } : sp));
-
           } else if (action === 'DELETE') {
-              // 1. Xóa trên Firebase
-              await deleteDoc(doc(db, "products", item)); // item ở đây là ID
-              // 2. Xóa trên giao diện NGAY
+              await deleteDoc(doc(db, "products", item));
               setDsSanPham(prev => prev.filter(sp => sp.id !== item));
           }
       } catch (e) { alert("Lỗi xử lý SP: " + e.message); }
   };
 
-  // Xử lý DANH MỤC (MENU)
   const handleUpdateDS_DM = async (action, item) => {
       try {
           if (action === 'ADD') {
               const docRef = await addDoc(danhMucCollection, item);
-              const newItem = { ...item, id: docRef.id };
-              setDsDanhMuc(prev => [...prev, newItem]); // Hiện ngay
-
+              setDsDanhMuc(prev => [...prev, { ...item, id: docRef.id }]);
           } else if (action === 'UPDATE') {
                const { id, ...data } = item;
-               // Xử lý parent rỗng thành null
                const cleanData = { ...data, parent: data.parent === "" ? null : data.parent };
-               
                await updateDoc(doc(db, "categories", id), cleanData);
-               setDsDanhMuc(prev => prev.map(dm => dm.id === id ? { ...item, ...cleanData } : dm)); // Hiện ngay
-
+               setDsDanhMuc(prev => prev.map(dm => dm.id === id ? { ...item, ...cleanData } : dm));
           } else if (action === 'DELETE') {
                await deleteDoc(doc(db, "categories", item));
-               setDsDanhMuc(prev => prev.filter(dm => dm.id !== item)); // Hiện ngay
+               setDsDanhMuc(prev => prev.filter(dm => dm.id !== item));
           }
       } catch (e) { alert("Lỗi xử lý DM: " + e.message); }
   };
 
+  const handleDatHang = async (khachHang, gioHang, tongTien) => {
+      try {
+          const donHangMoi = {
+              khachHang, gioHang, tongTien, ngayDat: Timestamp.now(), trangThai: 'Mới đặt'
+          };
+          await addDoc(donHangCollection, donHangMoi);
+          alert("🎉 Đặt hàng thành công!");
+          setGioHang([]);
+          fetchDonHang();
+          navigate('/');
+      } catch (e) { alert("Lỗi đặt hàng: " + e.message); }
+  };
 
-  // --- LOGIC GIỎ HÀNG & KHÁC ---
+  const handleUpdateStatusOrder = async (orderId, newStatus) => {
+      try {
+          await updateDoc(doc(db, "orders", orderId), { trangThai: newStatus });
+          setDsDonHang(prev => prev.map(dh => dh.id === orderId ? { ...dh, trangThai: newStatus } : dh));
+      } catch(e) { alert("Lỗi cập nhật đơn: " + e.message); }
+  };
+  
+  const handleDeleteOrder = async (orderId) => {
+      if(window.confirm("Xóa đơn này?")) {
+        try {
+            await deleteDoc(doc(db, "orders", orderId));
+            setDsDonHang(prev => prev.filter(dh => dh.id !== orderId));
+        } catch(e) { alert("Lỗi xóa đơn: " + e.message); }
+      }
+  };
+
+
+  // --- STATE GIAO DIỆN ---
   const [gioHang, setGioHang] = useState(() => {
       const saved = localStorage.getItem('gioHangCuaDuy');
       return saved ? JSON.parse(saved) : [];
@@ -118,35 +138,31 @@ function App() {
     const tonTai = gioHang.find(i => i.id === sp.id);
     setGioHang(tonTai ? gioHang.map(i => i.id === sp.id ? { ...i, soLuong: i.soLuong + 1 } : i) : [...gioHang, { ...sp, soLuong: 1 }]);
   }
-  function chinhSuaSoLuong(id, loai) {
-     setGioHang(gioHang.map(sp => sp.id === id ? { ...sp, soLuong: Math.max(1, loai === 'tang' ? sp.soLuong + 1 : sp.soLuong - 1) } : sp));
-  }
+  function chinhSuaSoLuong(id, loai) { setGioHang(gioHang.map(sp => sp.id === id ? { ...sp, soLuong: Math.max(1, loai === 'tang' ? sp.soLuong + 1 : sp.soLuong - 1) } : sp)); }
   function xoaSanPham(id) { setGioHang(gioHang.filter(sp => sp.id !== id)); }
   function xoaHetGioHang() { setGioHang([]); }
 
   const [danhMucHienTai, setDanhMucHienTai] = useState('all'); 
   const [tuKhoa, setTuKhoa] = useState('');
+  
+  // STATE MỚI: QUẢN LÝ MENU NÀO ĐANG XỔ XUỐNG
+  const [menuDangMo, setMenuDangMo] = useState(null);
+
   const navigate = useNavigate();
   const location = useLocation(); 
 
   // --- RENDER ---
   if (location.pathname === '/admin') {
-      return (
-        <Routes>
-            <Route path="/admin" element={
-                <Admin 
-                    dsSanPham={dsSanPham} 
-                    handleUpdateDS_SP={handleUpdateDS_SP} 
-                    dsDanhMuc={dsDanhMuc} 
-                    handleUpdateDS_DM={handleUpdateDS_DM} 
-                />
-            } />
-        </Routes>
-      );
+      return <Routes><Route path="/admin" element={<Admin dsSanPham={dsSanPham} handleUpdateDS_SP={handleUpdateDS_SP} dsDanhMuc={dsDanhMuc} handleUpdateDS_DM={handleUpdateDS_DM} dsDonHang={dsDonHang} handleUpdateStatusOrder={handleUpdateStatusOrder} handleDeleteOrder={handleDeleteOrder} />} /></Routes>;
   }
 
-  // Lọc Menu Gốc
   const danhMucGoc = dsDanhMuc.filter(dm => !dm.parent);
+
+  // HÀM TOGGLE MENU (BẤM VÀO THÌ XỔ, BẤM LẠI THÌ ĐÓNG)
+  const toggleMenu = (id) => {
+      if (menuDangMo === id) setMenuDangMo(null);
+      else setMenuDangMo(id);
+  };
 
   return (
     <div style={{ backgroundColor: colors.bgLight, minHeight: '100vh', fontFamily: 'Segoe UI, sans-serif' }}>
@@ -174,40 +190,81 @@ function App() {
 
       <Container fluid style={{ marginTop: '20px' }}>
         <Row>
-            {/* SIDEBAR MENU */}
+            {/* SIDEBAR MENU (ACCORDION STYLE) */}
             <Col md={3} lg={2} className="d-none d-md-block">
                 <div style={{ backgroundColor: 'white', borderRadius: '10px', overflow: 'hidden', position: 'sticky', top: '90px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                     <h5 style={{ backgroundColor: colors.primaryGreen, color: 'white', padding: '15px', margin: 0, textAlign: 'center' }}>DANH MỤC</h5>
                     <div style={{ padding: '10px' }}>
-                        <button onClick={() => { setDanhMucHienTai('all'); navigate('/'); }} style={{width: '100%', textAlign: 'left', padding: '10px', border: 'none', background: danhMucHienTai === 'all' ? colors.menuActiveBg : 'transparent', fontWeight: 'bold', color: danhMucHienTai === 'all' ? colors.primaryGreen : '#333'}}>🏠 Tất cả</button>
+                        
+                        {/* Nút Tất Cả */}
+                        <button onClick={() => { setDanhMucHienTai('all'); navigate('/'); }} 
+                            style={{
+                                width: '100%', textAlign: 'left', padding: '12px', border: 'none', borderRadius: '8px', marginBottom: '5px',
+                                background: danhMucHienTai === 'all' ? colors.menuActiveBg : 'transparent', fontWeight: 'bold', color: danhMucHienTai === 'all' ? colors.primaryGreen : '#333'
+                            }}>
+                            🏠 Tất cả
+                        </button>
+                        
                         {danhMucGoc.map(cha => {
                             if (cha.id === 'all') return null;
                             const conCuaCha = dsDanhMuc.filter(dm => dm.parent === (cha.customId || cha.id));
+                            const isExpanded = menuDangMo === (cha.customId || cha.id);
                             const isActiveCha = danhMucHienTai === (cha.customId || cha.id);
                             
                             return (
                                 <div key={cha.id} style={{marginBottom: '5px'}}>
-                                    <button onClick={() => { setDanhMucHienTai(cha.customId || cha.id); navigate('/'); window.scrollTo(0,0); }}
+                                    {/* MENU CHA */}
+                                    <button 
+                                        onClick={() => { 
+                                            // 1. Chuyển danh mục
+                                            setDanhMucHienTai(cha.customId || cha.id); 
+                                            navigate('/'); 
+                                            // 2. Nếu có con thì bật tắt xổ xuống
+                                            if (conCuaCha.length > 0) toggleMenu(cha.customId || cha.id);
+                                        }}
                                         style={{
-                                            width: '100%', textAlign: 'left', padding: '10px', border: 'none', borderRadius: '5px',
+                                            width: '100%', textAlign: 'left', padding: '12px', border: 'none', borderRadius: '8px',
                                             backgroundColor: isActiveCha ? colors.menuActiveBg : 'transparent',
                                             color: isActiveCha ? colors.primaryGreen : '#333',
-                                            fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px'
+                                            fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                            fontSize: '16px', transition: 'all 0.2s'
                                         }}>
-                                        <span>{cha.icon}</span> {cha.ten}
+                                        <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
+                                            <span>{cha.icon}</span> {cha.ten}
+                                        </div>
+                                        {/* Mũi tên chỉ xuống nếu có con */}
+                                        {conCuaCha.length > 0 && (
+                                            <span style={{fontSize: '12px', color: '#888'}}>
+                                                {isExpanded ? '▼' : '▶'}
+                                            </span>
+                                        )}
                                     </button>
-                                    {conCuaCha.length > 0 && (
-                                        <div style={{marginLeft: '20px', borderLeft: '2px solid #eee', paddingLeft: '5px'}}>
-                                            {conCuaCha.map(con => (
-                                                <button key={con.id} onClick={() => { setDanhMucHienTai(con.customId || con.id); navigate('/'); window.scrollTo(0,0); }}
-                                                    style={{
-                                                        width: '100%', textAlign: 'left', padding: '8px', border: 'none', borderRadius: '5px', marginTop: '2px',
-                                                        backgroundColor: danhMucHienTai === (con.customId || con.id) ? colors.menuActiveBg : 'transparent',
-                                                        color: danhMucHienTai === (con.customId || con.id) ? colors.primaryGreen : '#555', fontSize: '14px'
-                                                    }}>
-                                                    • {con.ten}
-                                                </button>
-                                            ))}
+
+                                    {/* MENU CON (Chỉ hiện khi isExpanded = true) */}
+                                    {conCuaCha.length > 0 && isExpanded && (
+                                        <div style={{marginLeft: '15px', paddingLeft: '10px', borderLeft: `2px solid ${colors.bgLight}`, marginTop: '5px'}}>
+                                            {conCuaCha.map(con => {
+                                                const isActiveCon = danhMucHienTai === (con.customId || con.id);
+                                                return (
+                                                    <button key={con.id} 
+                                                        onClick={(e) => { 
+                                                            e.stopPropagation(); // Tránh kích hoạt lại cha
+                                                            setDanhMucHienTai(con.customId || con.id); 
+                                                            navigate('/'); window.scrollTo(0,0); 
+                                                        }}
+                                                        style={{
+                                                            width: '100%', textAlign: 'left', padding: '10px', border: 'none', borderRadius: '5px', marginTop: '2px',
+                                                            // SỬA GIAO DIỆN CON TẠI ĐÂY:
+                                                            backgroundColor: isActiveCon ? '#e8f5e9' : 'transparent',
+                                                            color: isActiveCon ? colors.primaryGreen : '#444', // Đậm hơn (#444)
+                                                            fontSize: '15px', // To hơn (15px)
+                                                            fontWeight: isActiveCon ? 'bold' : '500', // Đậm vừa
+                                                            display: 'flex', alignItems: 'center', gap: '8px'
+                                                        }}>
+                                                        <span style={{fontSize: '6px', color: '#ccc'}}>●</span> {con.ten}
+                                                    </button>
+                                                )
+                                            })}
                                         </div>
                                     )}
                                 </div>
@@ -233,7 +290,7 @@ function App() {
                  <Routes>
                     <Route path="/" element={<Home dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} danhMuc={danhMucHienTai} tuKhoa={tuKhoa} colors={colors} />} />
                     <Route path="/product/:id" element={<ProductDetail dsSanPham={dsSanPham} themVaoGio={themVaoGio} colors={colors} />} />
-                    <Route path="/cart" element={<Cart gioHang={gioHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} xoaHetGioHang={xoaHetGioHang} colors={colors} />} />
+                    <Route path="/cart" element={<Cart gioHang={gioHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} xoaHetGioHang={xoaHetGioHang} colors={colors} handleDatHang={handleDatHang} />} />
                  </Routes>
             </Col>
         </Row>
