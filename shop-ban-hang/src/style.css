@@ -1,21 +1,34 @@
-/* --- KHUNG SƯỜN CHUNG --- */
+/* --- 1. CẤU HÌNH CHUNG --- */
 :root {
-  --green-main: #198754;
+  --primary-color: #198754;      /* Màu xanh chủ đạo */
+  --secondary-color: #f8f9fa;    /* Màu nền xám nhạt */
 }
 
 body {
-  margin: 0;
+  background-color: #fff;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f8f9fa;
+  margin: 0;
+  padding: 0;
 }
 
-/* NAVBAR FULL WIDTH */
+/* --- 2. NAVBAR & SIDEBAR --- */
 .navbar-custom {
-  background-color: var(--green-main) !important;
+  background-color: var(--primary-color) !important;
   padding: 10px 20px !important;
 }
 
-/* SIDEBAR DANH MỤC */
+.brand-circle {
+  background: white;
+  color: var(--primary-color);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+}
+
 .sidebar-main {
   background-color: #f8f9fa;
   min-height: 100vh;
@@ -32,26 +45,26 @@ body {
 
 .category-link.active {
   background-color: white;
-  color: var(--green-main);
-  border-left: 5px solid var(--green-main);
+  color: var(--primary-color);
+  border-left: 5px solid var(--primary-color);
   font-weight: bold;
 }
 
-/* FIX LỖI CHI TIẾT SẢN PHẨM (MỤC BẠN ĐANG BỊ LỆCH) */
+/* --- 3. TRANG CHI TIẾT SẢN PHẨM (CỐ ĐỊNH ẢNH & CHỮ) --- */
 .detail-container {
   display: flex;
-  flex-wrap: wrap; /* Tự xuống hàng trên điện thoại */
+  flex-wrap: wrap;
   background: white;
   border-radius: 15px;
   overflow: hidden;
 }
 
 .detail-image-box {
-  flex: 0 0 50%; /* Cố định 50% bên trái */
+  flex: 0 0 50%;
   max-width: 50%;
   padding: 20px;
   display: flex;
-  align-items: flex-start; /* Giúp ảnh không bị đẩy xuống thấp */
+  align-items: center;
   justify-content: center;
 }
 
@@ -59,107 +72,15 @@ body {
   width: 100%;
   max-height: 500px;
   object-fit: contain;
-  border-radius: 10px;
 }
 
 .detail-info-box {
-  flex: 0 0 50%; /* Cố định 50% bên phải */
+  flex: 0 0 50%;
   max-width: 50%;
   padding: 40px;
 }
 
-/* ADMIN DASHBOARD */
-.admin-top-bar {
-  background-color: var(--green-main);
-  color: white;
-  padding: 15px 20px;
-}
-
-.admin-img-thumb {
-  width: 50px;
-  height: 50px;
-  object-fit: cover;
-  border-radius: 5px;
-}
-
-/* RESPONSIVE CHO DI ĐỘNG */
-@media (max-width: 991px) {
-  .detail-image-box, .detail-info-box {
-    flex: 0 0 100%;
-    max-width: 100%;
-  }
-}
-/* Giao diện Đăng nhập Admin */
-.admin-login-wrapper {
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: #008848; /* Màu xanh lá chủ đạo */
-}
-
-.admin-login-card {
-  background: white;
-  padding: 40px;
-  border-radius: 15px;
-  width: 100%;
-  max-width: 400px;
-  text-align: center;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-}
-
-.admin-login-card h3 {
-  color: #008848;
-  font-weight: bold;
-  margin-bottom: 25px;
-}
-
-/* Bố cục trang Admin sau khi đăng nhập */
-.admin-navbar {
-  background-color: #008848;
-  color: white;
-  padding: 15px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.admin-content-area {
-  padding: 20px;
-  background-color: #f8f9fa;
-  min-height: calc(100vh - 70px);
-}
-
-.admin-thumb {
-  width: 50px;
-  height: 50px;
-  object-fit: cover;
-  border-radius: 5px;
-  border: 1px solid #ddd;
-}
-/* --- GIỎ HÀNG (CART) --- */
-.cart-page-wrapper {
-  background-color: #fff;
-  border-radius: 15px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-  margin-bottom: 30px;
-}
-
-.cart-table thead {
-  background-color: #f8f9fa;
-  text-transform: uppercase;
-  font-size: 0.85rem;
-  letter-spacing: 1px;
-}
-
-/* KHU VỰC THÔNG TIN KHÁCH HÀNG (NẰM DƯỚI) */
-.checkout-section {
-  background-color: #fdfdfd;
-  border-top: 2px solid #eee;
-  padding: 40px;
-  border-radius: 0 0 15px 15px;
-}
-
+/* --- 4. GIỎ HÀNG & BẢN ĐỒ --- */
 .map-container {
   width: 100%;
   height: 300px;
@@ -169,38 +90,45 @@ body {
   overflow: hidden;
 }
 
-.cart-summary-box {
-  background: #e8f5e9;
-  padding: 20px;
-  border-radius: 10px;
-  border: 1px dashed #2e7d32;
-}
+/* --- 5. QUẢN TRỊ (ADMIN) --- */
 .admin-main-container {
   min-height: 100vh;
   background-color: #f4f6f9;
 }
 
+.admin-navbar {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 15px 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.admin-thumb {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+/* Tab Admin */
 .nav-tabs .nav-link {
   color: #555;
   font-weight: bold;
 }
 
 .nav-tabs .nav-link.active {
-  color: #198754 !citeimportant;
+  color: #198754 !important;
   border-bottom: 3px solid #198754 !important;
 }
 
-.admin-navbar {
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-/* --- PHẦN ĐỔI MẬT KHẨU --- */
-.password-input-group {
+/* --- 6. BẢO MẬT & ĐƠN HÀNG (PHẦN BẠN VỪA NHẮC) --- */
+.password-group {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.password-toggle-icon {
+.password-icon {
   position: absolute;
   right: 15px;
   cursor: pointer;
@@ -208,34 +136,21 @@ body {
   z-index: 10;
 }
 
-.password-toggle-icon:hover {
-  color: var(--green-main);
+.order-card {
+  border: 1px solid #eee;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  transition: 0.3s;
 }
 
-/* --- QUẢN LÝ MENU --- */
-.menu-order-input {
-  width: 60px !important;
-  text-align: center;
-  font-weight: bold;
+.order-card:hover {
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
-.category-table-row {
-  transition: all 0.2s;
-}
-
-.category-table-row:hover {
-  background-color: #f1f8f4;
-}
-
-/* Nút Sửa nhanh trong bảng */
-.btn-edit-inline {
-  color: #ffc107;
-  cursor: pointer;
-  font-size: 1.1rem;
-}
-
-.btn-delete-inline {
-  color: #dc3545;
-  cursor: pointer;
-  font-size: 1.1rem;
+/* --- 7. RESPONSIVE --- */
+@media (max-width: 991px) {
+  .detail-image-box, .detail-info-box {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
 }
