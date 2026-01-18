@@ -3,14 +3,14 @@ import { Table, Button, Form, Modal, Badge, Tab, Tabs, Row, Col } from 'react-bo
 import { Link } from 'react-router-dom';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { doc, getDoc } from 'firebase/firestore'; 
+// QUAN TRỌNG: Import thêm setDoc
+import { doc, getDoc, setDoc } from 'firebase/firestore'; 
 import { db } from './firebase'; 
 
-// Không cần import Storage nữa để tránh lỗi
 const NO_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg";
 const ICON_LIST = ['🏠', '🥩', '🥦', '🍎', '🥛', '🥤', '🍞', '🥫', '🧼', '🧸', '📦'];
 
-function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsDonHang, handleUpdateStatusOrder, handleDeleteOrder, handleSaveConfig }) {
+function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsDonHang, handleUpdateStatusOrder, handleDeleteOrder }) {
   const [adminConfig, setAdminConfig] = useState(() => JSON.parse(localStorage.getItem('adminConfig') || '{"username":"admin","password":"123"}'));
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginInput, setLoginInput] = useState({ username: '', password: '' });
@@ -29,29 +29,29 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
   // State Cấu hình Shop
   const [shopConfig, setShopConfig] = useState({ tenShop: '', slogan: '', logo: '' });
 
-  // --- LOGIC XỬ LÝ ẢNH NHANH (BASE64) - KHÔNG BAO GIỜ BỊ XOAY ---
+  // --- HÀM LƯU CẤU HÌNH TRỰC TIẾP (KHÔNG CẦN QUA APP) ---
+  const luuCauHinhTrucTiep = async () => {
+    try {
+      await setDoc(doc(db, "cauHinh", "thongTinChung"), shopConfig);
+      alert("✅ Đã cập nhật Logo & Thông tin Shop thành công!");
+    } catch (error) {
+      alert("❌ Lỗi khi lưu: " + error.message);
+    }
+  };
+
+  // Logic Upload ảnh siêu tốc (Base64)
   const handleFastImageUpload = (e, type) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    // Kiểm tra dung lượng ảnh (nếu quá 2MB thì cảnh báo để nhẹ DB)
-    if (file.size > 2000000) {
-      alert("File ảnh quá lớn! Vui lòng chọn ảnh dưới 2MB.");
-      return;
-    }
+    if (file.size > 2000000) { alert("Ảnh quá lớn! Chọn ảnh < 2MB"); return; }
 
     const reader = new FileReader();
     reader.onloadend = () => {
-      // Khi đọc xong, lưu ngay kết quả vào State
-      if (type === 'LOGO') {
-        setShopConfig({ ...shopConfig, logo: reader.result });
-      } else if (type === 'PRODUCT') {
-        setFormDataSP({ ...formDataSP, anh: reader.result });
-      }
+      if (type === 'LOGO') setShopConfig({ ...shopConfig, logo: reader.result });
+      else if (type === 'PRODUCT') setFormDataSP({ ...formDataSP, anh: reader.result });
     };
     reader.readAsDataURL(file);
   };
-  // ---------------------------------------------------------------
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -105,7 +105,7 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
       <div className="p-4">
         <Tabs defaultActiveKey="config" className="mb-4 bg-white p-2 rounded shadow-sm border">
           
-          {/* TAB 1: CẤU HÌNH LOGO (UPLOAD SIÊU NHANH) */}
+          {/* TAB 1: CẤU HÌNH LOGO */}
           <Tab eventKey="config" title="⚙️ CẤU HÌNH LOGO">
             <div className="bg-white p-4 rounded text-center">
               <Row>
@@ -115,14 +115,14 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
                     <div className="border p-3 rounded mb-2 d-flex justify-content-center align-items-center" style={{height:'180px', background:'#f8f9fa'}}>
                       {shopConfig.logo ? <img src={shopConfig.logo} style={{maxHeight:'100%', maxWidth:'100%'}} alt="Logo" /> : <span className="text-muted">Chưa có logo</span>}
                     </div>
-                    {/* Dùng hàm handleFastImageUpload */}
                     <Form.Control type="file" onChange={(e) => handleFastImageUpload(e, 'LOGO')} />
                   </Form.Group>
                 </Col>
                 <Col md={8} className="text-start">
                   <Form.Group className="mb-3"><Form.Label className="fw-bold">Tên Shop</Form.Label><Form.Control value={shopConfig.tenShop} onChange={e => setShopConfig({...shopConfig, tenShop: e.target.value})} /></Form.Group>
                   <Form.Group className="mb-3"><Form.Label className="fw-bold">Slogan</Form.Label><Form.Control value={shopConfig.slogan} onChange={e => setShopConfig({...shopConfig, slogan: e.target.value})} /></Form.Group>
-                  <Button variant="success" className="w-100 fw-bold py-3" onClick={() => handleSaveConfig(shopConfig)}>💾 LƯU CẤU HÌNH</Button>
+                  {/* GỌI HÀM TRỰC TIẾP TẠI ĐÂY */}
+                  <Button variant="success" className="w-100 fw-bold py-3" onClick={luuCauHinhTrucTiep}>💾 LƯU CẤU HÌNH</Button>
                 </Col>
               </Row>
             </div>
@@ -186,7 +186,6 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
         </Tabs>
       </div>
 
-      {/* MODAL SẢN PHẨM */}
       <Modal show={showModalSP} onHide={() => setShowModalSP(false)} size="lg" centered>
         <Modal.Header closeButton><Modal.Title className="fw-bold text-success">CHI TIẾT SẢN PHẨM</Modal.Title></Modal.Header>
         <Modal.Body>
@@ -208,7 +207,6 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
               <Col md={4}>
                 <Form.Group className="mb-3">
                   <Form.Label className="fw-bold">Ảnh Sản Phẩm</Form.Label>
-                  {/* Dùng hàm handleFastImageUpload */}
                   <Form.Control type="file" onChange={(e) => handleFastImageUpload(e, 'PRODUCT')} />
                   <div className="mt-2 border p-2 text-center bg-white rounded">
                     <img src={formDataSP.anh || NO_IMAGE} style={{maxHeight:'160px', maxWidth:'100%'}} alt=""/>
@@ -222,7 +220,6 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
         </Modal.Body>
       </Modal>
 
-      {/* CÁC MODAL MENU & PASS (Giữ nguyên) */}
       <Modal show={showModalDM} onHide={() => setShowModalDM(false)} centered>
         <Modal.Header closeButton><Modal.Title className="fw-bold text-success">MENU</Modal.Title></Modal.Header>
         <Modal.Body className="p-4">
