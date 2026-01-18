@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { db } from './firebase'; 
-// QUAN TRỌNG: Phải import setDoc để lưu logo
 import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Badge, Button, Form, Container, Navbar, Nav } from 'react-bootstrap';
 
@@ -61,17 +60,22 @@ function App() {
     setGioHang([]); alert("Đặt hàng thành công!"); navigate('/');
   };
 
+  const chinhSuaSoLuong = (id, kieu) => {
+    setGioHang(gioHang.map(i => i.id === id ? {...i, soLuong: kieu === 'tang' ? i.soLuong + 1 : Math.max(1, i.soLuong - 1)} : i));
+  };
+
+  const xoaKhoiGio = (id) => setGioHang(gioHang.filter(i => i.id !== id));
+
   const sanPhamHienThi = dsSanPham.filter(sp => sp.ten?.toLowerCase().includes(tuKhoa.toLowerCase()));
   const isAdminPage = location.pathname.startsWith('/admin');
 
   return (
     <div className="app-container">
-      {/* HEADER: LOGO & TÌM KIẾM */}
+      {/* HEADER */}
       {!isAdminPage && (
         <Navbar bg="white" variant="light" expand="lg" className="sticky-top shadow-sm py-2 border-bottom">
           <Container>
             <Navbar.Brand as={Link} to="/" className="d-flex align-items-center">
-              {/* Logo động */}
               {shopConfig.logo ? (
                 <img src={shopConfig.logo} alt="Logo" height="55" className="me-2" style={{objectFit: 'contain'}} />
               ) : (
@@ -85,8 +89,16 @@ function App() {
             <Navbar.Toggle aria-controls="basic-navbar-nav" />
             <Navbar.Collapse id="basic-navbar-nav">
               <Nav className="w-100 d-flex justify-content-between align-items-center ms-lg-4 mt-3 mt-lg-0">
-                <Form className="d-flex w-100 mx-lg-3"><Form.Control type="search" placeholder="🔍 Tìm kiếm..." className="rounded-pill border-1 bg-light px-4 py-2" value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)} /></Form.Group>
-                <Link to="/cart" className="text-decoration-none ms-lg-3"><Button variant="success" className="rounded-pill fw-bold px-4 py-2 d-flex align-items-center gap-2 shadow-sm"><i className="fa-solid fa-cart-shopping"></i> Giỏ <Badge bg="warning" text="dark" pill>{gioHang.reduce((acc, item) => acc + item.soLuong, 0)}</Badge></Button></Link>
+                {/* Đã sửa lỗi chính tả ở đây: <Form> phải đóng bằng </Form> */}
+                <Form className="d-flex w-100 mx-lg-3">
+                  <Form.Control type="search" placeholder="🔍 Tìm kiếm..." className="rounded-pill border-1 bg-light px-4 py-2" value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)} />
+                </Form>
+                
+                <Link to="/cart" className="text-decoration-none ms-lg-3">
+                  <Button variant="success" className="rounded-pill fw-bold px-4 py-2 d-flex align-items-center gap-2 shadow-sm">
+                    <i className="fa-solid fa-cart-shopping"></i> Giỏ <Badge bg="warning" text="dark" pill>{gioHang.reduce((acc, item) => acc + item.soLuong, 0)}</Badge>
+                  </Button>
+                </Link>
               </Nav>
             </Navbar.Collapse>
           </Container>
@@ -96,21 +108,17 @@ function App() {
       <Routes>
         <Route path="/" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
         <Route path="/product/:id" element={<ProductDetail dsSanPham={dsSanPham} themVaoGio={themVaoGio} />} />
-        <Route path="/cart" element={<Cart gioHang={gioHang} handleDatHang={handleDatHang} chinhSuaSoLuong={(id, k) => setGioHang(gioHang.map(i => i.id === id ? {...i, soLuong: k==='tang'?i.soLuong+1:Math.max(1,i.soLuong-1)} : i))} xoaSanPham={(id) => setGioHang(gioHang.filter(i=>i.id!==id))} />} />
+        <Route path="/cart" element={<Cart gioHang={gioHang} handleDatHang={handleDatHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaKhoiGio} />} />
         
-        {/* --- PHẦN BẠN ĐANG THIẾU Ở ĐÂY 👇 --- */}
         <Route path="/admin" element={
           <Admin 
             dsSanPham={dsSanPham} 
             dsDanhMuc={dsDanhMuc} 
             dsDonHang={dsDonHang} 
-            // Các hàm cũ
             handleUpdateDS_SP={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"sanPham",d)):(t==='ADD'?await addDoc(collection(db,"sanPham"),d):await updateDoc(doc(db,"sanPham",d.id),d))}
             handleUpdateDS_DM={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"danhMuc",d)):(t==='ADD'?await addDoc(collection(db,"danhMuc"),d):await updateDoc(doc(db,"danhMuc",d.id),d))}
             handleUpdateStatusOrder={async (id, s) => await updateDoc(doc(db,"donHang",id),{trangThai:s})}
             handleDeleteOrder={async (id) => await deleteDoc(doc(db,"donHang",id))}
-            
-            // --- HÀM MỚI QUAN TRỌNG: LƯU CẤU HÌNH ---
             handleSaveConfig={async (data) => {
               try {
                 await setDoc(doc(db, "cauHinh", "thongTinChung"), data);
