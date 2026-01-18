@@ -1,24 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Form, Modal, Badge, Tab, Tabs, Row, Col, Spinner } from 'react-bootstrap'; // Thêm Spinner
+import { Table, Button, Form, Modal, Badge, Tab, Tabs, Row, Col } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { doc, getDoc } from 'firebase/firestore'; 
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // Nhập hàm Storage
-import { db, storage } from './firebase'; // Nhập biến storage
+import { db } from './firebase'; 
 
+// Không cần import Storage nữa để tránh lỗi
 const NO_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg";
 const ICON_LIST = ['🏠', '🥩', '🥦', '🍎', '🥛', '🥤', '🍞', '🥫', '🧼', '🧸', '📦'];
 
 function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsDonHang, handleUpdateStatusOrder, handleDeleteOrder, handleSaveConfig }) {
-  // ... (Giữ nguyên các State cũ: adminConfig, isLoggedIn, loginInput...)
   const [adminConfig, setAdminConfig] = useState(() => JSON.parse(localStorage.getItem('adminConfig') || '{"username":"admin","password":"123"}'));
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginInput, setLoginInput] = useState({ username: '', password: '' });
-  const [showOldPass, setShowOldPass] = useState(false);
-  const [showNewPass, setShowNewPass] = useState(false);
-  const [passForm, setPassForm] = useState({ oldPass: '', newPass: '' });
-
+  
   const [showModalSP, setShowModalSP] = useState(false);
   const [editingSP, setEditingSP] = useState(null);
   const [formDataSP, setFormDataSP] = useState({ ten: '', giaGoc: '', phanTramGiam: 0, giaBan: '', donVi: 'Cái', soLuong: 10, moTa: '', anh: '', phanLoai: '', isMoi: false, isKhuyenMai: false, isBanChay: false });
@@ -28,10 +24,35 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
   const [formDataDM, setFormDataDM] = useState({ ten: '', icon: '', parent: '', order: '' });
   
   const [showModalPass, setShowModalPass] = useState(false);
-  const [shopConfig, setShopConfig] = useState({ tenShop: '', slogan: '', logo: '' });
-  const [isUploading, setIsUploading] = useState(false); // Trạng thái đang tải ảnh
+  const [passForm, setPassForm] = useState({ oldPass: '', newPass: '' });
 
-  // ... (Giữ nguyên logic load Config & Sắp xếp menu) ...
+  // State Cấu hình Shop
+  const [shopConfig, setShopConfig] = useState({ tenShop: '', slogan: '', logo: '' });
+
+  // --- LOGIC XỬ LÝ ẢNH NHANH (BASE64) - KHÔNG BAO GIỜ BỊ XOAY ---
+  const handleFastImageUpload = (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Kiểm tra dung lượng ảnh (nếu quá 2MB thì cảnh báo để nhẹ DB)
+    if (file.size > 2000000) {
+      alert("File ảnh quá lớn! Vui lòng chọn ảnh dưới 2MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      // Khi đọc xong, lưu ngay kết quả vào State
+      if (type === 'LOGO') {
+        setShopConfig({ ...shopConfig, logo: reader.result });
+      } else if (type === 'PRODUCT') {
+        setFormDataSP({ ...formDataSP, anh: reader.result });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+  // ---------------------------------------------------------------
+
   useEffect(() => {
     if (isLoggedIn) {
       const fetchConfig = async () => {
@@ -58,35 +79,6 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
     setFormDataSP(p => ({ ...p, giaBan: goc > 0 ? Math.floor(goc * (1 - giam / 100)) : '' }));
   }, [formDataSP.giaGoc, formDataSP.phanTramGiam]);
 
-  // --- LOGIC UPLOAD ẢNH LÊN HOSTING (FIREBASE STORAGE) ---
-  const handleUploadToHosting = async (e, type) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setIsUploading(true); // Bật loading
-    try {
-      // 1. Tạo đường dẫn lưu file trên Hosting (vd: images/ten-file.jpg)
-      const storageRef = ref(storage, `images/${Date.now()}_${file.name}`);
-      
-      // 2. Upload file
-      await uploadBytes(storageRef, file);
-      
-      // 3. Lấy link tải về (URL)
-      const url = await getDownloadURL(storageRef);
-
-      // 4. Lưu link vào form
-      if (type === 'PRODUCT') {
-        setFormDataSP(prev => ({ ...prev, anh: url }));
-      } else if (type === 'LOGO') {
-        setShopConfig(prev => ({ ...prev, logo: url }));
-      }
-    } catch (error) {
-      alert("Lỗi upload ảnh: " + error.message);
-    } finally {
-      setIsUploading(false); // Tắt loading
-    }
-  };
-
   if (!isLoggedIn) return (
     <div className="admin-login-wrapper">
       <div className="admin-login-card shadow">
@@ -111,8 +103,9 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
       </div>
 
       <div className="p-4">
-        <Tabs defaultActiveKey="products" className="mb-4 bg-white p-2 rounded shadow-sm border">
-          {/* TAB 1: CẤU HÌNH SHOP */}
+        <Tabs defaultActiveKey="config" className="mb-4 bg-white p-2 rounded shadow-sm border">
+          
+          {/* TAB 1: CẤU HÌNH LOGO (UPLOAD SIÊU NHANH) */}
           <Tab eventKey="config" title="⚙️ CẤU HÌNH LOGO">
             <div className="bg-white p-4 rounded text-center">
               <Row>
@@ -120,17 +113,16 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
                   <Form.Group className="mb-3">
                     <Form.Label className="fw-bold">Logo Shop</Form.Label>
                     <div className="border p-3 rounded mb-2 d-flex justify-content-center align-items-center" style={{height:'180px', background:'#f8f9fa'}}>
-                      {isUploading ? <Spinner animation="border" variant="success" /> : (
-                        shopConfig.logo ? <img src={shopConfig.logo} style={{maxHeight:'100%', maxWidth:'100%'}} alt="Logo" /> : <span className="text-muted">Chưa có logo</span>
-                      )}
+                      {shopConfig.logo ? <img src={shopConfig.logo} style={{maxHeight:'100%', maxWidth:'100%'}} alt="Logo" /> : <span className="text-muted">Chưa có logo</span>}
                     </div>
-                    <Form.Control type="file" onChange={(e) => handleUploadToHosting(e, 'LOGO')} />
+                    {/* Dùng hàm handleFastImageUpload */}
+                    <Form.Control type="file" onChange={(e) => handleFastImageUpload(e, 'LOGO')} />
                   </Form.Group>
                 </Col>
                 <Col md={8} className="text-start">
                   <Form.Group className="mb-3"><Form.Label className="fw-bold">Tên Shop</Form.Label><Form.Control value={shopConfig.tenShop} onChange={e => setShopConfig({...shopConfig, tenShop: e.target.value})} /></Form.Group>
                   <Form.Group className="mb-3"><Form.Label className="fw-bold">Slogan</Form.Label><Form.Control value={shopConfig.slogan} onChange={e => setShopConfig({...shopConfig, slogan: e.target.value})} /></Form.Group>
-                  <Button variant="success" className="w-100 fw-bold" onClick={() => handleSaveConfig(shopConfig)}>LƯU CẤU HÌNH</Button>
+                  <Button variant="success" className="w-100 fw-bold py-3" onClick={() => handleSaveConfig(shopConfig)}>💾 LƯU CẤU HÌNH</Button>
                 </Col>
               </Row>
             </div>
@@ -194,7 +186,7 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
         </Tabs>
       </div>
 
-      {/* MODAL SẢN PHẨM (ĐÃ NÂNG CẤP UPLOAD) */}
+      {/* MODAL SẢN PHẨM */}
       <Modal show={showModalSP} onHide={() => setShowModalSP(false)} size="lg" centered>
         <Modal.Header closeButton><Modal.Title className="fw-bold text-success">CHI TIẾT SẢN PHẨM</Modal.Title></Modal.Header>
         <Modal.Body>
@@ -216,9 +208,10 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
               <Col md={4}>
                 <Form.Group className="mb-3">
                   <Form.Label className="fw-bold">Ảnh Sản Phẩm</Form.Label>
-                  <Form.Control type="file" onChange={(e) => handleUploadToHosting(e, 'PRODUCT')} />
+                  {/* Dùng hàm handleFastImageUpload */}
+                  <Form.Control type="file" onChange={(e) => handleFastImageUpload(e, 'PRODUCT')} />
                   <div className="mt-2 border p-2 text-center bg-white rounded">
-                    {isUploading ? <Spinner animation="border" size="sm" /> : <img src={formDataSP.anh || NO_IMAGE} style={{maxHeight:'160px', maxWidth:'100%'}} alt=""/>}
+                    <img src={formDataSP.anh || NO_IMAGE} style={{maxHeight:'160px', maxWidth:'100%'}} alt=""/>
                   </div>
                 </Form.Group>
               </Col>
@@ -229,8 +222,7 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
         </Modal.Body>
       </Modal>
 
-      {/* CÁC MODAL KHÁC GIỮ NGUYÊN (MENU, PASS) - Đã có ở version trước */}
-      {/* ... (Dán lại phần Modal Menu và Modal Pass của version trước vào đây) ... */}
+      {/* CÁC MODAL MENU & PASS (Giữ nguyên) */}
       <Modal show={showModalDM} onHide={() => setShowModalDM(false)} centered>
         <Modal.Header closeButton><Modal.Title className="fw-bold text-success">MENU</Modal.Title></Modal.Header>
         <Modal.Body className="p-4">
