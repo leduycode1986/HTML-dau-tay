@@ -27,15 +27,12 @@ function Cart({ gioHang, handleDatHang, chinhSuaSoLuong, xoaSanPham }) {
             <Form.Control className="mb-3 p-3 border-0 shadow-sm" placeholder="SĐT liên hệ *" value={khach.sdt} onChange={e => setKhach({...khach, sdt: e.target.value})} />
             <Form.Control as="textarea" rows={3} className="mb-3 p-3 border-0 shadow-sm" placeholder="Địa chỉ giao hàng chi tiết *" value={khach.diachi} onChange={e => setKhach({...khach, diachi: e.target.value})} />
             
-            {/* ĐÃ SỬA LỖI GOOGLE MAP Ở ĐÂY */}
-            <div className="map-container shadow-sm border rounded-3">
+            {/* --- ĐÃ SỬA LỖI LINK MAP --- */}
+            <div className="map-container shadow-sm border rounded-3" style={{height:'300px'}}>
               <iframe 
                 title="map" 
-                src={`https://maps.google.com/maps?q=${encodeURIComponent(khach.diachi || 'Ho Chi Minh City')}&output=embed`}
-                width="100%" 
-                height="100%" 
-                style={{border:0}} 
-                loading="lazy"
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(khach.diachi || 'Vietnam')}&output=embed`}
+                width="100%" height="100%" style={{border:0}} loading="lazy"
               ></iframe>
             </div>
           </div>
