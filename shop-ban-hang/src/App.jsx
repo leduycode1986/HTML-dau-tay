@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { db } from './firebase'; 
-import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+// Import setDoc để lưu cấu hình, import getDoc không cần ở đây vì dùng onSnapshot
+import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Badge, Button, Form, Container, Navbar, Nav } from 'react-bootstrap';
 
 import Home from './Home';
@@ -13,53 +14,58 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // State lưu dữ liệu lấy từ Firebase
+  // --- 1. STATE DỮ LIỆU ---
   const [dsSanPham, setDsSanPham] = useState([]);
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [dsDonHang, setDsDonHang] = useState([]);
   const [gioHang, setGioHang] = useState(() => JSON.parse(localStorage.getItem('cart') || '[]'));
   
-  // State cho ô tìm kiếm
+  // State Cấu hình Shop (Logo, Tên, Slogan)
+  const [shopConfig, setShopConfig] = useState({ 
+    tenShop: 'MaiVang Shop', 
+    slogan: 'Uy Tín Là Vàng', 
+    logo: '' 
+  });
+
   const [tuKhoa, setTuKhoa] = useState('');
 
-  // 1. KẾT NỐI REALTIME FIREBASE (Lấy dữ liệu bạn đã nhập)
+  // --- 2. KẾT NỐI REALTIME FIREBASE ---
   useEffect(() => {
-    // Lấy danh sách Sản Phẩm
+    // Lấy Sản phẩm
     const unsubSP = onSnapshot(collection(db, "sanPham"), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-      setDsSanPham(data);
+      setDsSanPham(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
     });
     
-    // Lấy danh sách Danh Mục (Menu)
+    // Lấy Danh mục
     const unsubDM = onSnapshot(collection(db, "danhMuc"), (snapshot) => {
       const data = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-      // Sắp xếp theo thứ tự (VD: 18.1, 18.2)
       data.sort((a, b) => parseFloat(a.order || 0) - parseFloat(b.order || 0));
       setDsDanhMuc(data);
     });
 
-    // Lấy Đơn Hàng
+    // Lấy Đơn hàng
     const unsubDH = onSnapshot(collection(db, "donHang"), (snapshot) => {
       setDsDonHang(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
     });
 
-    return () => { unsubSP(); unsubDM(); unsubDH(); };
+    // Lấy Cấu hình Shop (Logo) - QUAN TRỌNG ĐỂ HIỂN THỊ LOGO
+    const unsubConfig = onSnapshot(doc(db, "cauHinh", "thongTinChung"), (doc) => {
+      if (doc.exists()) {
+        setShopConfig(doc.data());
+      }
+    });
+
+    return () => { unsubSP(); unsubDM(); unsubDH(); unsubConfig(); };
   }, []);
 
-  // 2. Tự động lưu giỏ hàng
+  // Lưu giỏ hàng vào LocalStorage
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
 
-  // Logic Giỏ hàng
+  // --- 3. CÁC HÀM XỬ LÝ ---
   const themVaoGio = (sp) => {
     const check = gioHang.find(i => i.id === sp.id);
     if (check) setGioHang(gioHang.map(i => i.id === sp.id ? {...i, soLuong: i.soLuong + 1} : i));
     else setGioHang([...gioHang, {...sp, soLuong: 1}]);
-  };
-
-  const xoaKhoiGio = (id) => setGioHang(gioHang.filter(i => i.id !== id));
-  
-  const chinhSuaSoLuong = (id, kieu) => {
-    setGioHang(gioHang.map(i => i.id === id ? {...i, soLuong: kieu === 'tang' ? i.soLuong + 1 : Math.max(1, i.soLuong - 1)} : i));
   };
 
   const handleDatHang = async (khach) => {
@@ -68,45 +74,46 @@ function App() {
     setGioHang([]); alert("Đặt hàng thành công!"); navigate('/');
   };
 
-  // Logic Tìm kiếm sản phẩm
-  const sanPhamHienThi = dsSanPham.filter(sp => 
-    sp.ten?.toLowerCase().includes(tuKhoa.toLowerCase())
-  );
-
-  // Ẩn Header nếu ở trang Admin
+  // Logic lọc tìm kiếm
+  const sanPhamHienThi = dsSanPham.filter(sp => sp.ten?.toLowerCase().includes(tuKhoa.toLowerCase()));
+  
+  // Kiểm tra xem có đang ở trang Admin không để ẩn Header
   const isAdminPage = location.pathname.startsWith('/admin');
 
   return (
     <div className="app-container">
-      {/* --- HEADER: LOGO, TÌM KIẾM, GIỎ HÀNG --- */}
+      {/* HEADER: HIỂN THỊ LOGO ĐỘNG TỪ FIREBASE */}
       {!isAdminPage && (
-        <Navbar bg="success" variant="dark" expand="lg" className="sticky-top shadow-sm py-2">
+        <Navbar bg="white" variant="light" expand="lg" className="sticky-top shadow-sm py-2 border-bottom">
           <Container>
-            <Navbar.Brand as={Link} to="/" className="fw-bold text-uppercase border p-2 rounded bg-white text-success">
-              🦁 MAIVANG SHOP
+            <Navbar.Brand as={Link} to="/" className="d-flex align-items-center">
+              {/* Nếu có Logo trong DB thì hiện, ko thì hiện chữ cái đầu */}
+              {shopConfig.logo ? (
+                <img src={shopConfig.logo} alt="Logo" height="50" className="me-2" style={{objectFit: 'contain', maxHeight:'50px'}} />
+              ) : (
+                <span className="fs-2 me-2">🦁</span>
+              )}
+              
+              <div className="d-flex flex-column">
+                <span className="fw-bold text-success text-uppercase" style={{fontSize: '1.1rem', letterSpacing:'0.5px'}}>
+                  {shopConfig.tenShop || 'MaiVang Shop'}
+                </span>
+                <span className="text-warning small fw-bold" style={{fontSize: '0.7rem'}}>
+                  ⭐ {shopConfig.slogan || 'Uy Tín Là Vàng'} ⭐
+                </span>
+              </div>
             </Navbar.Brand>
+
             <Navbar.Toggle aria-controls="basic-navbar-nav" />
             <Navbar.Collapse id="basic-navbar-nav">
-              <Nav className="w-100 d-flex justify-content-between align-items-center ms-3">
-                
-                {/* Ô TÌM KIẾM */}
-                <Form className="d-flex w-100 mx-lg-4 my-2 my-lg-0">
-                  <Form.Control
-                    type="search"
-                    placeholder="🔍 Bạn muốn tìm món gì..."
-                    className="rounded-pill border-0 shadow-sm px-3"
-                    value={tuKhoa}
-                    onChange={(e) => setTuKhoa(e.target.value)}
-                  />
+              <Nav className="w-100 d-flex justify-content-between align-items-center ms-lg-4 mt-3 mt-lg-0">
+                <Form className="d-flex w-100 mx-lg-3 position-relative">
+                  <Form.Control type="search" placeholder="🔍 Bạn cần tìm gì..." className="rounded-pill border-1 bg-light px-4 py-2" style={{width: '100%'}} value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)} />
                 </Form>
-
-                {/* NÚT GIỎ HÀNG */}
-                <Link to="/cart" className="text-decoration-none">
-                  <Button variant="light" className="rounded-pill fw-bold text-success position-relative shadow-sm d-flex align-items-center gap-2">
-                    <span>🛒 Giỏ hàng</span>
-                    <Badge bg="danger" pill>
-                      {gioHang.reduce((acc, item) => acc + item.soLuong, 0)}
-                    </Badge>
+                <Link to="/cart" className="text-decoration-none ms-lg-3 mt-3 mt-lg-0">
+                  <Button variant="success" className="rounded-pill fw-bold px-4 py-2 d-flex align-items-center gap-2 shadow-sm">
+                    <i className="fa-solid fa-cart-shopping"></i> Giỏ
+                    <Badge bg="warning" text="dark" pill>{gioHang.reduce((acc, item) => acc + item.soLuong, 0)}</Badge>
                   </Button>
                 </Link>
               </Nav>
@@ -115,22 +122,39 @@ function App() {
         </Navbar>
       )}
 
-      {/* --- NỘI DUNG CHÍNH --- */}
+      {/* NỘI DUNG CHÍNH */}
       <Routes>
         <Route path="/" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
         <Route path="/product/:id" element={<ProductDetail dsSanPham={dsSanPham} themVaoGio={themVaoGio} />} />
-        <Route path="/cart" element={<Cart gioHang={gioHang} handleDatHang={handleDatHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaKhoiGio} />} />
+        <Route path="/cart" element={<Cart gioHang={gioHang} handleDatHang={handleDatHang} chinhSuaSoLuong={(id, k) => setGioHang(gioHang.map(i => i.id === id ? {...i, soLuong: k==='tang'?i.soLuong+1:Math.max(1,i.soLuong-1)} : i))} xoaSanPham={(id) => setGioHang(gioHang.filter(i=>i.id!==id))} />} />
         
-        {/* Route Admin (Giữ nguyên logic cập nhật Firebase) */}
-        <Route path="/admin" element={<Admin dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} dsDonHang={dsDonHang} 
-          handleUpdateDS_SP={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"sanPham",d)):(t==='ADD'?await addDoc(collection(db,"sanPham"),d):await updateDoc(doc(db,"sanPham",d.id),d))}
-          handleUpdateDS_DM={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"danhMuc",d)):(t==='ADD'?await addDoc(collection(db,"danhMuc"),d):await updateDoc(doc(db,"danhMuc",d.id),d))}
-          handleUpdateStatusOrder={async (id, s) => await updateDoc(doc(db,"donHang",id),{trangThai:s})}
-          handleDeleteOrder={async (id) => await deleteDoc(doc(db,"donHang",id))}
-        />} />
+        {/* --- ROUTE ADMIN: QUAN TRỌNG NHẤT --- */}
+        <Route path="/admin" element={
+          <Admin 
+            dsSanPham={dsSanPham} 
+            dsDanhMuc={dsDanhMuc} 
+            dsDonHang={dsDonHang} 
+            
+            // Các hàm xử lý dữ liệu cũ
+            handleUpdateDS_SP={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"sanPham",d)):(t==='ADD'?await addDoc(collection(db,"sanPham"),d):await updateDoc(doc(db,"sanPham",d.id),d))}
+            handleUpdateDS_DM={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"danhMuc",d)):(t==='ADD'?await addDoc(collection(db,"danhMuc"),d):await updateDoc(doc(db,"danhMuc",d.id),d))}
+            handleUpdateStatusOrder={async (id, s) => await updateDoc(doc(db,"donHang",id),{trangThai:s})}
+            handleDeleteOrder={async (id) => await deleteDoc(doc(db,"donHang",id))}
+            
+            // --- HÀM MỚI: LƯU CẤU HÌNH LOGO ---
+            handleSaveConfig={async (data) => {
+              try {
+                // Dùng setDoc để nếu chưa có thì tạo mới, có rồi thì ghi đè
+                await setDoc(doc(db, "cauHinh", "thongTinChung"), data);
+                alert("✅ Đã cập nhật Logo & Thông tin Shop thành công!");
+              } catch (error) {
+                alert("Lỗi khi lưu: " + error.message);
+              }
+            }}
+          />
+        } />
       </Routes>
     </div>
   );
 }
-
 export default App;

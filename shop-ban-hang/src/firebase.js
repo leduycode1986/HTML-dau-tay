@@ -1,18 +1,17 @@
-// src/firebase.js
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage"; // 1. Thêm dòng này
 
-// --- DÁN MÃ CỦA BẠN VÀO ĐÂY ---
 const firebaseConfig = {
-  apiKey: "AIzaSyD...", // Copy từ Firebase console
-  authDomain: "maivang-shop.firebaseapp.com",
-  projectId: "maivang-shop",
-  storageBucket: "maivang-shop.appspot.com",
+  // ... (Giữ nguyên các thông tin API Key cũ của bạn) ...
+  apiKey: "AIzaSy...",
+  authDomain: "...",
+  projectId: "...",
+  storageBucket: "maivang-shop.appspot.com", // 2. Đảm bảo dòng này có
   messagingSenderId: "...",
   appId: "..."
 };
-// ------------------------------
 
 const app = initializeApp(firebaseConfig);
-// Khởi tạo cơ sở dữ liệu
 export const db = getFirestore(app);
+export const storage = getStorage(app); // 3. Xuất biến storage
