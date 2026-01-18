@@ -3,13 +3,12 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage"; // 1. Thêm dòng này
 
 const firebaseConfig = {
-  // ... (Giữ nguyên các thông tin API Key cũ của bạn) ...
-  apiKey: "AIzaSy...",
-  authDomain: "...",
-  projectId: "...",
-  storageBucket: "maivang-shop.appspot.com", // 2. Đảm bảo dòng này có
-  messagingSenderId: "...",
-  appId: "..."
+  apiKey: "AIzaSyABCDSgWbQU57dptEVjXtqboIKaodvUmnA",
+  authDomain: "maivang-shop.firebaseapp.com",
+  projectId: "maivang-shop",
+  storageBucket: "maivang-shop.firebasestorage.app",
+  messagingSenderId: "580874818222",
+  appId: "1:580874818222:web:d895b6a48b21e9c235933f"
 };
 
 const app = initializeApp(firebaseConfig);
