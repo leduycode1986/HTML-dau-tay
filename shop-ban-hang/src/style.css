@@ -253,3 +253,70 @@ img { max-width: 100%; height: auto; }
 
 /* --- 15. TOASTIFY CUSTOM --- */
 .Toastify__toast-body { font-family: 'Segoe UI', sans-serif; font-size: 14px; }
+/* ... Code cũ giữ nguyên ... */
+
+/* --- 16. BỘ LỌC CHUYÊN NGHIỆP --- */
+.filter-toolbar {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.price-input-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.price-input {
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 8px 12px;
+  width: 120px;
+  font-size: 0.9rem;
+  transition: 0.2s;
+}
+.price-input:focus {
+  border-color: #198754;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.1);
+}
+
+.filter-btn {
+  background: #198754;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: 0.2s;
+}
+.filter-btn:hover { background: #146c43; }
+
+/* Ô Sắp xếp đẹp hơn */
+.sort-select {
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 8px 35px 8px 15px; /* Padding phải lớn để tránh icon mũi tên */
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  background-color: white;
+  min-width: 200px;
+  appearance: none; /* Ẩn mũi tên mặc định của trình duyệt */
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+}
+.sort-select:focus {
+  border-color: #198754;
+  outline: none;
+}

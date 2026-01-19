@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Row, Col, Container, Alert, Button, Form } from 'react-bootstrap'; // Thêm Form
+import { Row, Col, Container, Alert, Button, Form } from 'react-bootstrap';
 import Product from './Product';
 import { Link, useParams } from 'react-router-dom';
 
@@ -10,7 +10,8 @@ function Home({ dsSanPham, dsDanhMuc, themVaoGio }) {
 
   // --- STATE LỌC & SẮP XẾP ---
   const [sortType, setSortType] = useState('default');
-  const [priceRange, setPriceRange] = useState('all');
+  const [minPrice, setMinPrice] = useState(''); // Giá thấp nhất
+  const [maxPrice, setMaxPrice] = useState(''); // Giá cao nhất
 
   const ProductSlider = ({ title, products, icon }) => {
     const scrollRef = useRef(null);
@@ -33,14 +34,14 @@ function Home({ dsSanPham, dsDanhMuc, themVaoGio }) {
       }) 
     : dsSanPham;
 
-  // 2. Xử lý Lọc theo Giá
-  if (priceRange !== 'all') {
+  // 2. Xử lý Lọc theo Giá (Nhập tay)
+  // Chỉ lọc khi người dùng đã nhập ít nhất 1 trong 2 ô
+  if (minPrice !== '' || maxPrice !== '') {
     finalProducts = finalProducts.filter(sp => {
       const gia = sp.giaBan || 0;
-      if (priceRange === 'duoi100') return gia < 100000; // Ví dụ 100k
-      if (priceRange === '100-500') return gia >= 100000 && gia <= 500000;
-      if (priceRange === 'tren500') return gia > 500000;
-      return true;
+      const min = minPrice === '' ? 0 : parseInt(minPrice);
+      const max = maxPrice === '' ? Infinity : parseInt(maxPrice);
+      return gia >= min && gia <= max;
     });
   }
 
@@ -67,26 +68,31 @@ function Home({ dsSanPham, dsDanhMuc, themVaoGio }) {
           )}
 
           <div className="mt-4 pt-3 border-top">
-            <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
-              <h4 className="fw-bold text-uppercase m-0 text-success"><i className="fa-solid fa-border-all me-2"></i> {categoryId ? 'DANH SÁCH SẢN PHẨM' : 'TẤT CẢ SẢN PHẨM'}</h4>
+            <h4 className="fw-bold text-uppercase mb-3 text-success"><i className="fa-solid fa-border-all me-2"></i> {categoryId ? 'DANH SÁCH SẢN PHẨM' : 'TẤT CẢ SẢN PHẨM'}</h4>
+            
+            {/* --- THANH CÔNG CỤ LỌC (MỚI - ĐẸP HƠN) --- */}
+            <div className="filter-toolbar">
+              <div className="d-flex align-items-center gap-2">
+                <span className="fw-bold text-muted small text-uppercase">Khoảng giá:</span>
+                <div className="price-input-group">
+                  <input type="number" className="price-input" placeholder="Từ (¥)" value={minPrice} onChange={e => setMinPrice(e.target.value)} />
+                  <span className="text-muted">-</span>
+                  <input type="number" className="price-input" placeholder="Đến (¥)" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} />
+                </div>
+              </div>
               
-              {/* --- THANH CÔNG CỤ LỌC --- */}
-              <div className="d-flex gap-2">
-                <Form.Select size="sm" className="form-select-sm shadow-sm" style={{width:'150px'}} value={priceRange} onChange={e=>setPriceRange(e.target.value)}>
-                  <option value="all">💰 Tất cả mức giá</option>
-                  <option value="duoi100">Dưới 100k</option>
-                  <option value="100-500">100k - 500k</option>
-                  <option value="tren500">Trên 500k</option>
-                </Form.Select>
-                <Form.Select size="sm" className="form-select-sm shadow-sm" style={{width:'150px'}} value={sortType} onChange={e=>setSortType(e.target.value)}>
-                  <option value="default">✨ Sắp xếp</option>
-                  <option value="price-asc">Giá thấp đến cao</option>
-                  <option value="price-desc">Giá cao đến thấp</option>
-                  <option value="name-az">Tên A-Z</option>
-                </Form.Select>
+              <div className="d-flex align-items-center gap-2 ms-md-auto">
+                <span className="fw-bold text-muted small text-uppercase">Sắp xếp:</span>
+                <select className="sort-select" value={sortType} onChange={e=>setSortType(e.target.value)}>
+                  <option value="default">Mặc định</option>
+                  <option value="price-asc">Giá: Thấp đến Cao</option>
+                  <option value="price-desc">Giá: Cao đến Thấp</option>
+                  <option value="name-az">Tên: A đến Z</option>
+                </select>
               </div>
             </div>
-            
+            {/* ----------------------------------------- */}
+
             {finalProducts.length === 0 ? (
               <Alert variant="info" className="text-center">Không tìm thấy sản phẩm phù hợp.</Alert>
             ) : (

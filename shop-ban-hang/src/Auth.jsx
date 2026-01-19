@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Form, Button, Container, Alert } from 'react-bootstrap';
+import { Form, Button, Container } from 'react-bootstrap';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom'; // Thêm Link
 import { toast } from 'react-toastify';
 
 function Auth() {
@@ -17,9 +17,7 @@ function Auth() {
     e.preventDefault();
     try {
       if (isRegister) {
-        // Đăng ký
         const userCred = await createUserWithEmailAndPassword(auth, email, password);
-        // Tạo dữ liệu user trong Firestore để tích điểm
         await setDoc(doc(db, "users", userCred.user.uid), {
           email: email,
           ten: name,
@@ -28,7 +26,6 @@ function Auth() {
         });
         toast.success("Đăng ký thành công! Chào mừng bạn.");
       } else {
-        // Đăng nhập
         await signInWithEmailAndPassword(auth, email, password);
         toast.success("Đăng nhập thành công!");
       }
@@ -41,6 +38,13 @@ function Auth() {
   return (
     <Container className="auth-container">
       <h3 className="text-center fw-bold text-success mb-4">{isRegister ? 'ĐĂNG KÝ THÀNH VIÊN' : 'ĐĂNG NHẬP'}</h3>
+      
+      {/* Thông báo giải thích cho khách */}
+      <div className="alert alert-info small text-center mb-4">
+        Đăng nhập để tích điểm và xem lịch sử đơn hàng.<br/>
+        (Vui lòng dùng Email để đăng ký)
+      </div>
+
       <Form onSubmit={handleAuth}>
         {isRegister && (
           <Form.Group className="mb-3">
@@ -50,7 +54,7 @@ function Auth() {
         )}
         <Form.Group className="mb-3">
           <Form.Label>Email</Form.Label>
-          <Form.Control type="email" required onChange={(e) => setEmail(e.target.value)} />
+          <Form.Control type="email" placeholder="VD: khachhang@gmail.com" required onChange={(e) => setEmail(e.target.value)} />
         </Form.Group>
         <Form.Group className="mb-3">
           <Form.Label>Mật khẩu</Form.Label>
@@ -60,11 +64,21 @@ function Auth() {
           {isRegister ? 'ĐĂNG KÝ NGAY' : 'ĐĂNG NHẬP'}
         </Button>
       </Form>
-      <div className="text-center mt-3">
+      <div className="text-center mt-3 mb-4">
         <span className="text-muted">{isRegister ? 'Đã có tài khoản? ' : 'Chưa có tài khoản? '}</span>
         <span className="text-primary fw-bold" style={{cursor:'pointer'}} onClick={() => setIsRegister(!isRegister)}>
           {isRegister ? 'Đăng nhập' : 'Đăng ký'}
         </span>
+      </div>
+      
+      {/* NÚT CHUYỂN SANG TRANG ADMIN */}
+      <div className="border-top pt-3 text-center">
+        <p className="small text-muted mb-2">Bạn là chủ cửa hàng?</p>
+        <Link to="/admin">
+          <Button variant="outline-dark" size="sm" className="fw-bold">
+            <i className="fa-solid fa-user-shield me-2"></i> Vào trang Quản Trị (Admin)
+          </Button>
+        </Link>
       </div>
     </Container>
   );
