@@ -174,3 +174,66 @@ img { max-width: 100%; height: auto; }
   color: #dc3545;
   white-space: nowrap;
 }
+/* ... (Giữ nguyên code cũ) ... */
+
+/* --- 10. PRODUCT SLIDER (THANH TRƯỢT SẢN PHẨM) --- */
+.product-slider-wrapper {
+  position: relative;
+}
+
+.product-scroll-container {
+  display: flex;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  gap: 15px; /* Khoảng cách giữa các sản phẩm */
+  padding: 10px 5px;
+  /* Ẩn thanh cuộn xấu xí đi */
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.product-scroll-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Thẻ sản phẩm trong thanh trượt (Kích thước nhỏ gọn hơn) */
+.slider-item {
+  min-width: 210px; /* Chiều rộng cố định, đủ nhỏ nhưng vẫn rõ */
+  width: 210px;
+  flex: 0 0 auto; /* Không cho co giãn */
+}
+
+/* Nút bấm qua lại (Trái/Phải) */
+.slider-nav-btn {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: white;
+  border: 1px solid #dee2e6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  color: #333;
+  transition: all 0.2s;
+}
+.slider-nav-btn:hover {
+  background: #198754;
+  color: white;
+  border-color: #198754;
+}
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+/* --- 11. TẤT CẢ SẢN PHẨM (LƯỚI) --- */
+/* Trên màn hình lớn, hiển thị 5 cột cho gọn (thay vì 4 như cũ) */
+@media (min-width: 1200px) {
+  .row-cols-xl-5 > * {
+    flex: 0 0 auto;
+    width: 20%;
+  }
+}
