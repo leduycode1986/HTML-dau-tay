@@ -237,3 +237,19 @@ img { max-width: 100%; height: auto; }
     width: 20%;
   }
 }
+/* ... Code cũ giữ nguyên ... */
+
+/* --- 12. BỘ LỌC & SẮP XẾP --- */
+.filter-bar { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #eee; }
+.form-select-sm { border-radius: 20px; }
+
+/* --- 13. AUTH (ĐĂNG NHẬP/ĐK) --- */
+.auth-container { max-width: 400px; margin: 50px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+
+/* --- 14. BACK TO TOP --- */
+.back-to-top { position: fixed; bottom: 80px; right: 20px; width: 40px; height: 40px; background: #333; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0; transition: 0.3s; z-index: 990; }
+.back-to-top.visible { opacity: 0.8; }
+.back-to-top:hover { opacity: 1; background: #198754; }
+
+/* --- 15. TOASTIFY CUSTOM --- */
+.Toastify__toast-body { font-family: 'Segoe UI', sans-serif; font-size: 14px; }

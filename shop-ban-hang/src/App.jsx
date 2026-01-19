@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
-import { db } from './firebase'; 
-import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { Badge, Button, Form, Container, Navbar, Nav, Row, Col } from 'react-bootstrap';
+import { db, auth } from './firebase'; // Thêm auth
+import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { onAuthStateChanged, signOut } from 'firebase/auth'; // Thêm hàm auth
+import { Badge, Button, Form, Container, Navbar, Nav, Dropdown } from 'react-bootstrap';
+import { ToastContainer, toast } from 'react-toastify'; // Import Toast
+import 'react-toastify/dist/ReactToastify.css'; // CSS Toast
 
 import Home from './Home';
 import ProductDetail from './ProductDetail';
 import Cart from './Cart';
 import Admin from './Admin';
+import Auth from './Auth'; // Import trang Auth
 
 function App() {
   const navigate = useNavigate();
@@ -20,8 +24,14 @@ function App() {
   const [tuKhoa, setTuKhoa] = useState('');
   const [shopConfig, setShopConfig] = useState({ 
     tenShop: 'MaiVang Shop', slogan: '', logo: '', 
-    diaChi: '', sdt: '', linkFacebook: '', copyright: '@2024 Thực phẩm Mai Vàng' 
+    diaChi: '', sdt: '', linkFacebook: '', copyright: '@2024 Thực phẩm Mai Vàng',
+    tyLeDiem: 1000 // Ví dụ 1000đ = 1 điểm (Mặc định)
   });
+
+  // User State
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userData, setUserData] = useState(null); // Chứa điểm tích lũy
+  const [showTopBtn, setShowTopBtn] = useState(false);
 
   useEffect(() => {
     const unsubSP = onSnapshot(collection(db, "sanPham"), (sn) => setDsSanPham(sn.docs.map(d => ({id: d.id, ...d.data()}))));
@@ -32,7 +42,25 @@ function App() {
     });
     const unsubDH = onSnapshot(collection(db, "donHang"), (sn) => setDsDonHang(sn.docs.map(d => ({id: d.id, ...d.data()}))));
     const unsubConfig = onSnapshot(doc(db, "cauHinh", "thongTinChung"), (doc) => { if (doc.exists()) setShopConfig(doc.data()); });
-    return () => { unsubSP(); unsubDM(); unsubDH(); unsubConfig(); };
+    
+    // Theo dõi đăng nhập
+    const unsubAuth = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
+      if (user) {
+        // Lấy thông tin điểm tích lũy
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) setUserData(userDoc.data());
+        else setUserData({ diemTichLuy: 0, ten: user.email }); // Fallback
+      } else {
+        setUserData(null);
+      }
+    });
+
+    // Sự kiện cuộn trang (Back to top)
+    const handleScroll = () => setShowTopBtn(window.scrollY > 300);
+    window.addEventListener('scroll', handleScroll);
+
+    return () => { unsubSP(); unsubDM(); unsubDH(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', handleScroll); };
   }, []);
 
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
@@ -41,33 +69,65 @@ function App() {
     const check = gioHang.find(i => i.id === sp.id);
     if (check) setGioHang(gioHang.map(i => i.id === sp.id ? {...i, soLuong: i.soLuong + 1} : i));
     else setGioHang([...gioHang, {...sp, soLuong: 1}]);
+    toast.success(`Đã thêm "${sp.ten}" vào giỏ!`, { autoClose: 2000, position: "bottom-right" });
   };
 
   const handleDatHang = async (khach) => {
     const tongTien = gioHang.reduce((t, s) => t + (s.giaBan || s.giaGoc) * s.soLuong, 0);
-    await addDoc(collection(db, "donHang"), { khachHang: khach, gioHang, tongTien, trangThai: 'Mới đặt', ngayDat: serverTimestamp() });
-    setGioHang([]); alert("Đặt hàng thành công!"); navigate('/');
+    
+    // Xử lý tích điểm nếu đã đăng nhập
+    if (currentUser && userData) {
+      const tyLe = parseInt(shopConfig.tyLeDiem) || 1000; // Mặc định 1000đ = 1 điểm
+      const diemCong = Math.floor(tongTien / tyLe);
+      
+      // Cập nhật điểm vào Firebase
+      await updateDoc(doc(db, "users", currentUser.uid), {
+        diemTichLuy: (userData.diemTichLuy || 0) + diemCong
+      });
+      // Cập nhật state local ngay lập tức
+      setUserData({ ...userData, diemTichLuy: (userData.diemTichLuy || 0) + diemCong });
+      toast.info(`Bạn được cộng ${diemCong} điểm tích lũy!`);
+    }
+
+    await addDoc(collection(db, "donHang"), { 
+      khachHang: khach, 
+      gioHang, 
+      tongTien, 
+      trangThai: 'Mới đặt', 
+      ngayDat: serverTimestamp(),
+      userId: currentUser ? currentUser.uid : null // Lưu ID người mua nếu có
+    });
+    setGioHang([]); 
+    toast.success("Đặt hàng thành công! Cảm ơn bạn.");
+    navigate('/');
   };
 
   const chinhSuaSoLuong = (id, kieu) => {
     setGioHang(gioHang.map(i => i.id === id ? {...i, soLuong: kieu === 'tang' ? i.soLuong + 1 : Math.max(1, i.soLuong - 1)} : i));
   };
-  const xoaSanPham = (id) => setGioHang(gioHang.filter(i => i.id !== id));
+  const xoaSanPham = (id) => {
+    setGioHang(gioHang.filter(i => i.id !== id));
+    toast.warning("Đã xóa sản phẩm khỏi giỏ.");
+  };
   
   const sanPhamHienThi = dsSanPham.filter(sp => sp.ten?.toLowerCase().includes(tuKhoa.toLowerCase()));
   const isAdminPage = location.pathname.startsWith('/admin');
 
   return (
     <div className="app-container d-flex flex-column min-vh-100">
+      {/* TOAST CONTAINER: Nơi hiển thị thông báo */}
+      <ToastContainer />
+      
+      {/* NÚT BACK TO TOP */}
+      <div className={`back-to-top ${showTopBtn ? 'visible' : ''}`} onClick={() => window.scrollTo({top:0, behavior:'smooth'})}>
+        <i className="fa-solid fa-arrow-up"></i>
+      </div>
+
       {!isAdminPage && (
         <Navbar bg="white" variant="light" expand="lg" className="sticky-top shadow-sm py-2 border-bottom">
           <Container>
             <Navbar.Brand as={Link} to="/" className="d-flex align-items-center">
-              {shopConfig.logo ? (
-                <img src={shopConfig.logo} alt="Logo" className="me-2 rounded shop-logo" />
-              ) : (
-                <span className="fs-2 me-2">🦁</span>
-              )}
+              {shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" className="me-2 rounded shop-logo" /> : <span className="fs-2 me-2">🦁</span>}
               <div className="d-flex flex-column">
                 <span className="fw-bold text-success text-uppercase" style={{fontSize: '1.1rem'}}>{shopConfig.tenShop}</span>
                 <span className="text-warning small fw-bold" style={{fontSize: '0.7rem'}}>⭐ {shopConfig.slogan} ⭐</span>
@@ -76,25 +136,40 @@ function App() {
             <Navbar.Toggle aria-controls="basic-navbar-nav" />
             <Navbar.Collapse id="basic-navbar-nav">
               <Nav className="w-100 d-flex justify-content-between align-items-center ms-lg-4 mt-3 mt-lg-0">
-                
-                {/* --- 1. Ô TÌM KIẾM CÓ NÚT + HOTLINE --- */}
                 <Form className="d-flex flex-grow-1 mx-lg-3">
                   <Form.Control type="search" placeholder="🔍 Tìm kiếm..." className="rounded-start border-1 bg-light px-3 py-2" value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)} />
                   <Button variant="success" className="rounded-end px-3"><i className="fa-solid fa-magnifying-glass"></i></Button>
                 </Form>
-                {shopConfig.sdt && (
-                  <div className="d-none d-xl-block ms-3 header-hotline">
-                    <i className="fa-solid fa-phone-volume me-1"></i> Hotline/Zalo:<br/>
-                    <span className="fs-6">{shopConfig.sdt}</span>
-                  </div>
-                )}
-                {/* --------------------------------------- */}
+                
+                {/* --- KHU VỰC TÀI KHOẢN & GIỎ --- */}
+                <div className="d-flex align-items-center gap-3">
+                  {currentUser ? (
+                    <Dropdown align="end">
+                      <Dropdown.Toggle variant="light" className="d-flex align-items-center gap-2 border-0 bg-transparent">
+                        <div className="text-end lh-1">
+                          <div className="fw-bold small">{userData?.ten || 'Thành viên'}</div>
+                          <div className="text-warning small fw-bold" style={{fontSize:'0.7rem'}}>💎 {userData?.diemTichLuy || 0} điểm</div>
+                        </div>
+                        <i className="fa-solid fa-circle-user fs-4 text-secondary"></i>
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu>
+                        <Dropdown.Item onClick={() => signOut(auth)}>Đăng xuất</Dropdown.Item>
+                      </Dropdown.Menu>
+                    </Dropdown>
+                  ) : (
+                    <Link to="/auth" className="text-decoration-none">
+                      <Button variant="outline-primary" size="sm" className="rounded-pill fw-bold">
+                        <i className="fa-regular fa-user me-1"></i> Đăng nhập
+                      </Button>
+                    </Link>
+                  )}
 
-                <Link to="/cart" className="text-decoration-none ms-lg-3 mt-3 mt-lg-0">
-                  <Button variant="success" className="rounded-pill fw-bold px-4 py-2 d-flex align-items-center gap-2 shadow-sm">
-                    <i className="fa-solid fa-cart-shopping"></i> Giỏ <Badge bg="warning" text="dark" pill>{gioHang.reduce((acc, item) => acc + item.soLuong, 0)}</Badge>
-                  </Button>
-                </Link>
+                  <Link to="/cart" className="text-decoration-none">
+                    <Button variant="success" className="rounded-pill fw-bold px-3 py-2 d-flex align-items-center gap-2 shadow-sm">
+                      <i className="fa-solid fa-cart-shopping"></i> <Badge bg="warning" text="dark" pill>{gioHang.reduce((acc, item) => acc + item.soLuong, 0)}</Badge>
+                    </Button>
+                  </Link>
+                </div>
               </Nav>
             </Navbar.Collapse>
           </Container>
@@ -106,7 +181,8 @@ function App() {
           <Route path="/" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
           <Route path="/product/:id" element={<ProductDetail dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
           <Route path="/category/:id" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
-          <Route path="/cart" element={<Cart gioHang={gioHang} dsDanhMuc={dsDanhMuc} handleDatHang={handleDatHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} />} />
+          <Route path="/cart" element={<Cart gioHang={gioHang} dsDanhMuc={dsDanhMuc} handleDatHang={handleDatHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} currentUser={currentUser} userData={userData} />} />
+          <Route path="/auth" element={<Auth />} /> {/* Route Auth mới */}
           
           <Route path="/admin" element={
             <Admin 
@@ -122,53 +198,23 @@ function App() {
         </Routes>
       </div>
 
-      {/* --- 2. FOOTER (CHÂN TRANG) --- */}
       {!isAdminPage && (
         <footer className="footer-section pt-5 mt-4">
-          <Container>
+          {/* ... (Giữ nguyên code Footer của bạn) ... */}
+           <Container>
             <Row className="pb-4">
               <Col md={4} className="mb-4">
-                <div className="d-flex align-items-center mb-3">
-                  {shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" style={{height:'40px', marginRight:'10px'}} /> : <span className="fs-3 me-2">🦁</span>}
-                  <span className="fw-bold text-success fs-5">{shopConfig.tenShop}</span>
-                </div>
+                <div className="d-flex align-items-center mb-3">{shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" style={{height:'40px', marginRight:'10px'}} /> : <span className="fs-3 me-2">🦁</span>}<span className="fw-bold text-success fs-5">{shopConfig.tenShop}</span></div>
                 <p className="text-muted small">{shopConfig.slogan}</p>
               </Col>
-              <Col md={4} className="mb-4">
-                <div className="footer-title">Thông tin liên hệ</div>
-                <div className="footer-info-item"><i className="fa-solid fa-location-dot mt-1 text-success"></i> <span>{shopConfig.diaChi || 'Đang cập nhật địa chỉ...'}</span></div>
-                <div className="footer-info-item"><i className="fa-solid fa-phone mt-1 text-success"></i> <span>{shopConfig.sdt || 'Đang cập nhật SĐT...'}</span></div>
-                <div className="footer-info-item"><i className="fa-brands fa-facebook mt-1 text-success"></i> <a href={shopConfig.linkFacebook || '#'} target="_blank" rel="noreferrer" className="text-dark">Fanpage Facebook</a></div>
-              </Col>
-              <Col md={4} className="mb-4">
-                <div className="footer-title">Hỗ trợ khách hàng</div>
-                <div className="footer-info-item"><i className="fa-solid fa-check text-success"></i> Hướng dẫn mua hàng</div>
-                <div className="footer-info-item"><i className="fa-solid fa-check text-success"></i> Chính sách đổi trả</div>
-                <div className="footer-info-item"><i className="fa-solid fa-check text-success"></i> Hình thức thanh toán</div>
-              </Col>
+              <Col md={4} className="mb-4"><div className="footer-title">Thông tin liên hệ</div><div className="footer-info-item"><i className="fa-solid fa-location-dot mt-1 text-success"></i> <span>{shopConfig.diaChi}</span></div><div className="footer-info-item"><i className="fa-solid fa-phone mt-1 text-success"></i> <span>{shopConfig.sdt}</span></div><div className="footer-info-item"><i className="fa-brands fa-facebook mt-1 text-success"></i> <a href={shopConfig.linkFacebook} target="_blank" rel="noreferrer" className="text-dark">Fanpage Facebook</a></div></Col>
+              <Col md={4} className="mb-4"><div className="footer-title">Hỗ trợ khách hàng</div><div className="footer-info-item"><i className="fa-solid fa-check text-success"></i> Hướng dẫn mua hàng</div><div className="footer-info-item"><i className="fa-solid fa-check text-success"></i> Chính sách đổi trả</div><div className="footer-info-item"><i className="fa-solid fa-check text-success"></i> Hình thức thanh toán</div></Col>
             </Row>
           </Container>
-          <div className="copyright-bar">
-            {shopConfig.copyright || '@2024 Thực phẩm Mai Vàng'}
-          </div>
+          <div className="copyright-bar">{shopConfig.copyright}</div>
         </footer>
       )}
-
-      {/* --- 3. NÚT CHAT ZALO & MESSENGER --- */}
-      {!isAdminPage && (
-        <div className="floating-chat-container">
-          {shopConfig.linkFacebook && (
-            <a href={shopConfig.linkFacebook} target="_blank" rel="noreferrer" className="chat-btn mess-btn" title="Chat Messenger">
-              <i className="fa-brands fa-facebook-messenger"></i>
-            </a>
-          )}
-          {shopConfig.sdt && (
-            <a href={`https://zalo.me/${shopConfig.sdt}`} target="_blank" rel="noreferrer" className="chat-btn zalo-btn" title="Chat Zalo">
-              <i className="fa-solid fa-comment-dots"></i>
-            </a>
-          )}
-        </div>
-      )}
+      {!isAdminPage && (<div className="floating-chat-container">{shopConfig.linkFacebook && (<a href={shopConfig.linkFacebook} target="_blank" rel="noreferrer" className="chat-btn mess-btn"><i className="fa-brands fa-facebook-messenger"></i></a>)}{shopConfig.sdt && (<a href={`https://zalo.me/${shopConfig.sdt}`} target="_blank" rel="noreferrer" className="chat-btn zalo-btn"><i className="fa-solid fa-comment-dots"></i></a>)}</div>)}
     </div>
   );
 }
