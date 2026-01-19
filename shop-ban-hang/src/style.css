@@ -110,3 +110,67 @@ img { max-width: 100%; height: auto; }
   border-radius: 12px;
   border: 1px solid #eee;
 }
+/* ... (Giữ nguyên code cũ) ... */
+
+/* --- 7. FOOTER (CHÂN TRANG) --- */
+.footer-section {
+  background-color: #f8f9fa;
+  color: #333;
+  font-size: 0.95rem;
+  border-top: 3px solid #198754;
+}
+.footer-title {
+  color: #198754;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+.footer-info-item {
+  margin-bottom: 10px;
+  display: flex;
+  align-items: start;
+  gap: 10px;
+}
+.copyright-bar {
+  background-color: #198754;
+  color: white;
+  text-align: center;
+  padding: 15px;
+  font-size: 0.9rem;
+}
+
+/* --- 8. NÚT CHAT NỔI (FLOATING WIDGETS) --- */
+.floating-chat-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.chat-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  transition: transform 0.2s;
+  text-decoration: none;
+}
+.chat-btn:hover { transform: scale(1.1); color: white; }
+.zalo-btn { background-color: #0068ff; } /* Màu xanh Zalo */
+.mess-btn { background-color: #0084ff; } /* Màu xanh Messenger */
+
+/* --- 9. HEADER HOTLINE --- */
+.header-hotline {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #dc3545;
+  white-space: nowrap;
+}
