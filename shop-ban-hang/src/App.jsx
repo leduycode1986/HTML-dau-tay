@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
-import { db, auth } from './firebase'; // Thêm auth
+import { db, auth } from './firebase'; 
 import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
-import { onAuthStateChanged, signOut } from 'firebase/auth'; // Thêm hàm auth
-import { Badge, Button, Form, Container, Navbar, Nav, Dropdown } from 'react-bootstrap';
-import { ToastContainer, toast } from 'react-toastify'; // Import Toast
-import 'react-toastify/dist/ReactToastify.css'; // CSS Toast
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+// --- ĐÃ SỬA DÒNG DƯỚI: Thêm Row, Col vào import ---
+import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col } from 'react-bootstrap';
+// --------------------------------------------------
+import { ToastContainer, toast } from 'react-toastify'; 
+import 'react-toastify/dist/ReactToastify.css'; 
 
 import Home from './Home';
 import ProductDetail from './ProductDetail';
 import Cart from './Cart';
 import Admin from './Admin';
-import Auth from './Auth'; // Import trang Auth
+import Auth from './Auth'; 
 
 function App() {
   const navigate = useNavigate();
@@ -25,12 +27,11 @@ function App() {
   const [shopConfig, setShopConfig] = useState({ 
     tenShop: 'MaiVang Shop', slogan: '', logo: '', 
     diaChi: '', sdt: '', linkFacebook: '', copyright: '@2024 Thực phẩm Mai Vàng',
-    tyLeDiem: 1000 // Ví dụ 1000đ = 1 điểm (Mặc định)
+    tyLeDiem: 1000 
   });
 
-  // User State
   const [currentUser, setCurrentUser] = useState(null);
-  const [userData, setUserData] = useState(null); // Chứa điểm tích lũy
+  const [userData, setUserData] = useState(null); 
   const [showTopBtn, setShowTopBtn] = useState(false);
 
   useEffect(() => {
@@ -43,20 +44,17 @@ function App() {
     const unsubDH = onSnapshot(collection(db, "donHang"), (sn) => setDsDonHang(sn.docs.map(d => ({id: d.id, ...d.data()}))));
     const unsubConfig = onSnapshot(doc(db, "cauHinh", "thongTinChung"), (doc) => { if (doc.exists()) setShopConfig(doc.data()); });
     
-    // Theo dõi đăng nhập
     const unsubAuth = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       if (user) {
-        // Lấy thông tin điểm tích lũy
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) setUserData(userDoc.data());
-        else setUserData({ diemTichLuy: 0, ten: user.email }); // Fallback
+        else setUserData({ diemTichLuy: 0, ten: user.email });
       } else {
         setUserData(null);
       }
     });
 
-    // Sự kiện cuộn trang (Back to top)
     const handleScroll = () => setShowTopBtn(window.scrollY > 300);
     window.addEventListener('scroll', handleScroll);
 
@@ -74,17 +72,12 @@ function App() {
 
   const handleDatHang = async (khach) => {
     const tongTien = gioHang.reduce((t, s) => t + (s.giaBan || s.giaGoc) * s.soLuong, 0);
-    
-    // Xử lý tích điểm nếu đã đăng nhập
     if (currentUser && userData) {
-      const tyLe = parseInt(shopConfig.tyLeDiem) || 1000; // Mặc định 1000đ = 1 điểm
+      const tyLe = parseInt(shopConfig.tyLeDiem) || 1000; 
       const diemCong = Math.floor(tongTien / tyLe);
-      
-      // Cập nhật điểm vào Firebase
       await updateDoc(doc(db, "users", currentUser.uid), {
         diemTichLuy: (userData.diemTichLuy || 0) + diemCong
       });
-      // Cập nhật state local ngay lập tức
       setUserData({ ...userData, diemTichLuy: (userData.diemTichLuy || 0) + diemCong });
       toast.info(`Bạn được cộng ${diemCong} điểm tích lũy!`);
     }
@@ -95,7 +88,7 @@ function App() {
       tongTien, 
       trangThai: 'Mới đặt', 
       ngayDat: serverTimestamp(),
-      userId: currentUser ? currentUser.uid : null // Lưu ID người mua nếu có
+      userId: currentUser ? currentUser.uid : null 
     });
     setGioHang([]); 
     toast.success("Đặt hàng thành công! Cảm ơn bạn.");
@@ -115,10 +108,7 @@ function App() {
 
   return (
     <div className="app-container d-flex flex-column min-vh-100">
-      {/* TOAST CONTAINER: Nơi hiển thị thông báo */}
       <ToastContainer />
-      
-      {/* NÚT BACK TO TOP */}
       <div className={`back-to-top ${showTopBtn ? 'visible' : ''}`} onClick={() => window.scrollTo({top:0, behavior:'smooth'})}>
         <i className="fa-solid fa-arrow-up"></i>
       </div>
@@ -140,8 +130,6 @@ function App() {
                   <Form.Control type="search" placeholder="🔍 Tìm kiếm..." className="rounded-start border-1 bg-light px-3 py-2" value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)} />
                   <Button variant="success" className="rounded-end px-3"><i className="fa-solid fa-magnifying-glass"></i></Button>
                 </Form>
-                
-                {/* --- KHU VỰC TÀI KHOẢN & GIỎ --- */}
                 <div className="d-flex align-items-center gap-3">
                   {currentUser ? (
                     <Dropdown align="end">
@@ -163,7 +151,6 @@ function App() {
                       </Button>
                     </Link>
                   )}
-
                   <Link to="/cart" className="text-decoration-none">
                     <Button variant="success" className="rounded-pill fw-bold px-3 py-2 d-flex align-items-center gap-2 shadow-sm">
                       <i className="fa-solid fa-cart-shopping"></i> <Badge bg="warning" text="dark" pill>{gioHang.reduce((acc, item) => acc + item.soLuong, 0)}</Badge>
@@ -182,8 +169,7 @@ function App() {
           <Route path="/product/:id" element={<ProductDetail dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
           <Route path="/category/:id" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
           <Route path="/cart" element={<Cart gioHang={gioHang} dsDanhMuc={dsDanhMuc} handleDatHang={handleDatHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} currentUser={currentUser} userData={userData} />} />
-          <Route path="/auth" element={<Auth />} /> {/* Route Auth mới */}
-          
+          <Route path="/auth" element={<Auth />} />
           <Route path="/admin" element={
             <Admin 
               dsSanPham={dsSanPham} 
@@ -200,7 +186,6 @@ function App() {
 
       {!isAdminPage && (
         <footer className="footer-section pt-5 mt-4">
-          {/* ... (Giữ nguyên code Footer của bạn) ... */}
            <Container>
             <Row className="pb-4">
               <Col md={4} className="mb-4">
