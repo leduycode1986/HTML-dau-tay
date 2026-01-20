@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Row, Col, Container, Alert, Button, Modal } from 'react-bootstrap';
+import { Row, Col, Container, Alert, Button, Form, Modal } from 'react-bootstrap';
 import Product from './Product';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { toSlug } from './App';
 
-// (Component Slider - Không cần thay đổi)
+// --- SLIDER RIÊNG ĐỂ TRÁNH GIẬT ---
 const ProductSlider = ({ title, products, icon, themVaoGio, setQuickViewSP }) => {
   const scrollRef = useRef(null);
   const scroll = (d) => { if(scrollRef.current) scrollRef.current.scrollLeft += d==='left'?-300:300; };
@@ -20,7 +20,6 @@ const ProductSlider = ({ title, products, icon, themVaoGio, setQuickViewSP }) =>
 function Home({ dsSanPham, dsDanhMuc, themVaoGio, shopConfig }) {
   const { id: categoryId } = useParams();
   const navigate = useNavigate();
-  const [openMenuId, setOpenMenuId] = useState(null);
   const [sortType, setSortType] = useState('default');
   const [minPrice, setMinPrice] = useState(''); const [maxPrice, setMaxPrice] = useState('');
   const [visibleCount, setVisibleCount] = useState(12);
@@ -28,6 +27,7 @@ function Home({ dsSanPham, dsDanhMuc, themVaoGio, shopConfig }) {
   const [quickViewSP, setQuickViewSP] = useState(null);
   const [recentProducts, setRecentProducts] = useState([]);
   const [showPopupAds, setShowPopupAds] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState(null); // Fix lỗi setOpenMenuId
 
   useEffect(() => {
     if(!shopConfig?.flashSaleEnd) return;
@@ -56,7 +56,7 @@ function Home({ dsSanPham, dsDanhMuc, themVaoGio, shopConfig }) {
         <Col xs={12} md={9} lg={10} className="p-3 p-md-4" style={{background: '#f4f6f9'}}>
           {!categoryId && (
             <>
-              {/* KHÔNG CÒN BANNER VÀ FLASH SALE Ở ĐÂY NỮA (ĐÃ CHUYỂN RA APP VÀ TRANG RIÊNG) */}
+              {/* Product Sliders */}
               <ProductSlider title="SẢN PHẨM BÁN CHẠY" icon="🔥" products={dsSanPham.filter(sp => sp.isBanChay)} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />
               <ProductSlider title="SẢN PHẨM MỚI" icon="✨" products={dsSanPham.filter(sp => sp.isMoi)} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />
               {recentProducts.length > 0 && (<div className="mt-5 border-top pt-4"><h5 className="text-secondary mb-3"><i className="fa-solid fa-clock-rotate-left me-2"></i> Sản phẩm bạn vừa xem</h5><Row className="g-2 g-md-3 row-cols-2 row-cols-md-4 row-cols-lg-6">{recentProducts.slice(0, 6).map(sp => <Col key={sp.id}><Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} /></Col>)}</Row></div>)}
@@ -68,7 +68,7 @@ function Home({ dsSanPham, dsDanhMuc, themVaoGio, shopConfig }) {
 
       <Modal show={!!quickViewSP} onHide={() => setQuickViewSP(null)} size="lg" centered><Modal.Body className="p-0">{quickViewSP && (<Row className="g-0"><Col md={5}><img src={quickViewSP.anh} className="w-100 h-100 object-fit-cover" alt="" style={{minHeight: '300px'}} /></Col><Col md={7} className="p-4 d-flex flex-column justify-content-center"><h3 className="fw-bold text-success mb-2">{quickViewSP.ten}</h3><div className="mb-3"><span className="h4 text-danger fw-bold me-3">{quickViewSP.giaBan?.toLocaleString()} ¥</span>{quickViewSP.phanTramGiam > 0 && <span className="text-muted text-decoration-line-through">{quickViewSP.giaGoc?.toLocaleString()} ¥</span>}</div><div className="mb-4 text-muted small" dangerouslySetInnerHTML={{__html: quickViewSP.moTa?.substring(0, 150) + '...'}}></div><div className="d-flex gap-2"><Button variant="success" className="flex-grow-1 fw-bold rounded-pill" onClick={()=>{themVaoGio(quickViewSP); setQuickViewSP(null)}}>THÊM VÀO GIỎ</Button><Button variant="outline-secondary" onClick={()=>setQuickViewSP(null)}>Đóng</Button></div><Link to={`/san-pham/${toSlug(quickViewSP.ten)}/${quickViewSP.id}`} className="mt-3 text-center small text-primary">Xem chi tiết đầy đủ</Link></Col></Row>)}</Modal.Body></Modal>
 
-      {/* POPUP SĂN DEAL (LIÊN KẾT ĐẾN TRANG FLASH SALE) */}
+      {/* POPUP QUẢNG CÁO */}
       <Modal show={showPopupAds} onHide={()=>setShowPopupAds(false)} size="md" centered className="ads-modal">
         <Modal.Header closeButton style={{border: 'none', paddingBottom: 0}} />
         <Modal.Body className="text-center pt-0 pb-4 px-4">
@@ -76,7 +76,6 @@ function Home({ dsSanPham, dsDanhMuc, themVaoGio, shopConfig }) {
           <h4 className="fw-bold text-danger mb-2">FLASH SALE ĐANG DIỄN RA!</h4>
           <p className="text-muted mb-4">Săn ngay kẻo lỡ - Giá cực sốc</p>
           <div className="countdown-box justify-content-center mb-4 gap-2"><div className="countdown-item bg-danger text-white fs-4 p-2">{String(timeLeft.h).padStart(2,'0')}</div> : <div className="countdown-item bg-danger text-white fs-4 p-2">{String(timeLeft.m).padStart(2,'0')}</div> : <div className="countdown-item bg-danger text-white fs-4 p-2">{String(timeLeft.s).padStart(2,'0')}</div></div>
-          {/* CHUYỂN HƯỚNG SANG TRANG FLASH SALE */}
           <Button variant="success" size="lg" className="w-100 rounded-pill fw-bold shadow" onClick={()=>{setShowPopupAds(false); navigate('/flash-sale')}}>SĂN DEAL NGAY</Button>
         </Modal.Body>
       </Modal>
