@@ -11,6 +11,10 @@ function Member() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [passForm, setPassForm] = useState({ newPass: '', confirmPass: '' });
+  
+  // Form thông tin cá nhân
+  const [infoForm, setInfoForm] = useState({ ten: '', sdt: '', diachi: '' });
+
   const navigate = useNavigate();
   const user = auth.currentUser;
 
@@ -18,21 +22,41 @@ function Member() {
     if (!user) { navigate('/auth'); return; }
 
     const fetchData = async () => {
-      // 1. Lấy thông tin user & điểm
       const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (userDoc.exists()) setUserData(userDoc.data());
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        setUserData(data);
+        // Nạp dữ liệu vào form
+        setInfoForm({ ten: data.ten || '', sdt: data.sdt || '', diachi: data.diachi || '' });
+      }
 
-      // 2. Lấy danh sách đơn hàng của user này
       const q = query(collection(db, "donHang"), where("userId", "==", user.uid));
       const querySnapshot = await getDocs(q);
       const userOrders = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Sắp xếp đơn mới nhất lên đầu
       userOrders.sort((a, b) => b.ngayDat - a.ngayDat);
       setOrders(userOrders);
       setLoading(false);
     };
     fetchData();
   }, [user, navigate]);
+
+  // Cập nhật thông tin cá nhân
+  const handleUpdateInfo = async () => {
+    try {
+      await updateDoc(doc(db, "users", user.uid), {
+        ten: infoForm.ten,
+        sdt: infoForm.sdt,
+        diachi: infoForm.diachi
+      });
+      // Cập nhật tên hiển thị trên Auth (nếu đổi tên)
+      await updateProfile(user, { displayName: infoForm.ten });
+      
+      setUserData({ ...userData, ...infoForm });
+      toast.success("Cập nhật thông tin thành công!");
+    } catch (error) {
+      toast.error("Lỗi: " + error.message);
+    }
+  };
 
   const handleChangePass = async () => {
     if (passForm.newPass !== passForm.confirmPass) return toast.error("Mật khẩu không khớp!");
@@ -42,7 +66,7 @@ function Member() {
       toast.success("Đổi mật khẩu thành công!");
       setPassForm({ newPass: '', confirmPass: '' });
     } catch (error) {
-      toast.error("Lỗi: " + error.message); // Thường do chưa đăng nhập lại gần đây
+      toast.error("Lỗi: " + error.message);
     }
   };
 
@@ -60,6 +84,8 @@ function Member() {
             </div>
             <h5 className="fw-bold">{userData?.ten}</h5>
             <p className="text-muted small">{user.email}</p>
+            {userData?.sdt && <p className="mb-1"><i className="fa-solid fa-phone me-2 text-success"></i>{userData.sdt}</p>}
+            
             <div className="bg-warning bg-opacity-25 p-3 rounded mt-2">
               <div className="small text-muted text-uppercase fw-bold">Điểm tích lũy</div>
               <div className="display-6 fw-bold text-warning">💎 {userData?.diemTichLuy || 0}</div>
@@ -70,8 +96,29 @@ function Member() {
         <Col md={8}>
           <Card className="border-0 shadow-sm">
             <Card.Body>
-              <Tabs defaultActiveKey="orders" className="mb-4">
-                <Tab eventKey="orders" title={`📦 ĐƠN HÀNG CỦA TÔI (${orders.length})`}>
+              <Tabs defaultActiveKey="info" className="mb-4">
+                
+                {/* TAB 1: THÔNG TIN CÁ NHÂN */}
+                <Tab eventKey="info" title="📝 THÔNG TIN CÁ NHÂN">
+                  <Form>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Họ và tên</Form.Label>
+                      <Form.Control type="text" value={infoForm.ten} onChange={e => setInfoForm({...infoForm, ten: e.target.value})} />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Số điện thoại</Form.Label>
+                      <Form.Control type="text" value={infoForm.sdt} onChange={e => setInfoForm({...infoForm, sdt: e.target.value})} placeholder="Thêm số điện thoại để tiện giao hàng" />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Địa chỉ mặc định</Form.Label>
+                      <Form.Control as="textarea" rows={2} value={infoForm.diachi} onChange={e => setInfoForm({...infoForm, diachi: e.target.value})} placeholder="Địa chỉ giao hàng của bạn" />
+                    </Form.Group>
+                    <Button variant="success" onClick={handleUpdateInfo}>Lưu thay đổi</Button>
+                  </Form>
+                </Tab>
+
+                {/* TAB 2: ĐƠN HÀNG */}
+                <Tab eventKey="orders" title={`📦 LỊCH SỬ MUA HÀNG`}>
                   {orders.length === 0 ? (
                     <p className="text-center text-muted py-4">Bạn chưa có đơn hàng nào.</p>
                   ) : (
@@ -93,6 +140,7 @@ function Member() {
                   )}
                 </Tab>
 
+                {/* TAB 3: ĐỔI PASS */}
                 <Tab eventKey="account" title="🔒 ĐỔI MẬT KHẨU">
                   <Form>
                     <Form.Group className="mb-3">
@@ -103,7 +151,7 @@ function Member() {
                       <Form.Label>Nhập lại mật khẩu mới</Form.Label>
                       <Form.Control type="password" value={passForm.confirmPass} onChange={e => setPassForm({...passForm, confirmPass: e.target.value})} />
                     </Form.Group>
-                    <Button variant="success" onClick={handleChangePass}>Cập nhật mật khẩu</Button>
+                    <Button variant="danger" onClick={handleChangePass}>Cập nhật mật khẩu</Button>
                   </Form>
                 </Tab>
               </Tabs>

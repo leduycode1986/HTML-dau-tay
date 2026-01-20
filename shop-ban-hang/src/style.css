@@ -320,3 +320,22 @@ img { max-width: 100%; height: auto; }
   border-color: #198754;
   outline: none;
 }
+/* ... Code cũ giữ nguyên ... */
+
+/* --- 17. MENU TRƯỢT THEO (STICKY SIDEBAR) --- */
+.sidebar-main {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  /* Dòng quan trọng để menu trượt theo */
+  position: sticky;
+  top: 90px; /* Cách mép trên 90px (để không đè lên Header) */
+  z-index: 10;
+  height: fit-content; /* Chiều cao vừa đủ nội dung */
+  max-height: calc(100vh - 100px); /* Nếu menu dài quá thì cuộn bên trong */
+  overflow-y: auto;
+}
+
+/* Tùy chỉnh thanh cuộn cho menu nếu quá dài */
+.sidebar-main::-webkit-scrollbar { width: 5px; }
+.sidebar-main::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }

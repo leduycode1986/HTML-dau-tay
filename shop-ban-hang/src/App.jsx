@@ -12,13 +12,12 @@ import ProductDetail from './ProductDetail';
 import Cart from './Cart';
 import Admin from './Admin';
 import Auth from './Auth';
-import Member from './Member'; // <--- IMPORT MỚI
+import Member from './Member';
 
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // ... (Giữ nguyên các State cũ)
   const [dsSanPham, setDsSanPham] = useState([]);
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [dsDonHang, setDsDonHang] = useState([]);
@@ -32,7 +31,14 @@ function App() {
   const [userData, setUserData] = useState(null); 
   const [showTopBtn, setShowTopBtn] = useState(false);
 
-  // ... (Giữ nguyên các useEffect cũ)
+  // --- HÀM ĐĂNG XUẤT (ĐÃ SỬA) ---
+  const handleLogout = async () => {
+    await signOut(auth);
+    setUserData(null);
+    navigate('/'); // Quay về trang chủ
+    toast.info("Đã đăng xuất.");
+  };
+
   useEffect(() => {
     const unsubSP = onSnapshot(collection(db, "sanPham"), (sn) => setDsSanPham(sn.docs.map(d => ({id: d.id, ...d.data()}))));
     const unsubDM = onSnapshot(collection(db, "danhMuc"), (sn) => {
@@ -59,7 +65,6 @@ function App() {
 
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
 
-  // ... (Giữ nguyên các hàm themVaoGio, handleDatHang, chinhSuaSoLuong, xoaSanPham)
   const themVaoGio = (sp) => {
     const check = gioHang.find(i => i.id === sp.id);
     if (check) setGioHang(gioHang.map(i => i.id === sp.id ? {...i, soLuong: i.soLuong + 1} : i));
@@ -106,8 +111,8 @@ function App() {
                         <div className="text-end lh-1"><div className="fw-bold small">{userData?.ten || 'Thành viên'}</div><div className="text-warning small fw-bold" style={{fontSize:'0.7rem'}}>💎 {userData?.diemTichLuy || 0} điểm</div></div><i className="fa-solid fa-circle-user fs-4 text-secondary"></i>
                       </Dropdown.Toggle>
                       <Dropdown.Menu>
-                        <Dropdown.Item as={Link} to="/member">Quản lý tài khoản</Dropdown.Item> {/* Link vào Member */}
-                        <Dropdown.Item onClick={() => signOut(auth)}>Đăng xuất</Dropdown.Item>
+                        <Dropdown.Item as={Link} to="/member">Quản lý tài khoản</Dropdown.Item>
+                        <Dropdown.Item onClick={handleLogout}>Đăng xuất</Dropdown.Item>
                       </Dropdown.Menu>
                     </Dropdown>
                   ) : (
@@ -128,7 +133,7 @@ function App() {
           <Route path="/category/:id" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
           <Route path="/cart" element={<Cart gioHang={gioHang} dsDanhMuc={dsDanhMuc} handleDatHang={handleDatHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} currentUser={currentUser} userData={userData} />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/member" element={<Member />} /> {/* <-- ROUTE MỚI */}
+          <Route path="/member" element={<Member />} />
           
           <Route path="/admin" element={
             <Admin 
