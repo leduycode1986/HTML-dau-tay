@@ -3,9 +3,9 @@ import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
 import { db, auth } from './firebase'; 
 import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-// --- ĐÃ THÊM LẠI ROW, COL VÀO ĐÂY ĐỂ HẾT LỖI TRẮNG TRANG ---
+// --- QUAN TRỌNG: ĐÃ THÊM ROW, COL ĐỂ KHÔNG BỊ LỖI TRẮNG TRANG ---
 import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col } from 'react-bootstrap';
-// ------------------------------------------------------------
+// ----------------------------------------------------------------
 import { ToastContainer, toast } from 'react-toastify'; 
 import Slider from "react-slick"; 
 import 'react-toastify/dist/ReactToastify.css'; 
@@ -79,7 +79,7 @@ function App() {
 
       {!isAdminPage && (
         <>
-          {/* --- TOP BAR --- */}
+          {/* TOP BAR */}
           <div className="top-bar-notification">
             <div className="marquee-text">{shopConfig.topBarText || "Nhận giao hàng trong bán kính 5 km"}</div>
           </div>
@@ -102,15 +102,11 @@ function App() {
             </Container>
           </Navbar>
 
-          {/* --- BANNER TOÀN TRANG --- */}
+          {/* BANNER TOÀN TRANG */}
           {banners.length > 0 && (
             <div className="banner-global-container">
               <Slider {...sliderSettings}>
-                {banners.map(b => (
-                  <div key={b.id}>
-                    {b.link ? (<Link to={b.link}><img src={b.img} alt="Banner" className="banner-img" /></Link>) : (<img src={b.img} alt="Banner" className="banner-img" />)}
-                  </div>
-                ))}
+                {banners.map(b => (<div key={b.id}>{b.link ? (<Link to={b.link}><img src={b.img} alt="Banner" className="banner-img" /></Link>) : (<img src={b.img} alt="Banner" className="banner-img" />)}</div>))}
               </Slider>
             </div>
           )}
@@ -145,7 +141,6 @@ function App() {
         <footer className="footer-section pt-5 mt-4">
            <Container>
             <Row className="pb-4">
-              {/* --- ĐÃ THÊM LẠI ROW/COL ĐỂ TRÁNH LỖI --- */}
               <Col md={4} className="mb-4"><div className="d-flex align-items-center mb-3"><span className="fw-bold text-success fs-5 text-uppercase">{shopConfig.tenShop}</span></div><p className="text-muted small" style={{textAlign: 'justify'}}>{shopConfig.gioiThieu || 'Chuyên cung cấp thực phẩm tươi ngon...'}</p></Col>
               <Col md={4} className="mb-4"><div className="footer-title">Thông tin liên hệ</div><div className="footer-info-item"><i className="fa-solid fa-location-dot mt-1 text-success"></i> <span>{shopConfig.diaChi}</span></div><div className="footer-info-item"><i className="fa-solid fa-phone mt-1 text-success"></i> <span>{shopConfig.sdt}</span></div><div className="footer-info-item"><i className="fa-brands fa-facebook mt-1 text-success"></i> <a href={shopConfig.linkFacebook} target="_blank" rel="noreferrer" className="text-dark">Fanpage Facebook</a></div></Col>
               <Col md={4} className="mb-4"><div className="footer-title">Hỗ trợ khách hàng</div><div className="footer-info-item"><i className="fa-solid fa-check text-success"></i> Hướng dẫn mua hàng</div><div className="footer-info-item"><i className="fa-solid fa-check text-success"></i> Chính sách đổi trả</div>{shopConfig.zalo && <div className="footer-info-item"><i className="fa-solid fa-comment-dots text-primary"></i> Zalo: {shopConfig.zalo}</div>}</Col>

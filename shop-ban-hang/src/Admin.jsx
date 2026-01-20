@@ -9,12 +9,13 @@ import { db } from './firebase';
 const ICON_LIST = ['🏠','📦','🥩','🥦','🍎','🍞','🥫','❄️','🍬','🍫','🍪','🍦','🍺','🥤','🥛','🧃','🧺','🛋️','🍳','🧹','🧽','🧼','🧴','🪥','💄','🔖','⚡','🔥','🎉','🎁'];
 const NO_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg";
 
+// THÊM GIÁ TRỊ MẶC ĐỊNH CHO PROPS => FIX LỖI TRẮNG TRANG
 function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, dsDonHang = [], handleUpdateStatusOrder, handleDeleteOrder }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginInput, setLoginInput] = useState({ user: '', pass: '' });
   const [showPass, setShowPass] = useState(false);
 
-  // --- LOGIC FIX LỖI ĐĂNG NHẬP ---
+  // FIX LỖI ĐĂNG NHẬP: Tự động tương thích mật khẩu cũ và mới
   const [adminConfig] = useState(() => {
     try {
       const s = JSON.parse(localStorage.getItem('adminConfig') || '{}');
@@ -23,6 +24,7 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
   });
 
   const [shopConfig, setShopConfig] = useState({ tenShop:'', slogan:'', logo:'', diaChi:'', sdt:'', zalo:'', linkFacebook:'', copyright:'', tyLeDiem:1000, gioiThieu:'', flashSaleEnd:'', topBarText:'' });
+  
   const [dsBanner, setDsBanner] = useState([]);
   const [dsCoupon, setDsCoupon] = useState([]);
   const [dsShip, setDsShip] = useState([]); 
@@ -31,8 +33,8 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
 
   const [modal, setModal] = useState({ sp: false, dm: false, order: false, user: false });
   const [editData, setEditData] = useState({ sp: null, dm: null, user: null, order: null });
-  const [formDataSP, setFormDataSP] = useState({});
-  const [formDM, setFormDM] = useState({});
+  const [formDataSP, setFormDataSP] = useState({ ten:'', giaGoc:'', phanTramGiam:0, giaBan:'', donVi:'Cái', moTa:'', anh:'', phanLoai:'', isMoi:false, isKhuyenMai:false, isBanChay:false, isFlashSale:false });
+  const [formDM, setFormDM] = useState({ ten:'', icon:'', parent:'', order:'' });
   const [formBanner, setFormBanner] = useState({ img:'', link:'' });
   const [formCoupon, setFormCoupon] = useState({ code:'', giamGia:0 });
   const [formShip, setFormShip] = useState({ khuVuc:'', phi:0 });
