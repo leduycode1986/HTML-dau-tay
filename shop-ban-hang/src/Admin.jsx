@@ -6,44 +6,7 @@ import 'react-quill/dist/quill.snow.css';
 import { doc, getDoc, setDoc, collection, onSnapshot, deleteDoc, updateDoc, addDoc } from 'firebase/firestore'; 
 import { db } from './firebase'; 
 
-// --- ĐÃ CẬP NHẬT: DANH SÁCH ICON ĐẦY ĐỦ (CŨ + MỚI) ---
-const ICON_LIST = [
-  // 1. Thực phẩm tươi sống (Thịt, Cá, Hải sản)
-  '🥩', '🍗', '🍖', '🐟', '🦐', '🦑', '🦀',
-  
-  // 2. Rau, Củ, Trái cây
-  '🥦', '🥬', '🥒', '🥕', '🌽', '🍅', '🍆', '🥔',
-  '🍎', '🍌', '🍇', '🍊', '🍓', '🍉', '🥥',
-  
-  // 3. Gạo, Bột, Đồ khô, Bánh mì
-  '🍚', '🌾', '🍞', '🥖', '🥨', '🥜', '🌰',
-  
-  // 4. Gia vị, Dầu ăn
-  '🧂', '🍶', '🌶️', '🧄', '🧅', '🍋',
-  
-  // 5. Mì, Miến, Cháo, Phở, Chế biến sẵn
-  '🍜', '🍝', '🍲', '🥘', '🌭', '🥓', '🍳', '🥫', '🍱',
-  
-  // 6. Sữa, Kem, Sữa chua (Cũ + Mới: Hộp sữa)
-  '🥛', '🍼', '🧀', '🍦', '🍧', '🍨', '🥣', '🧃',
-  
-  // 7. Đồ uống, Bia, Giải khát (Mới)
-  '🍺', '🍻', '🍷', '🥤', '☕', '🍵',
-  
-  // 8. Bánh kẹo, Ăn vặt (Mới)
-  '🍬', '🍭', '🍫', '🍪', '🍰', '🍿',
-  
-  // 9. Đồ gia dụng, Vệ sinh nhà cửa (Mới)
-  '🏠', '🧺', '🧹', '🧽', '🧼', '🪣', '🛋️', '🛏️', '🚪',
-  
-  // 10. Chăm sóc cá nhân (Mới)
-  '🧴', '🪥', '🛁', '💄', '💍', 
-  
-  // 11. Khác (Đông lạnh, Sale, Hot...)
-  '❄️', '🧊', '📦', '🔖', '⚡', '🔥', '🎉', '🎁'
-];
-// -----------------------------------------------------
-
+const ICON_LIST = ['🏠', '📦', '🥩', '🥦', '🍎', '🍞', '🥫', '❄️', '🍬', '🍫', '🍪', '🍦', '🍺', '🥤', '🥛', '🧃', '🧺', '🛋️', '🍳', '🧹', '🧽', '🧼', '🧴', '🪥', '💄', '🔖', '⚡', '🔥', '🎉', '🎁'];
 const NO_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg";
 
 function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsDonHang, handleUpdateStatusOrder, handleDeleteOrder }) {
@@ -73,9 +36,13 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
   const [showModalUser, setShowModalUser] = useState(false);
   const [userPoint, setUserPoint] = useState(0);
 
+  // --- CẬP NHẬT STATE: THÊM TRƯỜNG ZALO ---
   const [shopConfig, setShopConfig] = useState({ 
-    tenShop: '', slogan: '', logo: '', diaChi: '', sdt: '', linkFacebook: '', copyright: '', tyLeDiem: 1000, gioiThieu: '' 
+    tenShop: '', slogan: '', logo: '', diaChi: '', 
+    sdt: '', zalo: '', // <-- Đã tách riêng sdt (hotline) và zalo
+    linkFacebook: '', copyright: '', tyLeDiem: 1000, gioiThieu: '' 
   });
+  // ----------------------------------------
   
   const [showModalOrder, setShowModalOrder] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -130,7 +97,6 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
 
   return (
     <div className="admin-main-container">
-      {/* --- MENU ADMIN CÓ HOTLINE --- */}
       <div className="admin-navbar">
         <h4>QUẢN TRỊ SHOP</h4> 
         <div className="d-flex align-items-center gap-3">
@@ -158,9 +124,24 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
                     <Col md={6}><Form.Group className="mb-3"><Form.Label className="fw-bold">Slogan</Form.Label><Form.Control value={shopConfig.slogan} onChange={e=>setShopConfig({...shopConfig, slogan:e.target.value})}/></Form.Group></Col>
                     <Col md={12}><Form.Group className="mb-3"><Form.Label className="fw-bold">Giới thiệu (Footer)</Form.Label><Form.Control as="textarea" rows={2} value={shopConfig.gioiThieu} onChange={e=>setShopConfig({...shopConfig, gioiThieu:e.target.value})}/></Form.Group></Col>
                     <Col md={12}><Form.Group className="mb-3"><Form.Label className="fw-bold">Địa chỉ</Form.Label><Form.Control value={shopConfig.diaChi} onChange={e=>setShopConfig({...shopConfig, diaChi:e.target.value})}/></Form.Group></Col>
-                    <Col md={6}><Form.Group className="mb-3"><Form.Label className="fw-bold">Hotline / Zalo</Form.Label><Form.Control value={shopConfig.sdt} onChange={e=>setShopConfig({...shopConfig, sdt:e.target.value})}/></Form.Group></Col>
+                    
+                    {/* --- ĐÃ TÁCH RIÊNG: HOTLINE VÀ ZALO --- */}
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-bold text-danger">Hotline (Gọi điện)</Form.Label>
+                        <Form.Control placeholder="090..." value={shopConfig.sdt} onChange={e=>setShopConfig({...shopConfig, sdt:e.target.value})}/>
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-bold text-primary">Số Zalo (Chat)</Form.Label>
+                        <Form.Control placeholder="090..." value={shopConfig.zalo} onChange={e=>setShopConfig({...shopConfig, zalo:e.target.value})}/>
+                      </Form.Group>
+                    </Col>
+                    {/* -------------------------------------- */}
+
                     <Col md={6}><Form.Group className="mb-3"><Form.Label className="fw-bold">Tỷ lệ điểm (¥ đổi 1 điểm)</Form.Label><Form.Control type="number" value={shopConfig.tyLeDiem} onChange={e=>setShopConfig({...shopConfig, tyLeDiem:e.target.value})}/></Form.Group></Col>
-                    <Col md={12}><Form.Group className="mb-3"><Form.Label className="fw-bold">Link Facebook</Form.Label><Form.Control value={shopConfig.linkFacebook} onChange={e=>setShopConfig({...shopConfig, linkFacebook:e.target.value})}/></Form.Group></Col>
+                    <Col md={6}><Form.Group className="mb-3"><Form.Label className="fw-bold">Link Facebook</Form.Label><Form.Control value={shopConfig.linkFacebook} onChange={e=>setShopConfig({...shopConfig, linkFacebook:e.target.value})}/></Form.Group></Col>
                   </Row>
                   <Button variant="success" onClick={luuCauHinh}>💾 LƯU CẤU HÌNH</Button>
                 </Col>
@@ -168,6 +149,7 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
             </div>
           </Tab>
 
+          {/* ... (Các Tab khác: Banner, Voucher, SP, Menu, Order, User giữ nguyên như cũ) ... */}
           <Tab eventKey="banner" title="🖼️ BANNER"><div className="bg-white p-3 rounded"><Row className="align-items-end mb-3"><Col md={5}><Form.Group><Form.Label className="fw-bold">Chọn ảnh Banner <span className="text-danger small">(1200 x 400 px)</span></Form.Label><Form.Control type="file" onChange={e=>handleUpload(e,'BANNER')}/></Form.Group></Col><Col md={5}><Form.Group><Form.Label className="fw-bold">Link (Tùy chọn)</Form.Label><Form.Control placeholder="/product/..." value={formBanner.link} onChange={e=>setFormBanner({...formBanner, link:e.target.value})}/></Form.Group></Col><Col md={2}><Button variant="primary" className="w-100" onClick={addBanner} disabled={!formBanner.img}>+ Thêm</Button></Col></Row><div className="d-flex flex-wrap gap-3">{dsBanner.map(b => (<div key={b.id} className="position-relative border rounded shadow-sm" style={{width:250}}><img src={b.img} alt="" className="w-100 rounded-top" style={{height: 100, objectFit:'cover'}} /><Button variant="danger" size="sm" className="position-absolute top-0 end-0 m-1" onClick={()=>delBanner(b.id)}>X</Button><div className="p-2 small bg-light text-truncate border-top">{b.link || 'Không có link'}</div></div>))}</div></div></Tab>
           <Tab eventKey="marketing" title="🎟️ VOUCHER & SHIP"><Row><Col md={6} className="border-end p-3"><h5 className="text-success fw-bold border-bottom pb-2">MÃ GIẢM GIÁ</h5><div className="d-flex gap-2 mb-3"><Form.Control placeholder="Mã (VD: SALE10)" value={formCoupon.code} onChange={e=>setFormCoupon({...formCoupon, code:e.target.value.toUpperCase()})}/><Form.Control type="number" placeholder="Giảm (¥)" value={formCoupon.giamGia} onChange={e=>setFormCoupon({...formCoupon, giamGia:e.target.value})}/> <Button onClick={addCoupon}>Thêm</Button></div><Table striped bordered hover size="sm"><thead><tr><th>Mã</th><th>Giảm</th><th>Xóa</th></tr></thead><tbody>{dsCoupon.map(c=>(<tr key={c.id}><td className="fw-bold text-primary">{c.code}</td><td className="text-danger fw-bold">{parseInt(c.giamGia).toLocaleString()} ¥</td><td><Button size="sm" variant="danger" onClick={()=>delCoupon(c.id)}>X</Button></td></tr>))}</tbody></Table></Col><Col md={6} className="p-3"><h5 className="text-primary fw-bold border-bottom pb-2">PHÍ SHIP (THEO KHU VỰC)</h5><div className="d-flex gap-2 mb-3"><Form.Control placeholder="Khu vực" value={formShip.khuVuc} onChange={e=>setFormShip({...formShip, khuVuc:e.target.value})}/><Form.Control type="number" placeholder="Phí ship (¥)" value={formShip.phi} onChange={e=>setFormShip({...formShip, phi:e.target.value})}/> <Button onClick={addShip}>Thêm</Button></div><Table striped bordered hover size="sm"><thead><tr><th>Khu vực</th><th>Phí Ship</th><th>Xóa</th></tr></thead><tbody>{dsShip.map(s=>(<tr key={s.id}><td>{s.khuVuc}</td><td className="text-danger fw-bold">{parseInt(s.phi).toLocaleString()} ¥</td><td><Button size="sm" variant="danger" onClick={()=>delShip(s.id)}>X</Button></td></tr>))}</tbody></Table></Col></Row></Tab>
           <Tab eventKey="products" title="📦 SẢN PHẨM"><Button variant="primary" className="my-3 fw-bold shadow-sm" onClick={()=>{setEditingSP(null); setFormDataSP({ ten: '', giaGoc: '', phanTramGiam: 0, giaBan: '', donVi: 'Cái', soLuong: 10, moTa: '', anh: '', phanLoai: '', isMoi: false, isKhuyenMai: false, isBanChay: false }); setShowModalSP(true)}}>+ THÊM SẢN PHẨM</Button><div className="table-responsive"><Table hover bordered className="align-middle bg-white shadow-sm"><thead className="bg-light"><tr><th style={{width:50}}>Ảnh</th><th>Tên sản phẩm</th><th>Danh mục</th><th>Giá bán</th><th>Trạng thái</th><th style={{width:120}}>Thao tác</th></tr></thead><tbody>{dsSanPham.map(sp=>{const tenDM = dsDanhMuc.find(d=>d.id===sp.phanLoai)?.ten || '---';return (<tr key={sp.id}><td><img src={sp.anh || NO_IMAGE} width="50" height="50" style={{objectFit:'cover', borderRadius:5}} alt=""/></td><td className="fw-bold">{sp.ten}</td><td><Badge bg="info">{tenDM}</Badge></td><td className="text-danger fw-bold">{sp.giaBan?.toLocaleString()} ¥</td><td>{sp.isMoi && <Badge bg="success" className="me-1">New</Badge>}{sp.isBanChay && <Badge bg="danger" className="me-1">Hot</Badge>}{sp.isKhuyenMai && <Badge bg="warning" text="dark">Sale</Badge>}</td><td><Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditingSP(sp); setFormDataSP(sp); setShowModalSP(true)}}><i className="fa-solid fa-pen"></i></Button><Button size="sm" variant="danger" onClick={()=>{if(confirm('Xóa?')) handleUpdateDS_SP('DELETE', sp.id)}}><i className="fa-solid fa-trash"></i></Button></td></tr>)})}</tbody></Table></div></Tab>
