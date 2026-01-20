@@ -23,19 +23,22 @@ function App() {
   const [dsDonHang, setDsDonHang] = useState([]);
   const [gioHang, setGioHang] = useState(() => JSON.parse(localStorage.getItem('cart') || '[]'));
   const [tuKhoa, setTuKhoa] = useState('');
+  
+  // Thêm 'gioiThieu' vào state
   const [shopConfig, setShopConfig] = useState({ 
     tenShop: 'MaiVang Shop', slogan: '', logo: '', 
-    diaChi: '', sdt: '', linkFacebook: '', copyright: '@2024 Thực phẩm Mai Vàng', tyLeDiem: 1000 
+    diaChi: '', sdt: '', linkFacebook: '', copyright: '@2026 Thực phẩm Mai Vàng', tyLeDiem: 1000,
+    gioiThieu: '' 
   });
+  
   const [currentUser, setCurrentUser] = useState(null);
   const [userData, setUserData] = useState(null); 
   const [showTopBtn, setShowTopBtn] = useState(false);
 
-  // --- HÀM ĐĂNG XUẤT (ĐÃ SỬA) ---
   const handleLogout = async () => {
     await signOut(auth);
     setUserData(null);
-    navigate('/'); // Quay về trang chủ
+    navigate('/'); 
     toast.info("Đã đăng xuất.");
   };
 
@@ -153,7 +156,17 @@ function App() {
         <footer className="footer-section pt-5 mt-4">
            <Container>
             <Row className="pb-4">
-              <Col md={4} className="mb-4"><div className="d-flex align-items-center mb-3">{shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" style={{height:'40px', marginRight:'10px'}} /> : <span className="fs-3 me-2">🦁</span>}<span className="fw-bold text-success fs-5">{shopConfig.tenShop}</span></div><p className="text-muted small">{shopConfig.slogan}</p></Col>
+              {/* --- ĐÃ CẬP NHẬT: HIỂN THỊ GIỚI THIỆU THAY VÌ LOGO --- */}
+              <Col md={4} className="mb-4">
+                <div className="d-flex align-items-center mb-3">
+                  <span className="fw-bold text-success fs-5 text-uppercase">{shopConfig.tenShop}</span>
+                </div>
+                <p className="text-muted small" style={{textAlign: 'justify'}}>
+                  {shopConfig.gioiThieu || 'Chuyên cung cấp thực phẩm tươi ngon, chất lượng cao, đảm bảo vệ sinh an toàn thực phẩm. Giao hàng nhanh chóng và tận tâm phục vụ.'}
+                </p>
+              </Col>
+              {/* -------------------------------------------------------- */}
+              
               <Col md={4} className="mb-4"><div className="footer-title">Thông tin liên hệ</div><div className="footer-info-item"><i className="fa-solid fa-location-dot mt-1 text-success"></i> <span>{shopConfig.diaChi}</span></div><div className="footer-info-item"><i className="fa-solid fa-phone mt-1 text-success"></i> <span>{shopConfig.sdt}</span></div><div className="footer-info-item"><i className="fa-brands fa-facebook mt-1 text-success"></i> <a href={shopConfig.linkFacebook} target="_blank" rel="noreferrer" className="text-dark">Fanpage Facebook</a></div></Col>
               <Col md={4} className="mb-4"><div className="footer-title">Hỗ trợ khách hàng</div><div className="footer-info-item"><i className="fa-solid fa-check text-success"></i> Hướng dẫn mua hàng</div><div className="footer-info-item"><i className="fa-solid fa-check text-success"></i> Chính sách đổi trả</div><div className="footer-info-item"><i className="fa-solid fa-check text-success"></i> Hình thức thanh toán</div></Col>
             </Row>
