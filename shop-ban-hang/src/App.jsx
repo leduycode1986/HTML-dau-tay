@@ -3,7 +3,9 @@ import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
 import { db, auth } from './firebase'; 
 import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
+// --- QUAN TRỌNG: ĐÃ IMPORT ĐẦY ĐỦ ROW, COL ĐỂ TRÁNH LỖI TRẮNG TRANG ---
 import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col } from 'react-bootstrap';
+// ----------------------------------------------------------------------
 import { ToastContainer, toast } from 'react-toastify'; 
 import Slider from "react-slick"; 
 import 'react-toastify/dist/ReactToastify.css'; 
@@ -30,6 +32,8 @@ export const toSlug = (str) => {
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // --- STATES DỮ LIỆU ---
   const [dsSanPham, setDsSanPham] = useState([]);
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [dsDonHang, setDsDonHang] = useState([]);
@@ -39,13 +43,14 @@ function App() {
   
   const [shopConfig, setShopConfig] = useState({ 
     tenShop: 'MaiVang Shop', slogan: '', logo: '', diaChi: '', sdt: '', zalo: '', linkFacebook: '', copyright: '', tyLeDiem: 1000, gioiThieu: '', flashSaleEnd: '',
-    topBarText: '🚀 Nhận giao hàng miễn phí trong bán kính 5km!', openingHours: '' 
+    topBarText: '🚀 Nhận giao hàng miễn phí trong bán kính 5km!', openingHours: ''
   });
   
   const [currentUser, setCurrentUser] = useState(null);
   const [userData, setUserData] = useState(null); 
   const [showTopBtn, setShowTopBtn] = useState(false);
 
+  // --- EFFECTS ---
   useEffect(() => { AOS.init({ duration: 800, once: false, offset: 50 }); }, []);
   useEffect(() => { window.scrollTo(0, 0); }, [location]);
 
@@ -56,6 +61,7 @@ function App() {
     const unsubBanner = onSnapshot(collection(db, "banners"), (sn) => setBanners(sn.docs.map(d => ({id: d.id, ...d.data()}))));
     const unsubConfig = onSnapshot(doc(db, "cauHinh", "thongTinChung"), (doc) => { if (doc.exists()) setShopConfig(doc.data()); });
     const unsubAuth = onAuthStateChanged(auth, async (user) => { setCurrentUser(user); if (user) { const userDoc = await getDoc(doc(db, "users", user.uid)); if (userDoc.exists()) setUserData(userDoc.data()); else setUserData({ diemTichLuy: 0, ten: user.displayName || user.email }); } else { setUserData(null); } });
+    
     const handleScroll = () => setShowTopBtn(window.scrollY > 300);
     window.addEventListener('scroll', handleScroll);
     return () => { unsubSP(); unsubDM(); unsubDH(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', handleScroll); };
@@ -63,10 +69,23 @@ function App() {
 
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
 
-  const themVaoGio = (sp) => { const check = gioHang.find(i => i.id === sp.id); if (check) setGioHang(gioHang.map(i => i.id === sp.id ? {...i, soLuong: i.soLuong + 1} : i)); else setGioHang([...gioHang, {...sp, soLuong: 1}]); toast.success(`Đã thêm "${sp.ten}" vào giỏ!`); };
-  const chinhSuaSoLuong = (id, kieu) => { setGioHang(gioHang.map(i => i.id === id ? {...i, soLuong: kieu === 'tang' ? i.soLuong + 1 : Math.max(1, i.soLuong - 1)} : i)); };
-  const xoaSanPham = (id) => { setGioHang(gioHang.filter(i => i.id !== id)); toast.warning("Đã xóa sản phẩm khỏi giỏ."); };
-  const handleLogout = async () => { await signOut(auth); setUserData(null); navigate('/'); toast.info("Đã đăng xuất."); };
+  // --- CÁC HÀM XỬ LÝ (ACTIONS) ---
+  const themVaoGio = (sp) => { 
+    const check = gioHang.find(i => i.id === sp.id); 
+    if (check) setGioHang(gioHang.map(i => i.id === sp.id ? {...i, soLuong: i.soLuong + 1} : i)); 
+    else setGioHang([...gioHang, {...sp, soLuong: 1}]); 
+    toast.success(`Đã thêm "${sp.ten}" vào giỏ!`); 
+  };
+
+  const chinhSuaSoLuong = (id, kieu) => { 
+    setGioHang(gioHang.map(i => i.id === id ? {...i, soLuong: kieu === 'tang' ? i.soLuong + 1 : Math.max(1, i.soLuong - 1)} : i)); 
+  };
+
+  const xoaSanPham = (id) => { 
+    setGioHang(gioHang.filter(i => i.id !== id)); 
+    toast.warning("Đã xóa sản phẩm khỏi giỏ."); 
+  };
+
   const handleDatHang = async (khach) => { 
     const tongTien = gioHang.reduce((t, s) => t + (s.giaBan || s.giaGoc) * s.soLuong, 0); 
     if (currentUser && userData) { 
@@ -90,6 +109,8 @@ function App() {
     navigate('/'); 
   };
 
+  const handleLogout = async () => { await signOut(auth); setUserData(null); navigate('/'); toast.info("Đã đăng xuất."); };
+  
   const sanPhamHienThi = dsSanPham.filter(sp => sp.ten?.toLowerCase().includes(tuKhoa.toLowerCase()));
   const isAdminPage = location.pathname.startsWith('/admin');
   const sliderSettings = { dots: true, infinite: true, speed: 500, slidesToShow: 1, slidesToScroll: 1, autoplay: true, autoplaySpeed: 3000, arrows: true };
@@ -101,7 +122,7 @@ function App() {
 
       {!isAdminPage && (
         <>
-          {/* HEADER CHẠY CHỮ + GIỜ MỞ CỬA */}
+          {/* 1. HEADER CHẠY CHỮ + GIỜ MỞ CỬA */}
           <div className="top-bar-notification d-flex justify-content-center align-items-center">
             <div className="marquee-text">
               {shopConfig.topBarText || "Chào mừng đến với cửa hàng!"}
@@ -127,7 +148,18 @@ function App() {
             </Container>
           </Navbar>
 
-          {banners.length > 0 && (<div className="banner-global-container"><Slider {...sliderSettings}>{banners.map(b => (<div key={b.id}>{b.link ? (<Link to={b.link}><img src={b.img} alt="Banner" className="banner-img" /></Link>) : (<img src={b.img} alt="Banner" className="banner-img" />)}</div>))}</Slider></div>)}
+          {/* 2. BANNER TOÀN TRANG (Global) */}
+          {banners.length > 0 && (
+            <div className="banner-global-container">
+              <Slider {...sliderSettings}>
+                {banners.map(b => (
+                  <div key={b.id}>
+                    {b.link ? (<Link to={b.link}><img src={b.img} alt="Banner" className="banner-img" /></Link>) : (<img src={b.img} alt="Banner" className="banner-img" />)}
+                  </div>
+                ))}
+              </Slider>
+            </div>
+          )}
         </>
       )}
 
@@ -136,9 +168,23 @@ function App() {
           <Route path="/" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
           <Route path="/san-pham/:slug/:id" element={<ProductDetail dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
           <Route path="/danh-muc/:slug/:id" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
-          <Route path="/cart" element={<Cart gioHang={gioHang} dsDanhMuc={dsDanhMuc} handleDatHang={handleDatHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} currentUser={currentUser} userData={userData} />} />
+          <Route path="/cart" element={
+            <Cart 
+              gioHang={gioHang} 
+              dsDanhMuc={dsDanhMuc} 
+              handleDatHang={handleDatHang} 
+              chinhSuaSoLuong={chinhSuaSoLuong} 
+              xoaSanPham={xoaSanPham} 
+              currentUser={currentUser} 
+              userData={userData} 
+            />
+          } />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/member" element={<Member />} />
+          
+          {/* --- QUAN TRỌNG: TRUYỀN themVaoGio CHO MEMBER ĐỂ MUA LẠI ĐƯỢC --- */}
+          <Route path="/member" element={<Member themVaoGio={themVaoGio} />} />
+          {/* --------------------------------------------------------------- */}
+          
           <Route path="/tra-cuu" element={<OrderLookup />} />
           <Route path="/flash-sale" element={<FlashSale dsSanPham={dsSanPham} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
           <Route path="/admin" element={

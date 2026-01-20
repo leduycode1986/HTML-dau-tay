@@ -83,51 +83,48 @@ img { max-width: 100%; height: auto; }
    PHẦN BỔ SUNG CHO TÍNH NĂNG MỚI (FLASH SALE, HEADER, BANNER)
    ========================================================================= */
 
-/* 1. TOP BAR (DÒNG CHỮ CHẠY) */
+/* --- 1. TOP BAR (FIX LỖI CHẠY CHỮ) --- */
 .top-bar-notification {
-  background: #d32f2f; /* Màu đỏ đậm */
+  background: #d32f2f; /* Màu đỏ nổi bật */
   color: #fff;
   font-size: 13px;
   font-weight: bold;
-  text-align: center;
   padding: 8px 0;
+  
+  /* Quan trọng: Ngắt bỏ Flexbox và Căn giữa để tránh xung đột */
+  display: block !important; 
+  text-align: left !important;
+  
+  overflow: hidden; /* Ẩn phần chữ tràn ra ngoài */
+  white-space: nowrap; /* Không xuống dòng */
   position: relative;
   z-index: 1050;
-  overflow: hidden;
-}
-/* Container chứa dòng chữ (cần overflow hidden để cắt chữ thừa) */
-.top-bar-notification {
-  /* ... Giữ các thuộc tính màu sắc cũ ... */
-  overflow: hidden; 
-  white-space: nowrap;
-  position: relative;
 }
 
-/* Dòng chữ chạy */
+/* Hiệu ứng chạy chữ chuẩn */
 .marquee-text {
   display: inline-block;
-  white-space: nowrap;
   
-  /* Chạy trong 30s, đều đặn (linear), lặp vô tận (infinite) */
-  animation: marquee 30s linear infinite; 
+  /* Kỹ thuật: Đẩy chữ ra ngoài mép phải 100% chiều rộng màn hình */
+  padding-left: 100%; 
   
-  /* Quan trọng: Giúp chuyển động mượt hơn trên trình duyệt */
+  /* Thời gian chạy: 25s (Bạn có thể sửa thành 20s cho nhanh hoặc 30s cho chậm) */
+  animation: marquee 25s linear infinite;
+  
+  /* Tối ưu hóa render để chạy mượt hơn trên Cốc Cốc/Chrome */
   will-change: transform; 
 }
 
-/* Định nghĩa chuyển động chuẩn từ Mép Phải -> Mép Trái */
+/* Định nghĩa chuyển động: Dịch chuyển toàn bộ thanh chữ sang trái */
 @keyframes marquee {
   0% {
-    /* Bắt đầu: Nằm khuất hoàn toàn bên phải màn hình */
-    /* 100vw nghĩa là 100% chiều rộng màn hình */
-    transform: translateX(100vw); 
+    transform: translate3d(0, 0, 0);
   }
   100% {
-    /* Kết thúc: Dịch chuyển sang trái 100% chiều dài của chính dòng chữ */
-    transform: translateX(-100%); 
+    /* Dịch chuyển sang trái 100% chiều dài của (Màn hình + Dòng chữ) */
+    transform: translate3d(-100%, 0, 0);
   }
 }
-@keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
 
 /* 2. BANNER TOÀN CỤC */
 .banner-global-container { margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
