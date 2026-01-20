@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Form, Modal, Badge, Tab, Tabs, Row, Col, Container } from 'react-bootstrap';
+import { Table, Button, Form, Modal, Badge, Tab, Tabs, Row, Col, Container, InputGroup } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -12,16 +12,17 @@ const NO_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_A
 function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsDonHang, handleUpdateStatusOrder, handleDeleteOrder }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginInput, setLoginInput] = useState({ user: '', pass: '' });
+  const [showPass, setShowPass] = useState(false); // State ẩn hiện mật khẩu
+  
+  // Lấy cấu hình admin từ LocalStorage hoặc dùng mặc định admin/123
   const [adminConfig] = useState(() => JSON.parse(localStorage.getItem('adminConfig') || '{"user":"admin","pass":"123"}'));
 
   const [data, setData] = useState({ banners: [], coupons: [], ships: [], users: [], reviews: [] });
   const [shopConfig, setShopConfig] = useState({ tenShop:'', slogan:'', logo:'', diaChi:'', sdt:'', zalo:'', linkFacebook:'', copyright:'', tyLeDiem:1000, gioiThieu:'', flashSaleEnd:'' });
   
-  // Modal States
   const [modal, setModal] = useState({ sp: false, dm: false, order: false, user: false });
   const [editData, setEditData] = useState({ sp: null, dm: null, user: null, order: null });
   
-  // Forms
   const [formSP, setFormSP] = useState({ ten:'', giaGoc:'', phanTramGiam:0, giaBan:'', donVi:'Cái', moTa:'', anh:'', phanLoai:'', isMoi:false, isKhuyenMai:false, isBanChay:false, isFlashSale:false });
   const [formDM, setFormDM] = useState({ ten:'', icon:'', parent:'', order:'' });
   const [formBanner, setFormBanner] = useState({ img:'', link:'' });
@@ -29,7 +30,6 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
   const [formShip, setFormShip] = useState({ khuVuc:'', phi:0 });
   const [userPoint, setUserPoint] = useState(0);
 
-  // Thống kê
   const thongKe = (() => {
     const today = new Date().toLocaleDateString('vi-VN'), thisMonth = new Date().getMonth() + 1, thisYear = new Date().getFullYear();
     let dNgay = 0, dThang = 0, dNam = 0;
@@ -57,7 +57,15 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
     }
   }, [isLoggedIn]);
 
-  const handleLogin = (e) => { e.preventDefault(); (loginInput.user===adminConfig.user && loginInput.pass===adminConfig.pass) ? setIsLoggedIn(true) : alert("Sai mật khẩu!"); };
+  const handleLogin = (e) => { 
+    e.preventDefault(); 
+    if (loginInput.user === adminConfig.user && loginInput.pass === adminConfig.pass) {
+      setIsLoggedIn(true);
+    } else {
+      alert(`Sai mật khẩu! Mặc định là: ${adminConfig.user} / ${adminConfig.pass}`); // Gợi ý mật khẩu luôn để bạn đỡ quên
+    }
+  };
+
   const handleUpload = (e, type) => { 
     const file = e.target.files[0]; if(!file) return; 
     const rd = new FileReader(); rd.onloadend=()=>{ 
@@ -67,13 +75,32 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
     }; rd.readAsDataURL(file); 
   };
   
-  // CRUD Helpers
   const add = async (col, d) => await addDoc(collection(db, col), d);
   const del = async (col, id) => confirm('Xóa?') && await deleteDoc(doc(db, col, id));
   const updatePrice = () => { const g = parseInt(formSP.giaGoc)||0, p = parseInt(formSP.phanTramGiam)||0; setFormSP(prev => ({...prev, giaBan: g > 0 ? Math.floor(g*(1-p/100)) : ''})); };
   useEffect(updatePrice, [formSP.giaGoc, formSP.phanTramGiam]);
 
-  if (!isLoggedIn) return <div className="admin-login-wrapper"><div className="admin-login-card shadow"><h3 className="text-center text-success fw-bold">ADMIN LOGIN</h3><Form onSubmit={handleLogin}><Form.Control className="mb-3 p-3" placeholder="User" onChange={e=>setLoginInput({...loginInput, user:e.target.value})}/><Form.Control type="password" className="mb-3 p-3" placeholder="Pass" onChange={e=>setLoginInput({...loginInput, pass:e.target.value})}/><Button type="submit" variant="success" className="w-100 fw-bold">ĐĂNG NHẬP</Button></Form></div></div>;
+  if (!isLoggedIn) return (
+    <div className="admin-login-wrapper">
+      <div className="admin-login-card shadow">
+        <h3 className="text-center text-success fw-bold mb-4">ADMIN LOGIN</h3>
+        <Form onSubmit={handleLogin}>
+          <Form.Group className="mb-3">
+            <Form.Control className="p-3" placeholder="Username" value={loginInput.user} onChange={e=>setLoginInput({...loginInput, user:e.target.value})}/>
+          </Form.Group>
+          <Form.Group className="mb-4">
+            <InputGroup>
+              <Form.Control className="p-3" type={showPass ? "text" : "password"} placeholder="Password" value={loginInput.pass} onChange={e=>setLoginInput({...loginInput, pass:e.target.value})}/>
+              <Button variant="outline-secondary" onClick={()=>setShowPass(!showPass)}>
+                <i className={showPass ? "fa-solid fa-eye-slash" : "fa-solid fa-eye"}></i>
+              </Button>
+            </InputGroup>
+          </Form.Group>
+          <Button type="submit" variant="success" className="w-100 py-3 fw-bold rounded-pill">ĐĂNG NHẬP</Button>
+        </Form>
+      </div>
+    </div>
+  );
 
   return (
     <div className="admin-main-container">
