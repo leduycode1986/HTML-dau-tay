@@ -95,12 +95,37 @@ img { max-width: 100%; height: auto; }
   z-index: 1050;
   overflow: hidden;
 }
+/* Container chứa dòng chữ (cần overflow hidden để cắt chữ thừa) */
+.top-bar-notification {
+  /* ... Giữ các thuộc tính màu sắc cũ ... */
+  overflow: hidden; 
+  white-space: nowrap;
+  position: relative;
+}
+
+/* Dòng chữ chạy */
 .marquee-text {
   display: inline-block;
   white-space: nowrap;
-  animation: marquee 40s linear infinite;
-  padding-left: 100%;
-  will-change: transform;
+  
+  /* Chạy trong 30s, đều đặn (linear), lặp vô tận (infinite) */
+  animation: marquee 30s linear infinite; 
+  
+  /* Quan trọng: Giúp chuyển động mượt hơn trên trình duyệt */
+  will-change: transform; 
+}
+
+/* Định nghĩa chuyển động chuẩn từ Mép Phải -> Mép Trái */
+@keyframes marquee {
+  0% {
+    /* Bắt đầu: Nằm khuất hoàn toàn bên phải màn hình */
+    /* 100vw nghĩa là 100% chiều rộng màn hình */
+    transform: translateX(100vw); 
+  }
+  100% {
+    /* Kết thúc: Dịch chuyển sang trái 100% chiều dài của chính dòng chữ */
+    transform: translateX(-100%); 
+  }
 }
 @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
 
