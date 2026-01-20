@@ -1,45 +1,48 @@
-/* --- 1. BASE --- */
+/* --- 1. BASE & RESET --- */
 body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 14px; }
-a { text-decoration: none; color: inherit; }
+a { text-decoration: none; color: inherit; transition: 0.2s; }
 img { max-width: 100%; height: auto; }
 
 /* --- 2. LAYOUT & RESPONSIVE --- */
-.sidebar-main { border-right: 1px solid #dee2e6; }
+/* MENU TRƯỢT THEO (STICKY SIDEBAR) - FIX CHO TẤT CẢ TRANG */
+.sidebar-main {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  /* Kỹ thuật Sticky: Giúp menu trượt theo khi cuộn */
+  position: -webkit-sticky; /* Cho Safari */
+  position: sticky;
+  top: 100px; /* Cách mép trên 100px để không đụng Header */
+  z-index: 10;
+  height: fit-content; 
+  max-height: calc(100vh - 120px); /* Chiều cao tối đa bằng màn hình */
+  overflow-y: auto; /* Nếu dài quá thì cho cuộn bên trong */
+  
+  /* Ẩn thanh cuộn bên trong để nhìn đẹp hơn ("tự trượt") */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE */
+}
+.sidebar-main::-webkit-scrollbar { 
+  display: none; /* Chrome/Safari */
+}
 
-/* MENU DANH MỤC TRÊN MOBILE */
+/* Fix hiển thị trên Mobile */
 @media (max-width: 768px) {
   .sidebar-main { 
+    position: static; /* Trên mobile không cần sticky */
     border-right: none; 
     border-bottom: 1px solid #dee2e6;
     min-height: auto !important;
     padding-bottom: 10px;
-  }
-  .sidebar-main .category-link {
-    padding: 8px 10px;
-    font-size: 13px;
-  }
-  /* Ẩn bớt danh mục con trên mobile nếu quá dài, hoặc chuyển thành lướt ngang */
-  .category-container-mobile {
-    display: flex;
-    overflow-x: auto;
-    white-space: nowrap;
-    padding-bottom: 5px;
-  }
-  .category-container-mobile .category-item {
-    display: inline-block;
-    min-width: 120px;
-    margin-right: 10px;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    background: white;
+    max-height: none;
   }
   .navbar-brand span { font-size: 1rem !important; }
 }
 
 /* --- 3. COMPONENTS --- */
 /* Product Card */
-.product-card { border-radius: 8px; overflow: hidden; background: #fff; height: 100%; display: flex; flex-direction: column; transition: 0.2s; }
-.product-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+.product-card { border-radius: 8px; overflow: hidden; background: #fff; height: 100%; display: flex; flex-direction: column; transition: 0.2s; border: 1px solid #eee; }
+.product-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-color: #198754; }
 .product-image-wrapper { position: relative; padding-top: 100%; overflow: hidden; }
 .product-image-wrapper img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
 .badge-overlay { position: absolute; top: 5px; left: 5px; display: flex; flex-direction: column; gap: 3px; }
@@ -50,292 +53,99 @@ img { max-width: 100%; height: auto; }
 .section-title { font-weight: 800; color: #198754; text-transform: uppercase; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #e9ecef; font-size: 1.1rem; position: relative; }
 .section-title::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 50px; height: 2px; background: #198754; }
 
-/* Menu Ngang (Trong trang danh mục) */
-.horizontal-submenu { white-space: nowrap; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; -webkit-overflow-scrolling: touch; }
-.sub-pill { display: inline-block; padding: 6px 15px; background: #fff; border: 1px solid #dee2e6; border-radius: 50px; margin-right: 8px; font-size: 13px; font-weight: 500; }
-.sub-pill:hover, .sub-pill.active { background: #198754; color: #fff; border-color: #198754; }
-
-/* --- 4. ADMIN --- */
+/* --- 4. ADMIN LOGIN & LAYOUT --- */
 .admin-login-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #e9ecef; padding: 15px; }
 .admin-login-card { width: 100%; max-width: 400px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
 .admin-navbar { background-color: #198754; color: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
 .admin-navbar h4 { font-size: 1.1rem; margin: 0; }
-.stats-box { padding: 15px; border-radius: 8px; color: white; margin-bottom: 10px; }
+.stats-box { padding: 15px; border-radius: 8px; color: white; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 .stats-box h3 { font-size: 1.5rem; margin: 0; }
-/* Fix bảng Admin trên mobile */
 .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .admin-content-container { max-width: 1400px; margin: 0 auto; padding: 15px; }
 
-/* Modal full width on mobile */
-@media (max-width: 576px) {
-  .modal-dialog { margin: 10px; }
-}
-/* ... (Giữ nguyên các code cũ) ... */
+/* --- 5. LOGO SHOP --- */
+.shop-logo { height: 50px; width: auto; object-fit: contain; display: block; }
+@media (max-width: 768px) { .shop-logo { height: 40px; } }
 
-/* --- 5. LOGO SHOP (FIX LỖI VỠ HÌNH) --- */
-.shop-logo {
-  height: 50px;       /* Cố định chiều cao */
-  width: auto;        /* Chiều rộng tự động theo tỷ lệ */
-  object-fit: contain; /* Giữ nguyên khung hình ảnh không bị méo */
-  display: block;
-}
+/* --- 6. GIÁ TIỀN --- */
+.price-original { text-decoration: line-through; color: #adb5bd; font-size: 0.9rem; margin-right: 8px; font-weight: 400; }
+.price-sale { color: #dc3545; font-weight: 800; font-size: 1.1rem; }
+.related-product-wrapper { background: #fff; padding: 15px; border-radius: 12px; border: 1px solid #eee; }
 
-/* Responsive cho logo trên mobile nếu cần */
-@media (max-width: 768px) {
-  .shop-logo {
-    height: 40px; /* Nhỏ hơn chút trên điện thoại */
-  }
-}
-/* ... (Giữ nguyên code cũ) ... */
+/* --- 7. FOOTER --- */
+.footer-section { background-color: #f8f9fa; color: #333; font-size: 0.95rem; border-top: 3px solid #198754; }
+.footer-title { color: #198754; font-weight: 700; text-transform: uppercase; margin-bottom: 15px; font-size: 1.1rem; }
+.footer-info-item { margin-bottom: 10px; display: flex; align-items: start; gap: 10px; }
+.copyright-bar { background-color: #198754; color: white; text-align: center; padding: 15px; font-size: 0.9rem; }
 
-/* --- 6. GIÁ TIỀN & NHÃN (LÀM ĐẸP) --- */
-.price-original {
-  text-decoration: line-through;
-  color: #adb5bd; /* Màu xám nhạt */
-  font-size: 0.9rem;
-  margin-right: 8px;
-  font-weight: 400;
-}
-
-.price-sale {
-  color: #dc3545; /* Màu đỏ */
-  font-weight: 800;
-  font-size: 1.1rem;
-}
-
-/* Khung sản phẩm cùng loại trong trang chi tiết */
-.related-product-wrapper {
-  background: #fff;
-  padding: 15px;
-  border-radius: 12px;
-  border: 1px solid #eee;
-}
-/* ... (Giữ nguyên code cũ) ... */
-
-/* --- 7. FOOTER (CHÂN TRANG) --- */
-.footer-section {
-  background-color: #f8f9fa;
-  color: #333;
-  font-size: 0.95rem;
-  border-top: 3px solid #198754;
-}
-.footer-title {
-  color: #198754;
-  font-weight: 700;
-  text-transform: uppercase;
-  margin-bottom: 15px;
-  font-size: 1.1rem;
-}
-.footer-info-item {
-  margin-bottom: 10px;
-  display: flex;
-  align-items: start;
-  gap: 10px;
-}
-.copyright-bar {
-  background-color: #198754;
-  color: white;
-  text-align: center;
-  padding: 15px;
-  font-size: 0.9rem;
-}
-
-/* --- 8. NÚT CHAT NỔI (FLOATING WIDGETS) --- */
+/* --- 8. NÚT CHAT & BACK TO TOP (ĐÃ SỬA VỊ TRÍ) --- */
 .floating-chat-container {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: 30px;
+  right: 20px; /* Chat nằm bên PHẢI */
   z-index: 1000;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
-.chat-btn {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 24px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-  transition: transform 0.2s;
-  text-decoration: none;
-}
+.chat-btn { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: transform 0.2s; text-decoration: none; }
 .chat-btn:hover { transform: scale(1.1); color: white; }
-.zalo-btn { background-color: #0068ff; } /* Màu xanh Zalo */
-.mess-btn { background-color: #0084ff; } /* Màu xanh Messenger */
+.zalo-btn { background-color: #0068ff; }
+.mess-btn { background-color: #0084ff; }
 
-/* --- 9. HEADER HOTLINE --- */
-.header-hotline {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #dc3545;
-  white-space: nowrap;
-}
-/* ... (Giữ nguyên code cũ) ... */
-
-/* --- 10. PRODUCT SLIDER (THANH TRƯỢT SẢN PHẨM) --- */
-.product-slider-wrapper {
-  position: relative;
-}
-
-.product-scroll-container {
-  display: flex;
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  gap: 15px; /* Khoảng cách giữa các sản phẩm */
-  padding: 10px 5px;
-  /* Ẩn thanh cuộn xấu xí đi */
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-.product-scroll-container::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
-}
-
-/* Thẻ sản phẩm trong thanh trượt (Kích thước nhỏ gọn hơn) */
-.slider-item {
-  min-width: 210px; /* Chiều rộng cố định, đủ nhỏ nhưng vẫn rõ */
-  width: 210px;
-  flex: 0 0 auto; /* Không cho co giãn */
-}
-
-/* Nút bấm qua lại (Trái/Phải) */
-.slider-nav-btn {
-  width: 35px;
-  height: 35px;
+/* Nút lên đầu trang: CHUYỂN SANG TRÁI để không bị che */
+.back-to-top {
+  position: fixed;
+  bottom: 30px;
+  left: 30px; /* <-- ĐÃ CHUYỂN SANG GÓC TRÁI */
+  width: 45px;
+  height: 45px;
+  background: #333;
+  color: white;
   border-radius: 50%;
-  background: white;
-  border: 1px solid #dee2e6;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  color: #333;
-  transition: all 0.2s;
+  opacity: 0;
+  transition: 0.3s;
+  z-index: 990;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
-.slider-nav-btn:hover {
-  background: #198754;
-  color: white;
-  border-color: #198754;
-}
-.slider-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-/* --- 11. TẤT CẢ SẢN PHẨM (LƯỚI) --- */
-/* Trên màn hình lớn, hiển thị 5 cột cho gọn (thay vì 4 như cũ) */
-@media (min-width: 1200px) {
-  .row-cols-xl-5 > * {
-    flex: 0 0 auto;
-    width: 20%;
-  }
-}
-/* ... Code cũ giữ nguyên ... */
-
-/* --- 12. BỘ LỌC & SẮP XẾP --- */
-.filter-bar { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #eee; }
-.form-select-sm { border-radius: 20px; }
-
-/* --- 13. AUTH (ĐĂNG NHẬP/ĐK) --- */
-.auth-container { max-width: 400px; margin: 50px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-
-/* --- 14. BACK TO TOP --- */
-.back-to-top { position: fixed; bottom: 80px; right: 20px; width: 40px; height: 40px; background: #333; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0; transition: 0.3s; z-index: 990; }
 .back-to-top.visible { opacity: 0.8; }
 .back-to-top:hover { opacity: 1; background: #198754; }
 
-/* --- 15. TOASTIFY CUSTOM --- */
+/* --- 9. HEADER HOTLINE --- */
+.header-hotline { font-size: 0.9rem; font-weight: 600; color: #dc3545; white-space: nowrap; }
+
+/* --- 10. SLIDER SẢN PHẨM --- */
+.product-slider-wrapper { position: relative; }
+.product-scroll-container { display: flex; overflow-x: auto; scroll-behavior: smooth; gap: 15px; padding: 10px 5px; -ms-overflow-style: none; scrollbar-width: none; }
+.product-scroll-container::-webkit-scrollbar { display: none; }
+.slider-item { min-width: 210px; width: 210px; flex: 0 0 auto; }
+.slider-nav-btn { width: 35px; height: 35px; border-radius: 50%; background: white; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); color: #333; transition: all 0.2s; }
+.slider-nav-btn:hover { background: #198754; color: white; border-color: #198754; }
+.slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+
+/* --- 11. BỘ LỌC & AUTH --- */
+.filter-toolbar { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; flex-wrap: wrap; align-items: center; gap: 15px; margin-bottom: 25px; }
+.price-input-group { display: flex; align-items: center; gap: 5px; }
+.price-input { border: 1px solid #dee2e6; border-radius: 6px; padding: 8px 12px; width: 120px; font-size: 0.9rem; transition: 0.2s; }
+.price-input:focus { border-color: #198754; outline: none; box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.1); }
+.sort-select { border: 1px solid #dee2e6; border-radius: 6px; padding: 8px 35px 8px 15px; font-size: 0.9rem; font-weight: 500; color: #333; cursor: pointer; background-color: white; min-width: 200px; appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 10px center; background-size: 16px; }
+.auth-container { max-width: 400px; margin: 50px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
 .Toastify__toast-body { font-family: 'Segoe UI', sans-serif; font-size: 14px; }
-/* ... Code cũ giữ nguyên ... */
 
-/* --- 16. BỘ LỌC CHUYÊN NGHIỆP --- */
-.filter-toolbar {
+/* --- 12. KHUNG TỔNG TIỀN TRONG CART (STICKY FIX) --- */
+.cart-summary-box {
   background: white;
-  padding: 15px;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 25px;
-}
-
-.price-input-group {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.price-input {
+  padding: 25px;
+  border-radius: 16px;
   border: 1px solid #dee2e6;
-  border-radius: 6px;
-  padding: 8px 12px;
-  width: 120px;
-  font-size: 0.9rem;
-  transition: 0.2s;
-}
-.price-input:focus {
-  border-color: #198754;
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.1);
-}
-
-.filter-btn {
-  background: #198754;
-  color: white;
-  border: none;
-  padding: 8px 20px;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  transition: 0.2s;
-}
-.filter-btn:hover { background: #146c43; }
-
-/* Ô Sắp xếp đẹp hơn */
-.sort-select {
-  border: 1px solid #dee2e6;
-  border-radius: 6px;
-  padding: 8px 35px 8px 15px; /* Padding phải lớn để tránh icon mũi tên */
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #333;
-  cursor: pointer;
-  background-color: white;
-  min-width: 200px;
-  appearance: none; /* Ẩn mũi tên mặc định của trình duyệt */
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 16px;
-}
-.sort-select:focus {
-  border-color: #198754;
-  outline: none;
-}
-/* ... Code cũ giữ nguyên ... */
-
-/* --- 17. MENU TRƯỢT THEO (STICKY SIDEBAR) --- */
-.sidebar-main {
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  /* Dòng quan trọng để menu trượt theo */
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  /* Sticky chuẩn */
+  position: -webkit-sticky;
   position: sticky;
-  top: 90px; /* Cách mép trên 90px (để không đè lên Header) */
-  z-index: 10;
-  height: fit-content; /* Chiều cao vừa đủ nội dung */
-  max-height: calc(100vh - 100px); /* Nếu menu dài quá thì cuộn bên trong */
-  overflow-y: auto;
+  top: 120px; /* Không bị che bởi Header */
+  z-index: 5;
 }
-
-/* Tùy chỉnh thanh cuộn cho menu nếu quá dài */
-.sidebar-main::-webkit-scrollbar { width: 5px; }
-.sidebar-main::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
