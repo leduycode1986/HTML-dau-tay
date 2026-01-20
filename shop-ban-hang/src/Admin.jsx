@@ -13,9 +13,21 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginInput, setLoginInput] = useState({ user: '', pass: '' });
   const [showPass, setShowPass] = useState(false); // State ẩn hiện mật khẩu
-  
-  // Lấy cấu hình admin từ LocalStorage hoặc dùng mặc định admin/123
-  const [adminConfig] = useState(() => JSON.parse(localStorage.getItem('adminConfig') || '{"user":"admin","pass":"123"}'));
+
+  // --- FIX LỖI "UNDEFINED": Tự động tương thích dữ liệu cũ & mới ---
+  const [adminConfig] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('adminConfig') || '{}');
+      return {
+        // Ưu tiên key mới 'user', nếu không có thì tìm key cũ 'username', không có nữa thì về mặc định 'admin'
+        user: saved.user || saved.username || 'admin',
+        pass: saved.pass || saved.password || '123'
+      };
+    } catch {
+      return { user: 'admin', pass: '123' };
+    }
+  });
+  // ---------------------------------------------------------------
 
   const [data, setData] = useState({ banners: [], coupons: [], ships: [], users: [], reviews: [] });
   const [shopConfig, setShopConfig] = useState({ tenShop:'', slogan:'', logo:'', diaChi:'', sdt:'', zalo:'', linkFacebook:'', copyright:'', tyLeDiem:1000, gioiThieu:'', flashSaleEnd:'' });
@@ -60,9 +72,11 @@ function Admin({ dsSanPham, handleUpdateDS_SP, dsDanhMuc, handleUpdateDS_DM, dsD
   const handleLogin = (e) => { 
     e.preventDefault(); 
     if (loginInput.user === adminConfig.user && loginInput.pass === adminConfig.pass) {
+      // Khi đăng nhập thành công, cập nhật lại localStorage theo chuẩn mới để lần sau không lỗi nữa
+      localStorage.setItem('adminConfig', JSON.stringify({ user: adminConfig.user, pass: adminConfig.pass }));
       setIsLoggedIn(true);
     } else {
-      alert(`Sai mật khẩu! Mặc định là: ${adminConfig.user} / ${adminConfig.pass}`); // Gợi ý mật khẩu luôn để bạn đỡ quên
+      alert(`Sai mật khẩu! Mặc định là: ${adminConfig.user} / ${adminConfig.pass}`);
     }
   };
 
