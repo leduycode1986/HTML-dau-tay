@@ -60,7 +60,6 @@ function Home({ dsSanPham, dsDanhMuc, themVaoGio, shopConfig }) {
         <Col xs={12} md={9} lg={10} className="p-3 p-md-4" style={{background: '#f4f6f9'}}>
           {!categoryId && (
             <>
-              {/* Product Sliders */}
               <ProductSlider title="SẢN PHẨM BÁN CHẠY" icon="🔥" products={dsSanPham.filter(sp => sp.isBanChay)} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />
               <ProductSlider title="SẢN PHẨM MỚI" icon="✨" products={dsSanPham.filter(sp => sp.isMoi)} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />
               {recentProducts.length > 0 && (<div className="mt-5 border-top pt-4"><h5 className="text-secondary mb-3"><i className="fa-solid fa-clock-rotate-left me-2"></i> Sản phẩm bạn vừa xem</h5><Row className="g-2 g-md-3 row-cols-2 row-cols-md-4 row-cols-lg-6">{recentProducts.slice(0, 6).map(sp => <Col key={sp.id}><Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} /></Col>)}</Row></div>)}

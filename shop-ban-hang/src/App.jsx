@@ -3,9 +3,9 @@ import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
 import { db, auth } from './firebase'; 
 import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-// --- QUAN TRỌNG: ĐÃ THÊM ROW, COL ĐỂ KHÔNG BỊ LỖI TRẮNG TRANG ---
+// --- ĐÃ BỔ SUNG ROW, COL ĐỂ KHÔNG BỊ LỖI TRẮNG TRANG ---
 import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col } from 'react-bootstrap';
-// ----------------------------------------------------------------
+// -------------------------------------------------------
 import { ToastContainer, toast } from 'react-toastify'; 
 import Slider from "react-slick"; 
 import 'react-toastify/dist/ReactToastify.css'; 
@@ -32,6 +32,8 @@ export const toSlug = (str) => {
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // --- STATES ---
   const [dsSanPham, setDsSanPham] = useState([]);
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [dsDonHang, setDsDonHang] = useState([]);
@@ -48,6 +50,7 @@ function App() {
   const [userData, setUserData] = useState(null); 
   const [showTopBtn, setShowTopBtn] = useState(false);
 
+  // --- EFFECTS ---
   useEffect(() => { AOS.init({ duration: 800, once: false, offset: 50 }); }, []);
   useEffect(() => { window.scrollTo(0, 0); }, [location]);
 
@@ -65,7 +68,46 @@ function App() {
 
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
 
-  const themVaoGio = (sp) => { const check = gioHang.find(i => i.id === sp.id); if (check) setGioHang(gioHang.map(i => i.id === sp.id ? {...i, soLuong: i.soLuong + 1} : i)); else setGioHang([...gioHang, {...sp, soLuong: 1}]); toast.success(`Đã thêm "${sp.ten}" vào giỏ!`); };
+  // --- FUNCTIONS GIỎ HÀNG (ĐÃ THÊM LẠI ĐỂ FIX LỖI) ---
+  const themVaoGio = (sp) => { 
+    const check = gioHang.find(i => i.id === sp.id); 
+    if (check) setGioHang(gioHang.map(i => i.id === sp.id ? {...i, soLuong: i.soLuong + 1} : i)); 
+    else setGioHang([...gioHang, {...sp, soLuong: 1}]); 
+    toast.success(`Đã thêm "${sp.ten}" vào giỏ!`); 
+  };
+
+  const chinhSuaSoLuong = (id, kieu) => { 
+    setGioHang(gioHang.map(i => i.id === id ? {...i, soLuong: kieu === 'tang' ? i.soLuong + 1 : Math.max(1, i.soLuong - 1)} : i)); 
+  };
+
+  const xoaSanPham = (id) => { 
+    setGioHang(gioHang.filter(i => i.id !== id)); 
+    toast.warning("Đã xóa sản phẩm khỏi giỏ."); 
+  };
+
+  const handleDatHang = async (khach) => { 
+    const tongTien = gioHang.reduce((t, s) => t + (s.giaBan || s.giaGoc) * s.soLuong, 0); 
+    if (currentUser && userData) { 
+      const tyLe = parseInt(shopConfig.tyLeDiem) || 1000; 
+      const diemCong = Math.floor(tongTien / tyLe); 
+      await updateDoc(doc(db, "users", currentUser.uid), { diemTichLuy: (userData.diemTichLuy || 0) + diemCong }); 
+      setUserData({ ...userData, diemTichLuy: (userData.diemTichLuy || 0) + diemCong }); 
+      toast.info(`Bạn được cộng ${diemCong} điểm tích lũy!`); 
+    } 
+    await addDoc(collection(db, "donHang"), { 
+      maDonHang: 'MV-'+Math.floor(100000+Math.random()*900000), 
+      khachHang: khach, 
+      gioHang, 
+      tongTien, 
+      trangThai: 'Mới đặt', 
+      ngayDat: serverTimestamp(), 
+      userId: currentUser ? currentUser.uid : null 
+    }); 
+    setGioHang([]); 
+    toast.success("Đặt hàng thành công!"); 
+    navigate('/'); 
+  };
+
   const handleLogout = async () => { await signOut(auth); setUserData(null); navigate('/'); toast.info("Đã đăng xuất."); };
   
   const sanPhamHienThi = dsSanPham.filter(sp => sp.ten?.toLowerCase().includes(tuKhoa.toLowerCase()));
@@ -106,7 +148,11 @@ function App() {
           {banners.length > 0 && (
             <div className="banner-global-container">
               <Slider {...sliderSettings}>
-                {banners.map(b => (<div key={b.id}>{b.link ? (<Link to={b.link}><img src={b.img} alt="Banner" className="banner-img" /></Link>) : (<img src={b.img} alt="Banner" className="banner-img" />)}</div>))}
+                {banners.map(b => (
+                  <div key={b.id}>
+                    {b.link ? (<Link to={b.link}><img src={b.img} alt="Banner" className="banner-img" /></Link>) : (<img src={b.img} alt="Banner" className="banner-img" />)}
+                  </div>
+                ))}
               </Slider>
             </div>
           )}
@@ -118,7 +164,17 @@ function App() {
           <Route path="/" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
           <Route path="/san-pham/:slug/:id" element={<ProductDetail dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
           <Route path="/danh-muc/:slug/:id" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
-          <Route path="/cart" element={<Cart gioHang={gioHang} dsDanhMuc={dsDanhMuc} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} currentUser={currentUser} userData={userData} />} />
+          <Route path="/cart" element={
+            <Cart 
+              gioHang={gioHang} 
+              dsDanhMuc={dsDanhMuc} 
+              handleDatHang={handleDatHang} // Dùng logic trong App
+              chinhSuaSoLuong={chinhSuaSoLuong} // Đã truyền hàm
+              xoaSanPham={xoaSanPham} // Đã truyền hàm
+              currentUser={currentUser} 
+              userData={userData} 
+            />
+          } />
           <Route path="/auth" element={<Auth />} />
           <Route path="/member" element={<Member />} />
           <Route path="/tra-cuu" element={<OrderLookup />} />

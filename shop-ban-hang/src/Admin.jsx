@@ -9,7 +9,7 @@ import { db } from './firebase';
 const ICON_LIST = ['🏠','📦','🥩','🥦','🍎','🍞','🥫','❄️','🍬','🍫','🍪','🍦','🍺','🥤','🥛','🧃','🧺','🛋️','🍳','🧹','🧽','🧼','🧴','🪥','💄','🔖','⚡','🔥','🎉','🎁'];
 const NO_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg";
 
-// THÊM GIÁ TRỊ MẶC ĐỊNH CHO PROPS => FIX LỖI TRẮNG TRANG
+// QUAN TRỌNG: THÊM GIÁ TRỊ MẶC ĐỊNH = [] ĐỂ KHÔNG BỊ TRẮNG TRANG
 function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, dsDonHang = [], handleUpdateStatusOrder, handleDeleteOrder }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginInput, setLoginInput] = useState({ user: '', pass: '' });
