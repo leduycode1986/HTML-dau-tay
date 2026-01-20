@@ -9,7 +9,42 @@ import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 import { toSlug } from './App';
 
-function Home({ dsSanPham, dsDanhMuc, themVaoGio, shopConfig }) { // Nhận thêm shopConfig
+// --- ĐƯA COMPONENT NÀY RA NGOÀI ĐỂ TRÁNH RE-RENDER (FIX LỖI GIẬT) ---
+const ProductSlider = ({ title, products, icon, themVaoGio, setQuickViewSP }) => {
+  const scrollRef = useRef(null);
+  const scroll = (d) => { if(scrollRef.current) scrollRef.current.scrollLeft += d==='left'?-300:300; };
+  
+  if (!products || products.length === 0) return null;
+
+  return ( 
+    <div className="mb-5" data-aos="fade-up">
+       {/* Chỉ hiện Header nếu có Title */}
+       {title && (
+         <div className="slider-header">
+           <div className="section-title d-flex align-items-center mb-0 border-0">
+             <span className="me-2 fs-4">{icon}</span> {title}
+           </div>
+           <div className="d-flex gap-2">
+             <button className="slider-nav-btn" onClick={() => scroll('left')}><i className="fa-solid fa-chevron-left"></i></button>
+             <button className="slider-nav-btn" onClick={() => scroll('right')}><i className="fa-solid fa-chevron-right"></i></button>
+           </div>
+         </div>
+       )}
+       <div className="product-slider-wrapper">
+         <div className="product-scroll-container" ref={scrollRef}>
+           {products.map(sp => (
+             <div key={sp.id} className="slider-item position-relative product-card-hover-trigger">
+               <Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} />
+             </div>
+           ))}
+         </div>
+       </div>
+    </div> 
+  );
+};
+// -------------------------------------------------------------------
+
+function Home({ dsSanPham, dsDanhMuc, themVaoGio, shopConfig }) {
   const { id: categoryId } = useParams();
   const [openMenuId, setOpenMenuId] = useState(null);
   const [banners, setBanners] = useState([]);
@@ -26,14 +61,15 @@ function Home({ dsSanPham, dsDanhMuc, themVaoGio, shopConfig }) { // Nhận thê
   useEffect(() => { const unsub = onSnapshot(collection(db, "banners"), (sn) => setBanners(sn.docs.map(d => ({id: d.id, ...d.data()})))); return () => unsub(); }, []);
   const sliderSettings = { dots: true, infinite: true, speed: 500, slidesToShow: 1, slidesToScroll: 1, autoplay: true, autoplaySpeed: 3000, arrows: true };
 
-  // --- ĐẾM NGƯỢC ---
+  // --- LOGIC ĐẾM NGƯỢC ---
   useEffect(() => {
     if(!shopConfig?.flashSaleEnd) return;
     const interval = setInterval(() => {
       const now = new Date().getTime();
       const distance = new Date(shopConfig.flashSaleEnd).getTime() - now;
-      if (distance < 0) { clearInterval(interval); setTimeLeft({ h:0, m:0, s:0 }); }
-      else {
+      if (distance < 0) { 
+        clearInterval(interval); setTimeLeft({ h:0, m:0, s:0 }); 
+      } else {
         const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
         const s = Math.floor((distance % (1000 * 60)) / 1000);
@@ -51,14 +87,8 @@ function Home({ dsSanPham, dsDanhMuc, themVaoGio, shopConfig }) { // Nhận thê
       setRecentProducts(found);
     }
   }, [dsSanPham]);
-
-  const ProductSlider = ({ title, products, icon }) => {
-     const scrollRef = useRef(null);
-     const scroll = (d) => { if(scrollRef.current) scrollRef.current.scrollLeft += d==='left'?-300:300; };
-     if (products.length === 0) return null;
-     return ( <div className="mb-5" data-aos="fade-up"><div className="slider-header"><div className="section-title d-flex align-items-center mb-0 border-0"><span className="me-2 fs-4">{icon}</span> {title}</div><div className="d-flex gap-2"><button className="slider-nav-btn" onClick={() => scroll('left')}><i className="fa-solid fa-chevron-left"></i></button><button className="slider-nav-btn" onClick={() => scroll('right')}><i className="fa-solid fa-chevron-right"></i></button></div></div><div className="product-slider-wrapper"><div className="product-scroll-container" ref={scrollRef}>{products.map(sp => (<div key={sp.id} className="slider-item position-relative product-card-hover-trigger"><Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} /></div>))}</div></div></div> );
-  };
   
+  // Lọc sản phẩm
   let finalProducts = categoryId ? dsSanPham.filter(sp => (sp.phanLoai === categoryId || dsDanhMuc.filter(d => d.parent === categoryId).map(c => c.id).includes(sp.phanLoai))) : dsSanPham;
   if (minPrice || maxPrice) { finalProducts = finalProducts.filter(sp => { const g = sp.giaBan||0; const min = minPrice?parseInt(minPrice):0; const max = maxPrice?parseInt(maxPrice):Infinity; return g>=min && g<=max; }); }
   if (sortType === 'price-asc') finalProducts.sort((a, b) => (a.giaBan||0) - (b.giaBan||0));
@@ -78,22 +108,40 @@ function Home({ dsSanPham, dsDanhMuc, themVaoGio, shopConfig }) { // Nhận thê
             <>
               {banners.length > 0 && (<div className="banner-slider-container" data-aos="zoom-in"><Slider {...sliderSettings}>{banners.map(b => (<div key={b.id}>{b.link ? (<Link to={b.link}><img src={b.img} alt="Banner" className="banner-img" /></Link>) : (<img src={b.img} alt="Banner" className="banner-img" />)}</div>))}</Slider></div>)}
               
-              {/* --- LỌC ĐÚNG SP FLASH SALE --- */}
+              {/* --- FLASH SALE (ĐÃ FIX: KO BỊ GIẬT) --- */}
               {shopConfig?.flashSaleEnd && (timeLeft.h > 0 || timeLeft.m > 0 || timeLeft.s > 0) && (
-                <div className="flash-sale-container" data-aos="flip-up">
+                <div className="flash-sale-container mb-5" data-aos="flip-up">
                   <div className="d-flex align-items-center gap-3 mb-3">
                     <h2 className="fw-bold m-0"><i className="fa-solid fa-bolt fa-beat"></i> FLASH SALE</h2>
-                    <div className="countdown-box"><div className="countdown-item">{String(timeLeft.h).padStart(2,'0')}</div>:<div className="countdown-item">{String(timeLeft.m).padStart(2,'0')}</div>:<div className="countdown-item">{String(timeLeft.s).padStart(2,'0')}</div></div>
+                    <div className="countdown-box">
+                      <div className="countdown-item">{String(timeLeft.h).padStart(2,'0')}</div>:
+                      <div className="countdown-item">{String(timeLeft.m).padStart(2,'0')}</div>:
+                      <div className="countdown-item">{String(timeLeft.s).padStart(2,'0')}</div>
+                    </div>
                   </div>
-                  <ProductSlider title="" icon="" products={dsSanPham.filter(sp => sp.isFlashSale)} />
+                  {/* Truyền các props cần thiết vào component con */}
+                  <ProductSlider 
+                    title="" 
+                    icon="" 
+                    products={dsSanPham.filter(sp => sp.isFlashSale)} 
+                    themVaoGio={themVaoGio} 
+                    setQuickViewSP={setQuickViewSP} 
+                  />
                 </div>
               )}
-              {/* ----------------------------- */}
+              {/* -------------------------------------- */}
 
-              <ProductSlider title="SẢN PHẨM BÁN CHẠY" icon="🔥" products={dsSanPham.filter(sp => sp.isBanChay)} />
-              <ProductSlider title="SẢN PHẨM MỚI" icon="✨" products={dsSanPham.filter(sp => sp.isMoi)} />
+              <ProductSlider title="SẢN PHẨM BÁN CHẠY" icon="🔥" products={dsSanPham.filter(sp => sp.isBanChay)} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />
+              <ProductSlider title="SẢN PHẨM MỚI" icon="✨" products={dsSanPham.filter(sp => sp.isMoi)} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />
               
-              {recentProducts.length > 0 && (<div className="mt-5 border-top pt-4"><h5 className="text-secondary mb-3"><i className="fa-solid fa-clock-rotate-left me-2"></i> Sản phẩm bạn vừa xem</h5><Row className="g-2 g-md-3 row-cols-2 row-cols-md-4 row-cols-lg-6">{recentProducts.slice(0, 6).map(sp => <Col key={sp.id}><Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} /></Col>)}</Row></div>)}
+              {recentProducts.length > 0 && (
+                <div className="mt-5 border-top pt-4">
+                  <h5 className="text-secondary mb-3"><i className="fa-solid fa-clock-rotate-left me-2"></i> Sản phẩm bạn vừa xem</h5>
+                  <Row className="g-2 g-md-3 row-cols-2 row-cols-md-4 row-cols-lg-6">
+                    {recentProducts.slice(0, 6).map(sp => <Col key={sp.id}><Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} /></Col>)}
+                  </Row>
+                </div>
+              )}
             </>
           )}
 
@@ -101,6 +149,7 @@ function Home({ dsSanPham, dsDanhMuc, themVaoGio, shopConfig }) { // Nhận thê
         </Col>
       </Row>
 
+      {/* QUICK VIEW MODAL */}
       <Modal show={!!quickViewSP} onHide={() => setQuickViewSP(null)} size="lg" centered>
         <Modal.Body className="p-0">
           {quickViewSP && (
@@ -108,9 +157,15 @@ function Home({ dsSanPham, dsDanhMuc, themVaoGio, shopConfig }) { // Nhận thê
               <Col md={5}><img src={quickViewSP.anh} className="w-100 h-100 object-fit-cover" alt="" style={{minHeight: '300px'}} /></Col>
               <Col md={7} className="p-4 d-flex flex-column justify-content-center">
                 <h3 className="fw-bold text-success mb-2">{quickViewSP.ten}</h3>
-                <div className="mb-3"><span className="h4 text-danger fw-bold me-3">{quickViewSP.giaBan?.toLocaleString()} ¥</span>{quickViewSP.phanTramGiam > 0 && <span className="text-muted text-decoration-line-through">{quickViewSP.giaGoc?.toLocaleString()} ¥</span>}</div>
+                <div className="mb-3">
+                  <span className="h4 text-danger fw-bold me-3">{quickViewSP.giaBan?.toLocaleString()} ¥</span>
+                  {quickViewSP.phanTramGiam > 0 && <span className="text-muted text-decoration-line-through">{quickViewSP.giaGoc?.toLocaleString()} ¥</span>}
+                </div>
                 <div className="mb-4 text-muted small" dangerouslySetInnerHTML={{__html: quickViewSP.moTa?.substring(0, 150) + '...'}}></div>
-                <div className="d-flex gap-2"><Button variant="success" className="flex-grow-1 fw-bold rounded-pill" onClick={()=>{themVaoGio(quickViewSP); setQuickViewSP(null)}}>THÊM VÀO GIỎ</Button><Button variant="outline-secondary" onClick={()=>setQuickViewSP(null)}>Đóng</Button></div>
+                <div className="d-flex gap-2">
+                  <Button variant="success" className="flex-grow-1 fw-bold rounded-pill" onClick={()=>{themVaoGio(quickViewSP); setQuickViewSP(null)}}>THÊM VÀO GIỎ</Button>
+                  <Button variant="outline-secondary" onClick={()=>setQuickViewSP(null)}>Đóng</Button>
+                </div>
                 <Link to={`/san-pham/${toSlug(quickViewSP.ten)}/${quickViewSP.id}`} className="mt-3 text-center small text-primary">Xem chi tiết đầy đủ</Link>
               </Col>
             </Row>
