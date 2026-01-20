@@ -149,3 +149,23 @@ img { max-width: 100%; height: auto; }
   top: 120px; /* Không bị che bởi Header */
   z-index: 5;
 }
+/* ... (Giữ nguyên code cũ) ... */
+
+/* --- 19. BANNER SLIDER --- */
+.banner-slider-container { margin-bottom: 30px; overflow: hidden; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+.banner-img { width: 100%; height: 350px; object-fit: cover; display: block; }
+/* Chỉnh nút mũi tên của Slider cho đẹp */
+.slick-prev, .slick-next { z-index: 2; width: 40px; height: 40px; }
+.slick-prev { left: 15px; } .slick-next { right: 15px; }
+.slick-prev::before, .slick-next::before { font-size: 30px; opacity: 0.8; }
+.slick-dots { bottom: 15px; }
+.slick-dots li button:before { font-size: 12px; color: white; opacity: 0.5; }
+.slick-dots li.slick-active button:before { color: white; opacity: 1; }
+
+/* Responsive Banner Mobile */
+@media (max-width: 768px) { .banner-img { height: 180px; } }
+
+/* --- 20. BÌNH LUẬN & ĐÁNH GIÁ --- */
+.review-box { background: #f8f9fa; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+.star-rating { color: #ffc107; font-size: 1.1rem; }
+.review-avatar { width: 40px; height: 40px; background: #198754; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; }
