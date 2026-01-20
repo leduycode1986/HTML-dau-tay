@@ -3,9 +3,12 @@ import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
 import { db, auth } from './firebase'; 
 import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col } from 'react-bootstrap';
+import { Badge, Button, Form, Container, Navbar, Nav, Dropdown } from 'react-bootstrap';
 import { ToastContainer, toast } from 'react-toastify'; 
+import Slider from "react-slick"; // Import Slider để dùng Global
 import 'react-toastify/dist/ReactToastify.css'; 
+import "slick-carousel/slick/slick.css"; 
+import "slick-carousel/slick/slick-theme.css";
 import AOS from 'aos'; import 'aos/dist/aos.css';
 
 import Home from './Home';
@@ -15,6 +18,7 @@ import Admin from './Admin';
 import Auth from './Auth';
 import Member from './Member';
 import OrderLookup from './OrderLookup';
+import FlashSale from './FlashSale'; // Import trang FlashSale mới
 
 export const toSlug = (str) => {
   if (!str) return '';
@@ -29,12 +33,13 @@ function App() {
   const [dsSanPham, setDsSanPham] = useState([]);
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [dsDonHang, setDsDonHang] = useState([]);
+  const [banners, setBanners] = useState([]); // State Banner toàn cục
   const [gioHang, setGioHang] = useState(() => JSON.parse(localStorage.getItem('cart') || '[]'));
   const [tuKhoa, setTuKhoa] = useState('');
   
   const [shopConfig, setShopConfig] = useState({ 
     tenShop: 'MaiVang Shop', slogan: '', logo: '', diaChi: '', sdt: '', zalo: '', linkFacebook: '', copyright: '', tyLeDiem: 1000, gioiThieu: '', flashSaleEnd: '',
-    topBarText: '🚀 Giao hàng miễn phí trong bán kính 5km' 
+    topBarText: '🚀 Nhận giao hàng miễn phí trong bán kính 5km!' 
   });
   
   const [currentUser, setCurrentUser] = useState(null);
@@ -48,11 +53,12 @@ function App() {
     const unsubSP = onSnapshot(collection(db, "sanPham"), (sn) => setDsSanPham(sn.docs.map(d => ({id: d.id, ...d.data()}))));
     const unsubDM = onSnapshot(collection(db, "danhMuc"), (sn) => { const data = sn.docs.map(d => ({id: d.id, ...d.data()})); data.sort((a, b) => parseFloat(a.order || 0) - parseFloat(b.order || 0)); setDsDanhMuc(data); });
     const unsubDH = onSnapshot(collection(db, "donHang"), (sn) => setDsDonHang(sn.docs.map(d => ({id: d.id, ...d.data()}))));
+    const unsubBanner = onSnapshot(collection(db, "banners"), (sn) => setBanners(sn.docs.map(d => ({id: d.id, ...d.data()})))); // Lấy Banner
     const unsubConfig = onSnapshot(doc(db, "cauHinh", "thongTinChung"), (doc) => { if (doc.exists()) setShopConfig(doc.data()); });
     const unsubAuth = onAuthStateChanged(auth, async (user) => { setCurrentUser(user); if (user) { const userDoc = await getDoc(doc(db, "users", user.uid)); if (userDoc.exists()) setUserData(userDoc.data()); else setUserData({ diemTichLuy: 0, ten: user.displayName || user.email }); } else { setUserData(null); } });
     const handleScroll = () => setShowTopBtn(window.scrollY > 300);
     window.addEventListener('scroll', handleScroll);
-    return () => { unsubSP(); unsubDM(); unsubDH(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', handleScroll); };
+    return () => { unsubSP(); unsubDM(); unsubDH(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', handleScroll); };
   }, []);
 
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
@@ -65,6 +71,7 @@ function App() {
   
   const sanPhamHienThi = dsSanPham.filter(sp => sp.ten?.toLowerCase().includes(tuKhoa.toLowerCase()));
   const isAdminPage = location.pathname.startsWith('/admin');
+  const sliderSettings = { dots: true, infinite: true, speed: 500, slidesToShow: 1, slidesToScroll: 1, autoplay: true, autoplaySpeed: 3000, arrows: true };
 
   return (
     <div className="app-container d-flex flex-column min-vh-100">
@@ -73,9 +80,11 @@ function App() {
 
       {!isAdminPage && (
         <>
-          {/* --- TOP BAR (MỚI) --- */}
-          {shopConfig.topBarText && <div className="top-bar-notification">{shopConfig.topBarText}</div>}
-          
+          {/* --- 1. DÒNG THÔNG BÁO CHẠY (HEADER TEXT) --- */}
+          <div className="top-bar-notification">
+            <div className="marquee-text">{shopConfig.topBarText || "Nhận giao hàng trong bán kính 5 km"}</div>
+          </div>
+
           <Navbar bg="white" variant="light" expand="lg" className="sticky-top shadow-sm py-2 border-bottom">
             <Container>
               <Navbar.Brand as={Link} to="/">{shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" className="me-2 rounded shop-logo" /> : <span className="fs-2 me-2">🦁</span>}<div className="d-flex flex-column"><span className="fw-bold text-success text-uppercase" style={{fontSize: '1.1rem'}}>{shopConfig.tenShop}</span><span className="text-warning small fw-bold" style={{fontSize: '0.7rem'}}>⭐ {shopConfig.slogan} ⭐</span></div></Navbar.Brand>
@@ -93,6 +102,19 @@ function App() {
               </Navbar.Collapse>
             </Container>
           </Navbar>
+
+          {/* --- 2. BANNER TOÀN TRANG (Đặt ở đây để hiện mọi nơi) --- */}
+          {banners.length > 0 && (
+            <div className="banner-global-container">
+              <Slider {...sliderSettings}>
+                {banners.map(b => (
+                  <div key={b.id}>
+                    {b.link ? (<Link to={b.link}><img src={b.img} alt="Banner" className="banner-img" /></Link>) : (<img src={b.img} alt="Banner" className="banner-img" />)}
+                  </div>
+                ))}
+              </Slider>
+            </div>
+          )}
         </>
       )}
 
@@ -105,7 +127,19 @@ function App() {
           <Route path="/auth" element={<Auth />} />
           <Route path="/member" element={<Member />} />
           <Route path="/tra-cuu" element={<OrderLookup />} />
-          <Route path="/admin" element={<Admin dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} dsDonHang={dsDonHang} handleUpdateDS_SP={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"sanPham",d)):(t==='ADD'?await addDoc(collection(db,"sanPham"),d):await updateDoc(doc(db,"sanPham",d.id),d))} handleUpdateDS_DM={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"danhMuc",d)):(t==='ADD'?await addDoc(collection(db,"danhMuc"),d):await updateDoc(doc(db,"danhMuc",d.id),d))} handleUpdateStatusOrder={async (id, s) => await updateDoc(doc(db,"donHang",id),{trangThai:s})} handleDeleteOrder={async (id) => await deleteDoc(doc(db,"donHang",id))} />} />
+          <Route path="/flash-sale" element={<FlashSale dsSanPham={dsSanPham} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
+          
+          <Route path="/admin" element={
+            <Admin 
+              dsSanPham={dsSanPham} 
+              dsDanhMuc={dsDanhMuc} 
+              dsDonHang={dsDonHang} 
+              handleUpdateDS_SP={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"sanPham",d)):(t==='ADD'?await addDoc(collection(db,"sanPham"),d):await updateDoc(doc(db,"sanPham",d.id),d))} 
+              handleUpdateDS_DM={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"danhMuc",d)):(t==='ADD'?await addDoc(collection(db,"danhMuc"),d):await updateDoc(doc(db,"danhMuc",d.id),d))} 
+              handleUpdateStatusOrder={async (id, s) => await updateDoc(doc(db,"donHang",id),{trangThai:s})} 
+              handleDeleteOrder={async (id) => await deleteDoc(doc(db,"donHang",id))} 
+            />
+          } />
         </Routes>
       </div>
 
