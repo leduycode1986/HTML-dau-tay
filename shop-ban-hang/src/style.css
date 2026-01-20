@@ -87,79 +87,89 @@ img { max-width: 100%; height: auto; }
 .review-box { background: #f8f9fa; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
 .star-rating { color: #ffc107; font-size: 1.1rem; }
 .review-avatar { width: 40px; height: 40px; background: #198754; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; }
-/* ... (GIỮ NGUYÊN CÁC PHẦN CŨ TỪ 1 ĐẾN 8) ... */
-/* Bạn hãy giữ nguyên toàn bộ code CSS cũ, chỉ thêm đoạn dưới đây vào cuối file */
 
-/* --- 1. BASE & RESET --- */
-body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 14px; overflow-x: hidden; } /* Fix lỗi tràn ngang do hiệu ứng */
-a { text-decoration: none; color: inherit; transition: 0.2s; }
-img { max-width: 100%; height: auto; }
+/* --- 1. TOP BAR (MỚI: Dòng thông báo trên cùng) --- */
+.top-bar-notification {
+  background-color: #2c3e50; /* Màu tối sang trọng */
+  color: #fff;
+  font-size: 12px;
+  text-align: center;
+  padding: 5px 10px;
+  letter-spacing: 0.5px;
+  position: relative;
+  z-index: 1031; /* Cao hơn navbar */
+}
 
-/* ... (COPY LẠI TOÀN BỘ CSS CŨ CỦA BẠN VÀO ĐÂY NẾU MUỐN, HOẶC CHỈ CẦN DÁN ĐÈ NẾU BẠN DÙNG FILE CŨ CỦA TÔI) ... */
-/* ĐỂ TIẾT KIỆM KHÔNG GIAN, TÔI SẼ GHI LẠI CÁC CLASS QUAN TRỌNG VÀ THÊM MỚI */
+/* --- 2. BANNER SLIDER (CHỈNH NHỎ LẠI) --- */
+.banner-slider-container { margin-bottom: 20px; overflow: hidden; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.05); }
+.banner-img { 
+  width: 100%; 
+  height: 220px; /* Giảm từ 350px xuống 220px cho Desktop */
+  object-fit: cover; 
+  display: block; 
+}
+/* Responsive Mobile: Nhỏ hơn nữa */
+@media (max-width: 768px) { 
+  .banner-img { height: 140px; } 
+  .top-bar-notification { font-size: 11px; }
+}
 
-/* --- (Tái khẳng định các class cũ quan trọng để không bị lỗi) --- */
-.sidebar-main { background: white; border-radius: 8px; overflow: hidden; position: -webkit-sticky; position: sticky; top: 100px; z-index: 10; height: fit-content; max-height: calc(100vh - 120px); overflow-y: auto; scrollbar-width: none; }
+/* --- 3. FLASH SALE (GỌN GÀNG HƠN) --- */
+.flash-sale-container { 
+  background: linear-gradient(90deg, #d32f2f 0%, #ff5252 100%); 
+  padding: 15px; /* Giảm padding */
+  border-radius: 8px; 
+  margin-bottom: 20px; 
+  color: white; 
+  position: relative;
+  overflow: hidden;
+}
+.flash-sale-header { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
+.countdown-box { display: flex; gap: 5px; align-items: center; font-weight: bold; font-size: 1rem; background: rgba(0,0,0,0.1); padding: 5px 10px; border-radius: 4px; }
+.countdown-item { background: white; color: #d32f2f; padding: 2px 6px; border-radius: 4px; min-width: 30px; text-align: center; font-size: 13px; }
+
+/* --- 4. CÁC CLASS KHÁC (GIỮ NGUYÊN) --- */
+body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; font-size: 14px; overflow-x: hidden; }
+a { text-decoration: none; color: inherit; transition: 0.2s; } img { max-width: 100%; height: auto; }
+.sidebar-main { background: white; border-radius: 8px; position: sticky; top: 100px; z-index: 10; max-height: calc(100vh - 120px); overflow-y: auto; scrollbar-width: none; }
 .sidebar-main::-webkit-scrollbar { display: none; }
 @media (max-width: 768px) { .sidebar-main { position: static; max-height: none; } }
-
-.product-card { border-radius: 8px; overflow: hidden; background: #fff; height: 100%; display: flex; flex-direction: column; transition: 0.3s; border: 1px solid #eee; position: relative; } /* Thêm position relative */
-.product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); border-color: #198754; }
+.product-card { border-radius: 8px; background: #fff; height: 100%; display: flex; flex-direction: column; transition: 0.3s; border: 1px solid #eee; position: relative; overflow: hidden; }
+.product-card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); border-color: #198754; }
 .product-image-wrapper { position: relative; padding-top: 100%; overflow: hidden; }
 .product-image-wrapper img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
-.product-card:hover .product-image-wrapper img { transform: scale(1.1); } 
-
+.product-card:hover .product-image-wrapper img { transform: scale(1.05); }
 .badge-overlay { position: absolute; top: 5px; left: 5px; display: flex; flex-direction: column; gap: 3px; z-index: 2; }
 .badge-item { padding: 3px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; color: white; text-transform: uppercase; }
 .badge-new { background: #198754; } .badge-hot { background: #dc3545; } .badge-promo-tag { background: #ffc107; color: #000; }
-
-/* --- 9. FLASH SALE (MỚI) --- */
-.flash-sale-container { background: linear-gradient(90deg, #d32f2f 0%, #ff5252 100%); padding: 20px; border-radius: 12px; margin-bottom: 30px; color: white; }
-.countdown-box { display: flex; gap: 10px; align-items: center; font-weight: bold; font-size: 1.2rem; background: rgba(0,0,0,0.2); padding: 10px 20px; border-radius: 30px; width: fit-content; margin-top: 10px; }
-.countdown-item { background: white; color: #d32f2f; padding: 5px 10px; border-radius: 5px; min-width: 40px; text-align: center; }
-
-/* --- 10. QUICK VIEW BUTTON (MỚI) --- */
-.quick-view-btn {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%) scale(0); /* Ẩn mặc định */
-  background: rgba(255, 255, 255, 0.9);
-  color: #333;
-  width: 45px; height: 45px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-  cursor: pointer;
-  z-index: 3;
-  transition: 0.3s;
-}
+.quick-view-btn { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); background: rgba(255, 255, 255, 0.95); color: #333; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.2); cursor: pointer; z-index: 3; transition: 0.3s; }
 .quick-view-btn:hover { background: #198754; color: white; }
-.product-card:hover .quick-view-btn { transform: translate(-50%, -50%) scale(1); } /* Hiện khi hover */
-
-/* --- 11. TRA CỨU ĐƠN HÀNG (MỚI) --- */
-.tracking-box { max-width: 600px; margin: 50px auto; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); text-align: center; }
-.tracking-step { display: flex; justify-content: space-between; position: relative; margin-top: 30px; }
-.tracking-step::before { content: ''; position: absolute; top: 15px; left: 0; width: 100%; height: 3px; background: #eee; z-index: 0; }
-.step-item { position: relative; z-index: 1; background: white; padding: 0 10px; text-align: center; }
-.step-icon { width: 35px; height: 35px; background: #eee; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px; color: #999; }
-.step-item.active .step-icon { background: #198754; color: white; }
-.step-item.active ~ .step-item .step-icon { background: #eee; } /* Các bước sau chưa active */
-
-/* --- CÁC CLASS CŨ CẦN GIỮ --- */
-.section-title { font-weight: 800; color: #198754; text-transform: uppercase; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #e9ecef; font-size: 1.1rem; position: relative; }
-.section-title::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 50px; height: 2px; background: #198754; }
-.cart-summary-box { background: white; padding: 25px; border-radius: 16px; border: 1px solid #dee2e6; box-shadow: 0 10px 30px rgba(0,0,0,0.08); position: -webkit-sticky; position: sticky; top: 120px; z-index: 5; }
+.product-card:hover .quick-view-btn { transform: translate(-50%, -50%) scale(1); }
+.section-title { font-weight: 800; color: #198754; text-transform: uppercase; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #e9ecef; font-size: 1rem; position: relative; }
+.section-title::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 40px; height: 2px; background: #198754; }
+.price-original { text-decoration: line-through; color: #adb5bd; font-size: 0.85rem; margin-right: 5px; }
+.price-sale { color: #dc3545; font-weight: 800; font-size: 1rem; }
+.cart-summary-box { background: white; padding: 20px; border-radius: 12px; border: 1px solid #dee2e6; box-shadow: 0 5px 20px rgba(0,0,0,0.05); position: sticky; top: 120px; z-index: 5; }
 .admin-login-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #e9ecef; }
 .admin-login-card { width: 100%; max-width: 400px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-.admin-navbar { background-color: #198754; color: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; }
-.banner-img { width: 100%; height: 350px; object-fit: cover; }
-@media (max-width: 768px) { .banner-img { height: 180px; } }
+.admin-navbar { background-color: #198754; color: white; padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; }
 .floating-chat-container { position: fixed; bottom: 30px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
-.chat-btn { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; text-decoration: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+.chat-btn { width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; text-decoration: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 .zalo-btn { background: #0068ff; } .mess-btn { background: #0084ff; }
-.back-to-top { position: fixed; bottom: 30px; left: 30px; width: 45px; height: 45px; background: #333; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.3s; z-index: 990; }
+.back-to-top { position: fixed; bottom: 30px; left: 30px; width: 40px; height: 40px; background: #333; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.3s; z-index: 990; }
 .back-to-top.visible { opacity: 0.8; }
-.price-original { text-decoration: line-through; color: #adb5bd; font-size: 0.9rem; margin-right: 8px; }
-.price-sale { color: #dc3545; font-weight: 800; font-size: 1.1rem; }
 .footer-section { background-color: #f8f9fa; border-top: 3px solid #198754; padding-top: 20px; margin-top: 20px; }
-.copyright-bar { background-color: #198754; color: white; text-align: center; padding: 15px; }
+.copyright-bar { background-color: #198754; color: white; text-align: center; padding: 10px; font-size: 0.85rem; }
+.tracking-box { max-width: 600px; margin: 40px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); text-align: center; }
+.tracking-step { display: flex; justify-content: space-between; position: relative; margin-top: 20px; }
+.tracking-step::before { content: ''; position: absolute; top: 15px; left: 0; width: 100%; height: 3px; background: #eee; z-index: 0; }
+.step-item { position: relative; z-index: 1; background: white; padding: 0 5px; text-align: center; }
+.step-icon { width: 30px; height: 30px; background: #eee; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px; color: #999; font-size: 12px; }
+.step-item.active .step-icon { background: #198754; color: white; }
+.shop-logo { height: 45px; width: auto; object-fit: contain; }
+.slider-nav-btn { width: 30px; height: 30px; border-radius: 50%; background: white; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); color: #333; }
+.slider-nav-btn:hover { background: #198754; color: white; border-color: #198754; }
+.slick-prev, .slick-next { z-index: 2; width: 30px; height: 30px; }
+.slick-prev { left: 10px; } .slick-next { right: 10px; }
+.slick-prev::before, .slick-next::before { font-size: 24px; opacity: 0.7; }
+.slick-dots { bottom: 10px; }

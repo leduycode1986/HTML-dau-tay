@@ -6,8 +6,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col } from 'react-bootstrap';
 import { ToastContainer, toast } from 'react-toastify'; 
 import 'react-toastify/dist/ReactToastify.css'; 
-import AOS from 'aos'; // Import AOS
-import 'aos/dist/aos.css'; // CSS AOS
+import AOS from 'aos'; import 'aos/dist/aos.css';
 
 import Home from './Home';
 import ProductDetail from './ProductDetail';
@@ -15,9 +14,8 @@ import Cart from './Cart';
 import Admin from './Admin';
 import Auth from './Auth';
 import Member from './Member';
-import OrderLookup from './OrderLookup'; // Import trang Tra cứu
+import OrderLookup from './OrderLookup';
 
-// Hàm tạo slug SEO
 export const toSlug = (str) => {
   if (!str) return '';
   str = str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
@@ -28,24 +26,23 @@ export const toSlug = (str) => {
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // Khởi tạo AOS (Hiệu ứng cuộn)
-  useEffect(() => {
-    AOS.init({ duration: 800, once: false, offset: 50 }); // duration: tốc độ, once: false để cuộn lên xuống đều chạy lại
-  }, []);
-
-  // Reset cuộn trang khi chuyển route
-  useEffect(() => { window.scrollTo(0, 0); }, [location]);
-
   const [dsSanPham, setDsSanPham] = useState([]);
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [dsDonHang, setDsDonHang] = useState([]);
   const [gioHang, setGioHang] = useState(() => JSON.parse(localStorage.getItem('cart') || '[]'));
   const [tuKhoa, setTuKhoa] = useState('');
-  const [shopConfig, setShopConfig] = useState({ tenShop: 'MaiVang Shop', slogan: '', logo: '', diaChi: '', sdt: '', zalo: '', linkFacebook: '', copyright: '', tyLeDiem: 1000, gioiThieu: '', flashSaleEnd: '' }); // Thêm flashSaleEnd
+  
+  const [shopConfig, setShopConfig] = useState({ 
+    tenShop: 'MaiVang Shop', slogan: '', logo: '', diaChi: '', sdt: '', zalo: '', linkFacebook: '', copyright: '', tyLeDiem: 1000, gioiThieu: '', flashSaleEnd: '',
+    topBarText: '🚀 Giao hàng miễn phí trong bán kính 5km' 
+  });
+  
   const [currentUser, setCurrentUser] = useState(null);
   const [userData, setUserData] = useState(null); 
   const [showTopBtn, setShowTopBtn] = useState(false);
+
+  useEffect(() => { AOS.init({ duration: 800, once: false, offset: 50 }); }, []);
+  useEffect(() => { window.scrollTo(0, 0); }, [location]);
 
   useEffect(() => {
     const unsubSP = onSnapshot(collection(db, "sanPham"), (sn) => setDsSanPham(sn.docs.map(d => ({id: d.id, ...d.data()}))));
@@ -61,7 +58,7 @@ function App() {
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
 
   const themVaoGio = (sp) => { const check = gioHang.find(i => i.id === sp.id); if (check) setGioHang(gioHang.map(i => i.id === sp.id ? {...i, soLuong: i.soLuong + 1} : i)); else setGioHang([...gioHang, {...sp, soLuong: 1}]); toast.success(`Đã thêm "${sp.ten}" vào giỏ!`); };
-  const handleDatHang = async (khach) => { const tongTien = gioHang.reduce((t, s) => t + (s.giaBan || s.giaGoc) * s.soLuong, 0); if (currentUser && userData) { const tyLe = parseInt(shopConfig.tyLeDiem) || 1000; const diemCong = Math.floor(tongTien / tyLe); await updateDoc(doc(db, "users", currentUser.uid), { diemTichLuy: (userData.diemTichLuy || 0) + diemCong }); setUserData({ ...userData, diemTichLuy: (userData.diemTichLuy || 0) + diemCong }); toast.info(`Bạn được cộng ${diemCong} điểm tích lũy!`); } await addDoc(collection(db, "donHang"), { khachHang: khach, gioHang, tongTien, trangThai: 'Mới đặt', ngayDat: serverTimestamp(), userId: currentUser ? currentUser.uid : null }); setGioHang([]); toast.success("Đặt hàng thành công!"); navigate('/'); };
+  const handleDatHang = async (khach) => { const tongTien = gioHang.reduce((t, s) => t + (s.giaBan || s.giaGoc) * s.soLuong, 0); if (currentUser && userData) { const tyLe = parseInt(shopConfig.tyLeDiem) || 1000; const diemCong = Math.floor(tongTien / tyLe); await updateDoc(doc(db, "users", currentUser.uid), { diemTichLuy: (userData.diemTichLuy || 0) + diemCong }); setUserData({ ...userData, diemTichLuy: (userData.diemTichLuy || 0) + diemCong }); toast.info(`Bạn được cộng ${diemCong} điểm tích lũy!`); } await addDoc(collection(db, "donHang"), { maDonHang: 'MV-'+Math.floor(100000+Math.random()*900000), khachHang: khach, gioHang, tongTien, trangThai: 'Mới đặt', ngayDat: serverTimestamp(), userId: currentUser ? currentUser.uid : null }); setGioHang([]); toast.success("Đặt hàng thành công!"); navigate('/'); };
   const chinhSuaSoLuong = (id, kieu) => { setGioHang(gioHang.map(i => i.id === id ? {...i, soLuong: kieu === 'tang' ? i.soLuong + 1 : Math.max(1, i.soLuong - 1)} : i)); };
   const xoaSanPham = (id) => { setGioHang(gioHang.filter(i => i.id !== id)); toast.warning("Đã xóa sản phẩm khỏi giỏ."); };
   const handleLogout = async () => { await signOut(auth); setUserData(null); navigate('/'); toast.info("Đã đăng xuất."); };
@@ -75,23 +72,28 @@ function App() {
       <div className={`back-to-top ${showTopBtn ? 'visible' : ''}`} onClick={() => window.scrollTo({top:0, behavior:'smooth'})}><i className="fa-solid fa-arrow-up"></i></div>
 
       {!isAdminPage && (
-        <Navbar bg="white" variant="light" expand="lg" className="sticky-top shadow-sm py-2 border-bottom">
-          <Container>
-            <Navbar.Brand as={Link} to="/">{shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" className="me-2 rounded shop-logo" /> : <span className="fs-2 me-2">🦁</span>}<div className="d-flex flex-column"><span className="fw-bold text-success text-uppercase" style={{fontSize: '1.1rem'}}>{shopConfig.tenShop}</span><span className="text-warning small fw-bold" style={{fontSize: '0.7rem'}}>⭐ {shopConfig.slogan} ⭐</span></div></Navbar.Brand>
-            <Navbar.Toggle aria-controls="basic-navbar-nav" />
-            <Navbar.Collapse id="basic-navbar-nav">
-              <Nav className="w-100 d-flex justify-content-between align-items-center ms-lg-4 mt-3 mt-lg-0">
-                <Form className="d-flex flex-grow-1 mx-lg-3"><Form.Control type="search" placeholder="🔍 Tìm kiếm..." className="rounded-start border-1 bg-light px-3 py-2" value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)} /><Button variant="success" className="rounded-end px-3"><i className="fa-solid fa-magnifying-glass"></i></Button></Form>
-                {shopConfig.sdt && (<div className="d-none d-lg-block ms-3 me-3" style={{minWidth: 'fit-content'}}><div className="d-flex align-items-center border rounded-pill px-3 py-1 bg-light"><i className="fa-solid fa-phone-volume fa-shake text-danger fs-5 me-2"></i><div className="lh-1"><span className="d-block text-muted" style={{fontSize:'10px', textTransform:'uppercase', fontWeight:'bold'}}>Hotline</span><span className="fw-bold text-danger" style={{fontSize:'1.1rem'}}>{shopConfig.sdt}</span></div></div></div>)}
-                <div className="d-flex align-items-center gap-2">
-                  <Link to="/tra-cuu" className="text-decoration-none"><Button variant="outline-info" size="sm" className="rounded-pill fw-bold text-nowrap me-2"><i className="fa-solid fa-truck-fast"></i> Tra đơn</Button></Link>
-                  {currentUser ? (<Dropdown align="end"><Dropdown.Toggle variant="light" className="d-flex align-items-center gap-2 border-0 bg-transparent"><div className="text-end lh-1"><div className="fw-bold small">{userData?.ten || 'Thành viên'}</div><div className="text-warning small fw-bold" style={{fontSize:'0.7rem'}}>💎 {userData?.diemTichLuy || 0} điểm</div></div><i className="fa-solid fa-circle-user fs-4 text-secondary"></i></Dropdown.Toggle><Dropdown.Menu><Dropdown.Item as={Link} to="/member">Quản lý tài khoản</Dropdown.Item><Dropdown.Item onClick={handleLogout}>Đăng xuất</Dropdown.Item></Dropdown.Menu></Dropdown>) : ( <Link to="/auth" className="text-decoration-none"><Button variant="outline-primary" size="sm" className="rounded-pill fw-bold text-nowrap"><i className="fa-regular fa-user me-1"></i> Đăng nhập</Button></Link> )}
-                  <Link to="/cart" className="text-decoration-none"><Button variant="success" className="rounded-pill fw-bold px-3 py-2 d-flex align-items-center gap-2 shadow-sm text-nowrap"><i className="fa-solid fa-cart-shopping"></i> <Badge bg="warning" text="dark" pill>{gioHang.reduce((acc, item) => acc + item.soLuong, 0)}</Badge></Button></Link>
-                </div>
-              </Nav>
-            </Navbar.Collapse>
-          </Container>
-        </Navbar>
+        <>
+          {/* --- TOP BAR (MỚI) --- */}
+          {shopConfig.topBarText && <div className="top-bar-notification">{shopConfig.topBarText}</div>}
+          
+          <Navbar bg="white" variant="light" expand="lg" className="sticky-top shadow-sm py-2 border-bottom">
+            <Container>
+              <Navbar.Brand as={Link} to="/">{shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" className="me-2 rounded shop-logo" /> : <span className="fs-2 me-2">🦁</span>}<div className="d-flex flex-column"><span className="fw-bold text-success text-uppercase" style={{fontSize: '1.1rem'}}>{shopConfig.tenShop}</span><span className="text-warning small fw-bold" style={{fontSize: '0.7rem'}}>⭐ {shopConfig.slogan} ⭐</span></div></Navbar.Brand>
+              <Navbar.Toggle aria-controls="basic-navbar-nav" />
+              <Navbar.Collapse id="basic-navbar-nav">
+                <Nav className="w-100 d-flex justify-content-between align-items-center ms-lg-4 mt-3 mt-lg-0">
+                  <Form className="d-flex flex-grow-1 mx-lg-3"><Form.Control type="search" placeholder="🔍 Tìm kiếm..." className="rounded-start border-1 bg-light px-3 py-2" value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)} /><Button variant="success" className="rounded-end px-3"><i className="fa-solid fa-magnifying-glass"></i></Button></Form>
+                  {shopConfig.sdt && (<div className="d-none d-lg-block ms-3 me-3" style={{minWidth: 'fit-content'}}><div className="d-flex align-items-center border rounded-pill px-3 py-1 bg-light"><i className="fa-solid fa-phone-volume fa-shake text-danger fs-5 me-2"></i><div className="lh-1"><span className="d-block text-muted" style={{fontSize:'10px', textTransform:'uppercase', fontWeight:'bold'}}>Hotline</span><span className="fw-bold text-danger" style={{fontSize:'1.1rem'}}>{shopConfig.sdt}</span></div></div></div>)}
+                  <div className="d-flex align-items-center gap-2">
+                    <Link to="/tra-cuu" className="text-decoration-none"><Button variant="outline-info" size="sm" className="rounded-pill fw-bold text-nowrap me-2"><i className="fa-solid fa-truck-fast"></i> Tra đơn</Button></Link>
+                    {currentUser ? (<Dropdown align="end"><Dropdown.Toggle variant="light" className="d-flex align-items-center gap-2 border-0 bg-transparent"><div className="text-end lh-1"><div className="fw-bold small">{userData?.ten || 'Thành viên'}</div><div className="text-warning small fw-bold" style={{fontSize:'0.7rem'}}>💎 {userData?.diemTichLuy || 0} điểm</div></div><i className="fa-solid fa-circle-user fs-4 text-secondary"></i></Dropdown.Toggle><Dropdown.Menu><Dropdown.Item as={Link} to="/member">Quản lý tài khoản</Dropdown.Item><Dropdown.Item onClick={handleLogout}>Đăng xuất</Dropdown.Item></Dropdown.Menu></Dropdown>) : ( <Link to="/auth" className="text-decoration-none"><Button variant="outline-primary" size="sm" className="rounded-pill fw-bold text-nowrap"><i className="fa-regular fa-user me-1"></i> Đăng nhập</Button></Link> )}
+                    <Link to="/cart" className="text-decoration-none"><Button variant="success" className="rounded-pill fw-bold px-3 py-2 d-flex align-items-center gap-2 shadow-sm text-nowrap"><i className="fa-solid fa-cart-shopping"></i> <Badge bg="warning" text="dark" pill>{gioHang.reduce((acc, item) => acc + item.soLuong, 0)}</Badge></Button></Link>
+                  </div>
+                </Nav>
+              </Navbar.Collapse>
+            </Container>
+          </Navbar>
+        </>
       )}
 
       <div className="flex-grow-1">
@@ -102,7 +104,7 @@ function App() {
           <Route path="/cart" element={<Cart gioHang={gioHang} dsDanhMuc={dsDanhMuc} handleDatHang={handleDatHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} currentUser={currentUser} userData={userData} />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/member" element={<Member />} />
-          <Route path="/tra-cuu" element={<OrderLookup />} /> {/* Route mới */}
+          <Route path="/tra-cuu" element={<OrderLookup />} />
           <Route path="/admin" element={<Admin dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} dsDonHang={dsDonHang} handleUpdateDS_SP={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"sanPham",d)):(t==='ADD'?await addDoc(collection(db,"sanPham"),d):await updateDoc(doc(db,"sanPham",d.id),d))} handleUpdateDS_DM={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"danhMuc",d)):(t==='ADD'?await addDoc(collection(db,"danhMuc"),d):await updateDoc(doc(db,"danhMuc",d.id),d))} handleUpdateStatusOrder={async (id, s) => await updateDoc(doc(db,"donHang",id),{trangThai:s})} handleDeleteOrder={async (id) => await deleteDoc(doc(db,"donHang",id))} />} />
         </Routes>
       </div>
