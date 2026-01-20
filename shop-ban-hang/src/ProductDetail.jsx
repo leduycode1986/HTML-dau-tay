@@ -16,6 +16,20 @@ function ProductDetail({ dsSanPham, dsDanhMuc, themVaoGio }) {
   const [comment, setComment] = useState('');
   const user = auth.currentUser;
 
+  // --- LƯU LỊCH SỬ XEM (MỚI) ---
+  useEffect(() => {
+    if(id) {
+      let recent = JSON.parse(localStorage.getItem('recent') || '[]');
+      // Xóa ID cũ nếu trùng để đưa lên đầu
+      recent = recent.filter(item => item !== id);
+      recent.unshift(id);
+      // Chỉ giữ lại 10 sản phẩm gần nhất
+      if(recent.length > 10) recent.pop();
+      localStorage.setItem('recent', JSON.stringify(recent));
+    }
+  }, [id]);
+  // -----------------------------
+
   useEffect(() => {
     if(id) {
       const q = query(collection(db, "reviews"), where("productId", "==", id));
