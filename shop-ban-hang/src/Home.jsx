@@ -24,6 +24,7 @@ const ProductSlider = ({ title, products, icon, themVaoGio, setQuickViewSP }) =>
 function Home({ dsSanPham, dsDanhMuc, themVaoGio, shopConfig }) {
   const { id: categoryId } = useParams();
   const navigate = useNavigate();
+  const [openMenuId, setOpenMenuId] = useState(null);
   const [sortType, setSortType] = useState('default');
   const [minPrice, setMinPrice] = useState(''); const [maxPrice, setMaxPrice] = useState('');
   const [visibleCount, setVisibleCount] = useState(12);
@@ -31,16 +32,29 @@ function Home({ dsSanPham, dsDanhMuc, themVaoGio, shopConfig }) {
   const [quickViewSP, setQuickViewSP] = useState(null);
   const [recentProducts, setRecentProducts] = useState([]);
   const [showPopupAds, setShowPopupAds] = useState(false);
-  const [openMenuId, setOpenMenuId] = useState(null);
 
   useEffect(() => {
     if(!shopConfig?.flashSaleEnd) return;
-    const now = new Date().getTime(); const distance = new Date(shopConfig.flashSaleEnd).getTime() - now;
-    if (distance > 0 && !sessionStorage.getItem('seenPopup')) { setShowPopupAds(true); sessionStorage.setItem('seenPopup', 'true'); }
+    
+    // Check Popup 1 lần duy nhất khi vào
+    const now = new Date().getTime();
+    const distance = new Date(shopConfig.flashSaleEnd).getTime() - now;
+    if (distance > 0 && !sessionStorage.getItem('seenPopup')) { 
+        setShowPopupAds(true); 
+        sessionStorage.setItem('seenPopup', 'true'); 
+    }
+
     const interval = setInterval(() => {
-      const nowTick = new Date().getTime(); const distTick = new Date(shopConfig.flashSaleEnd).getTime() - nowTick;
-      if (distTick < 0) { clearInterval(interval); setTimeLeft({ h:0, m:0, s:0 }); setShowPopupAds(false); }
-      else { setTimeLeft({ h: Math.floor((distTick%(1000*60*60*24))/(1000*60*60)), m: Math.floor((distTick%(1000*60*60))/(1000*60)), s: Math.floor((distTick%(1000*60))/1000) }); }
+      const nowTick = new Date().getTime();
+      const distTick = new Date(shopConfig.flashSaleEnd).getTime() - nowTick;
+      if (distTick < 0) { 
+        clearInterval(interval); setTimeLeft({ h:0, m:0, s:0 }); setShowPopupAds(false); 
+      } else {
+        const h = Math.floor((distTick % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const m = Math.floor((distTick % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((distTick % (1000 * 60)) / 1000);
+        setTimeLeft({ h, m, s });
+      }
     }, 1000);
     return () => clearInterval(interval);
   }, [shopConfig]);
@@ -60,6 +74,7 @@ function Home({ dsSanPham, dsDanhMuc, themVaoGio, shopConfig }) {
         <Col xs={12} md={9} lg={10} className="p-3 p-md-4" style={{background: '#f4f6f9'}}>
           {!categoryId && (
             <>
+              {/* SLIDERS SẢN PHẨM */}
               <ProductSlider title="SẢN PHẨM BÁN CHẠY" icon="🔥" products={dsSanPham.filter(sp => sp.isBanChay)} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />
               <ProductSlider title="SẢN PHẨM MỚI" icon="✨" products={dsSanPham.filter(sp => sp.isMoi)} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />
               {recentProducts.length > 0 && (<div className="mt-5 border-top pt-4"><h5 className="text-secondary mb-3"><i className="fa-solid fa-clock-rotate-left me-2"></i> Sản phẩm bạn vừa xem</h5><Row className="g-2 g-md-3 row-cols-2 row-cols-md-4 row-cols-lg-6">{recentProducts.slice(0, 6).map(sp => <Col key={sp.id}><Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} /></Col>)}</Row></div>)}
@@ -68,8 +83,21 @@ function Home({ dsSanPham, dsDanhMuc, themVaoGio, shopConfig }) {
           <div className="mt-4 pt-3 border-top"><h4 className="fw-bold text-uppercase mb-3 text-success"><i className="fa-solid fa-border-all me-2"></i> {categoryId ? 'DANH SÁCH SẢN PHẨM' : 'TẤT CẢ SẢN PHẨM'}</h4><div className="filter-toolbar"><div className="d-flex align-items-center gap-2"><span className="fw-bold text-muted small text-uppercase">Khoảng giá:</span><div className="price-input-group"><input type="number" className="price-input" placeholder="Từ (¥)" value={minPrice} onChange={e => setMinPrice(e.target.value)} /><span className="text-muted">-</span><input type="number" className="price-input" placeholder="Đến (¥)" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} /></div></div><div className="d-flex align-items-center gap-2 ms-md-auto"><span className="fw-bold text-muted small text-uppercase">Sắp xếp:</span><select className="sort-select" value={sortType} onChange={e=>setSortType(e.target.value)}><option value="default">Mặc định</option><option value="price-asc">Giá: Thấp đến Cao</option><option value="price-desc">Giá: Cao đến Thấp</option><option value="name-az">Tên: A đến Z</option></select></div></div>{finalProducts.length === 0 ? (<Alert variant="info" className="text-center">Không tìm thấy sản phẩm phù hợp.</Alert>) : (<><Row className="g-2 g-md-3 row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5" data-aos="fade-up">{finalProducts.slice(0, visibleCount).map(sp => <Col key={sp.id}><Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} /></Col>)}</Row>{visibleCount < finalProducts.length && (<div className="text-center mt-4"><Button variant="outline-success" className="rounded-pill px-5 fw-bold shadow-sm" onClick={() => setVisibleCount(visibleCount + 12)}>Xem thêm <i className="fa-solid fa-arrow-down ms-2"></i></Button></div>)}</>)}</div>
         </Col>
       </Row>
+
+      {/* QUICK VIEW */}
       <Modal show={!!quickViewSP} onHide={() => setQuickViewSP(null)} size="lg" centered><Modal.Body className="p-0">{quickViewSP && (<Row className="g-0"><Col md={5}><img src={quickViewSP.anh} className="w-100 h-100 object-fit-cover" alt="" style={{minHeight: '300px'}} /></Col><Col md={7} className="p-4 d-flex flex-column justify-content-center"><h3 className="fw-bold text-success mb-2">{quickViewSP.ten}</h3><div className="mb-3"><span className="h4 text-danger fw-bold me-3">{quickViewSP.giaBan?.toLocaleString()} ¥</span>{quickViewSP.phanTramGiam > 0 && <span className="text-muted text-decoration-line-through">{quickViewSP.giaGoc?.toLocaleString()} ¥</span>}</div><div className="mb-4 text-muted small" dangerouslySetInnerHTML={{__html: quickViewSP.moTa?.substring(0, 150) + '...'}}></div><div className="d-flex gap-2"><Button variant="success" className="flex-grow-1 fw-bold rounded-pill" onClick={()=>{themVaoGio(quickViewSP); setQuickViewSP(null)}}>THÊM VÀO GIỎ</Button><Button variant="outline-secondary" onClick={()=>setQuickViewSP(null)}>Đóng</Button></div><Link to={`/san-pham/${toSlug(quickViewSP.ten)}/${quickViewSP.id}`} className="mt-3 text-center small text-primary">Xem chi tiết đầy đủ</Link></Col></Row>)}</Modal.Body></Modal>
-      <Modal show={showPopupAds} onHide={()=>setShowPopupAds(false)} size="md" centered className="ads-modal"><Modal.Header closeButton style={{border: 'none', paddingBottom: 0}} /><Modal.Body className="text-center pt-0 pb-4 px-4"><div className="mb-3 display-1 text-warning"><i className="fa-solid fa-bolt fa-shake"></i></div><h4 className="fw-bold text-danger mb-2">FLASH SALE ĐANG DIỄN RA!</h4><p className="text-muted mb-4">Săn ngay kẻo lỡ - Giá cực sốc</p><div className="countdown-box justify-content-center mb-4 gap-2"><div className="countdown-item bg-danger text-white fs-4 p-2">{String(timeLeft.h).padStart(2,'0')}</div> : <div className="countdown-item bg-danger text-white fs-4 p-2">{String(timeLeft.m).padStart(2,'0')}</div> : <div className="countdown-item bg-danger text-white fs-4 p-2">{String(timeLeft.s).padStart(2,'0')}</div></div><Button variant="success" size="lg" className="w-100 rounded-pill fw-bold shadow" onClick={()=>{setShowPopupAds(false); navigate('/flash-sale')}}>SĂN DEAL NGAY</Button></Modal.Body></Modal>
+
+      {/* POPUP FLASH SALE (CHỈ HIỆN NẾU CÒN THỜI GIAN) */}
+      <Modal show={showPopupAds} onHide={()=>setShowPopupAds(false)} size="md" centered className="ads-modal">
+        <Modal.Header closeButton style={{border: 'none', paddingBottom: 0}} />
+        <Modal.Body className="text-center pt-0 pb-4 px-4">
+          <div className="mb-3 display-1 text-warning"><i className="fa-solid fa-bolt fa-shake"></i></div>
+          <h4 className="fw-bold text-danger mb-2">FLASH SALE ĐANG DIỄN RA!</h4>
+          <p className="text-muted mb-4">Săn ngay kẻo lỡ - Giá cực sốc</p>
+          <div className="countdown-box justify-content-center mb-4 gap-2"><div className="countdown-item bg-danger text-white fs-4 p-2">{String(timeLeft.h).padStart(2,'0')}</div> : <div className="countdown-item bg-danger text-white fs-4 p-2">{String(timeLeft.m).padStart(2,'0')}</div> : <div className="countdown-item bg-danger text-white fs-4 p-2">{String(timeLeft.s).padStart(2,'0')}</div></div>
+          <Button variant="success" size="lg" className="w-100 rounded-pill fw-bold shadow" onClick={()=>{setShowPopupAds(false); navigate('/flash-sale')}}>SĂN DEAL NGAY</Button>
+        </Modal.Body>
+      </Modal>
     </Container>
   );
 }
