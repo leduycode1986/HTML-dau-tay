@@ -3,9 +3,11 @@ import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
 import { db, auth } from './firebase'; 
 import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { Badge, Button, Form, Container, Navbar, Nav, Dropdown } from 'react-bootstrap';
+// --- ĐÃ THÊM LẠI ROW, COL VÀO ĐÂY ĐỂ HẾT LỖI TRẮNG TRANG ---
+import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col } from 'react-bootstrap';
+// ------------------------------------------------------------
 import { ToastContainer, toast } from 'react-toastify'; 
-import Slider from "react-slick"; // Import Slider để dùng Global
+import Slider from "react-slick"; 
 import 'react-toastify/dist/ReactToastify.css'; 
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css";
@@ -18,7 +20,7 @@ import Admin from './Admin';
 import Auth from './Auth';
 import Member from './Member';
 import OrderLookup from './OrderLookup';
-import FlashSale from './FlashSale'; // Import trang FlashSale mới
+import FlashSale from './FlashSale'; 
 
 export const toSlug = (str) => {
   if (!str) return '';
@@ -33,7 +35,7 @@ function App() {
   const [dsSanPham, setDsSanPham] = useState([]);
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [dsDonHang, setDsDonHang] = useState([]);
-  const [banners, setBanners] = useState([]); // State Banner toàn cục
+  const [banners, setBanners] = useState([]); 
   const [gioHang, setGioHang] = useState(() => JSON.parse(localStorage.getItem('cart') || '[]'));
   const [tuKhoa, setTuKhoa] = useState('');
   
@@ -53,7 +55,7 @@ function App() {
     const unsubSP = onSnapshot(collection(db, "sanPham"), (sn) => setDsSanPham(sn.docs.map(d => ({id: d.id, ...d.data()}))));
     const unsubDM = onSnapshot(collection(db, "danhMuc"), (sn) => { const data = sn.docs.map(d => ({id: d.id, ...d.data()})); data.sort((a, b) => parseFloat(a.order || 0) - parseFloat(b.order || 0)); setDsDanhMuc(data); });
     const unsubDH = onSnapshot(collection(db, "donHang"), (sn) => setDsDonHang(sn.docs.map(d => ({id: d.id, ...d.data()}))));
-    const unsubBanner = onSnapshot(collection(db, "banners"), (sn) => setBanners(sn.docs.map(d => ({id: d.id, ...d.data()})))); // Lấy Banner
+    const unsubBanner = onSnapshot(collection(db, "banners"), (sn) => setBanners(sn.docs.map(d => ({id: d.id, ...d.data()}))));
     const unsubConfig = onSnapshot(doc(db, "cauHinh", "thongTinChung"), (doc) => { if (doc.exists()) setShopConfig(doc.data()); });
     const unsubAuth = onAuthStateChanged(auth, async (user) => { setCurrentUser(user); if (user) { const userDoc = await getDoc(doc(db, "users", user.uid)); if (userDoc.exists()) setUserData(userDoc.data()); else setUserData({ diemTichLuy: 0, ten: user.displayName || user.email }); } else { setUserData(null); } });
     const handleScroll = () => setShowTopBtn(window.scrollY > 300);
@@ -64,9 +66,6 @@ function App() {
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
 
   const themVaoGio = (sp) => { const check = gioHang.find(i => i.id === sp.id); if (check) setGioHang(gioHang.map(i => i.id === sp.id ? {...i, soLuong: i.soLuong + 1} : i)); else setGioHang([...gioHang, {...sp, soLuong: 1}]); toast.success(`Đã thêm "${sp.ten}" vào giỏ!`); };
-  const handleDatHang = async (khach) => { const tongTien = gioHang.reduce((t, s) => t + (s.giaBan || s.giaGoc) * s.soLuong, 0); if (currentUser && userData) { const tyLe = parseInt(shopConfig.tyLeDiem) || 1000; const diemCong = Math.floor(tongTien / tyLe); await updateDoc(doc(db, "users", currentUser.uid), { diemTichLuy: (userData.diemTichLuy || 0) + diemCong }); setUserData({ ...userData, diemTichLuy: (userData.diemTichLuy || 0) + diemCong }); toast.info(`Bạn được cộng ${diemCong} điểm tích lũy!`); } await addDoc(collection(db, "donHang"), { maDonHang: 'MV-'+Math.floor(100000+Math.random()*900000), khachHang: khach, gioHang, tongTien, trangThai: 'Mới đặt', ngayDat: serverTimestamp(), userId: currentUser ? currentUser.uid : null }); setGioHang([]); toast.success("Đặt hàng thành công!"); navigate('/'); };
-  const chinhSuaSoLuong = (id, kieu) => { setGioHang(gioHang.map(i => i.id === id ? {...i, soLuong: kieu === 'tang' ? i.soLuong + 1 : Math.max(1, i.soLuong - 1)} : i)); };
-  const xoaSanPham = (id) => { setGioHang(gioHang.filter(i => i.id !== id)); toast.warning("Đã xóa sản phẩm khỏi giỏ."); };
   const handleLogout = async () => { await signOut(auth); setUserData(null); navigate('/'); toast.info("Đã đăng xuất."); };
   
   const sanPhamHienThi = dsSanPham.filter(sp => sp.ten?.toLowerCase().includes(tuKhoa.toLowerCase()));
@@ -80,7 +79,7 @@ function App() {
 
       {!isAdminPage && (
         <>
-          {/* --- 1. DÒNG THÔNG BÁO CHẠY (HEADER TEXT) --- */}
+          {/* --- TOP BAR --- */}
           <div className="top-bar-notification">
             <div className="marquee-text">{shopConfig.topBarText || "Nhận giao hàng trong bán kính 5 km"}</div>
           </div>
@@ -103,7 +102,7 @@ function App() {
             </Container>
           </Navbar>
 
-          {/* --- 2. BANNER TOÀN TRANG (Đặt ở đây để hiện mọi nơi) --- */}
+          {/* --- BANNER TOÀN TRANG --- */}
           {banners.length > 0 && (
             <div className="banner-global-container">
               <Slider {...sliderSettings}>
@@ -123,12 +122,11 @@ function App() {
           <Route path="/" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
           <Route path="/san-pham/:slug/:id" element={<ProductDetail dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
           <Route path="/danh-muc/:slug/:id" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
-          <Route path="/cart" element={<Cart gioHang={gioHang} dsDanhMuc={dsDanhMuc} handleDatHang={handleDatHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} currentUser={currentUser} userData={userData} />} />
+          <Route path="/cart" element={<Cart gioHang={gioHang} dsDanhMuc={dsDanhMuc} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} currentUser={currentUser} userData={userData} />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/member" element={<Member />} />
           <Route path="/tra-cuu" element={<OrderLookup />} />
           <Route path="/flash-sale" element={<FlashSale dsSanPham={dsSanPham} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
-          
           <Route path="/admin" element={
             <Admin 
               dsSanPham={dsSanPham} 
@@ -147,6 +145,7 @@ function App() {
         <footer className="footer-section pt-5 mt-4">
            <Container>
             <Row className="pb-4">
+              {/* --- ĐÃ THÊM LẠI ROW/COL ĐỂ TRÁNH LỖI --- */}
               <Col md={4} className="mb-4"><div className="d-flex align-items-center mb-3"><span className="fw-bold text-success fs-5 text-uppercase">{shopConfig.tenShop}</span></div><p className="text-muted small" style={{textAlign: 'justify'}}>{shopConfig.gioiThieu || 'Chuyên cung cấp thực phẩm tươi ngon...'}</p></Col>
               <Col md={4} className="mb-4"><div className="footer-title">Thông tin liên hệ</div><div className="footer-info-item"><i className="fa-solid fa-location-dot mt-1 text-success"></i> <span>{shopConfig.diaChi}</span></div><div className="footer-info-item"><i className="fa-solid fa-phone mt-1 text-success"></i> <span>{shopConfig.sdt}</span></div><div className="footer-info-item"><i className="fa-brands fa-facebook mt-1 text-success"></i> <a href={shopConfig.linkFacebook} target="_blank" rel="noreferrer" className="text-dark">Fanpage Facebook</a></div></Col>
               <Col md={4} className="mb-4"><div className="footer-title">Hỗ trợ khách hàng</div><div className="footer-info-item"><i className="fa-solid fa-check text-success"></i> Hướng dẫn mua hàng</div><div className="footer-info-item"><i className="fa-solid fa-check text-success"></i> Chính sách đổi trả</div>{shopConfig.zalo && <div className="footer-info-item"><i className="fa-solid fa-comment-dots text-primary"></i> Zalo: {shopConfig.zalo}</div>}</Col>
