@@ -1,27 +1,42 @@
 import React from 'react';
-import { Card, Button } from 'react-bootstrap';
+import { Card, Button, Badge } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { toSlug } from './App';
 
 function Product({ sp, themVaoGio, openQuickView }) {
-  const linkSP = `/san-pham/${toSlug(sp.ten)}/${sp.id}`;
   return (
-    <Card className="product-card h-100 shadow-sm border-0">
+    <Card className="h-100 border-0 shadow-sm product-card">
       <div className="product-image-wrapper">
-        <Link to={linkSP}><img src={sp.anh} alt={sp.ten} /></Link>
+        <Link to={`/san-pham/${toSlug(sp.ten)}/${sp.id}`} onClick={()=>window.scrollTo(0,0)}>
+          <Card.Img variant="top" src={sp.anh} alt={sp.ten} />
+        </Link>
         <div className="badge-overlay">
-          {/* --- BADGE FLASH SALE --- */}
-          {sp.isFlashSale && <span className="badge-item bg-warning text-dark"><i className="fa-solid fa-bolt"></i> FLASH</span>}
+          {sp.isFlashSale && <span className="badge-item badge-promo-tag">⚡ FLASH SALE</span>}
           {sp.isMoi && <span className="badge-item badge-new">NEW</span>}
-          {sp.isBanChay && <span className="badge-item badge-hot">HOT</span>}
-          {sp.isKhuyenMai && <span className="badge-item badge-promo-tag">SALE</span>}
+          {sp.phanTramGiam > 0 && <span className="badge-item badge-hot">-{sp.phanTramGiam}%</span>}
         </div>
-        
-        <div className="quick-view-btn" onClick={openQuickView} title="Xem nhanh"><i className="fa-solid fa-eye"></i></div>
+        <div className="quick-view-btn" onClick={openQuickView} title="Xem nhanh">
+          <i className="fa-solid fa-eye"></i>
+        </div>
       </div>
-      <Card.Body className="d-flex flex-column p-2">
-        <Link to={linkSP} className="text-decoration-none text-dark flex-grow-1"><div className="fw-bold text-truncate mb-1" title={sp.ten}>{sp.ten}</div><div className="d-flex align-items-center"><span className="price-sale me-2">{sp.giaBan?.toLocaleString()} ¥</span>{sp.phanTramGiam > 0 && <span className="price-original small">{sp.giaGoc?.toLocaleString()} ¥</span>}</div></Link>
-        <Button variant="outline-success" size="sm" className="w-100 rounded-pill fw-bold mt-2" onClick={() => themVaoGio(sp)}><i className="fa-solid fa-cart-plus"></i> Thêm</Button>
+      <Card.Body className="p-3 d-flex flex-column">
+        <Link to={`/san-pham/${toSlug(sp.ten)}/${sp.id}`} className="text-decoration-none text-dark" onClick={()=>window.scrollTo(0,0)}>
+          <Card.Title className="fs-6 fw-bold mb-1 text-truncate" title={sp.ten}>{sp.ten}</Card.Title>
+        </Link>
+        
+        {/* HIỂN THỊ GIÁ KÈM ĐƠN VỊ TÍNH */}
+        <div className="mt-auto">
+          <div className="d-flex align-items-baseline flex-wrap">
+            <span className="text-danger fw-bold me-2" style={{fontSize: '1.1rem'}}>
+              {sp.giaBan?.toLocaleString()}¥ <span className="small text-muted fw-normal">/ {sp.donVi || 'cái'}</span>
+            </span>
+            {sp.phanTramGiam > 0 && <span className="text-muted text-decoration-line-through small">{sp.giaGoc?.toLocaleString()}¥</span>}
+          </div>
+          
+          <Button variant="outline-success" size="sm" className="w-100 mt-2 rounded-pill fw-bold" onClick={() => themVaoGio(sp)}>
+            <i className="fa-solid fa-cart-plus me-1"></i> Thêm
+          </Button>
+        </div>
       </Card.Body>
     </Card>
   );

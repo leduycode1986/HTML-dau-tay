@@ -32,6 +32,7 @@ function Cart({ gioHang, dsDanhMuc, chinhSuaSoLuong, xoaSanPham, currentUser }) 
                         <img src={i.anh} width="60" height="60" style={{objectFit:'cover', borderRadius:'8px', marginRight:'10px'}} alt=""/>
                         <div>
                           <Link to={`/san-pham/${toSlug(i.ten)}/${i.id}`} className="fw-bold text-decoration-none text-dark">{i.ten}</Link>
+                          <div className="small text-muted">Đơn vị: {i.donVi || 'Cái'}</div>
                         </div>
                       </div>
                     </td>
