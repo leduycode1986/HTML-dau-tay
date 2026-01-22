@@ -4,37 +4,59 @@ import { Link } from 'react-router-dom';
 import { toSlug } from './App';
 
 function Product({ sp, themVaoGio, openQuickView }) {
+  // Kiểm tra tình trạng kho
+  const isOutOfStock = !sp.soLuong || sp.soLuong <= 0;
+
   return (
-    <Card className="h-100 border-0 shadow-sm product-card">
-      <div className="product-image-wrapper">
+    <Card className={`h-100 border-0 shadow-sm product-card ${isOutOfStock ? 'opacity-75' : ''}`}>
+      <div className="product-image-wrapper position-relative">
         <Link to={`/san-pham/${toSlug(sp.ten)}/${sp.id}`} onClick={()=>window.scrollTo(0,0)}>
-          <Card.Img variant="top" src={sp.anh} alt={sp.ten} />
+          {/* Nếu hết hàng thì ảnh mờ đi chút */}
+          <Card.Img variant="top" src={sp.anh} alt={sp.ten} style={{filter: isOutOfStock ? 'grayscale(80%)' : 'none'}} />
         </Link>
+        
+        {/* Nhãn trạng thái */}
         <div className="badge-overlay">
-          {sp.isFlashSale && <span className="badge-item badge-promo-tag">⚡ FLASH SALE</span>}
-          {sp.isMoi && <span className="badge-item badge-new">NEW</span>}
+          {isOutOfStock && <span className="badge-item bg-secondary">HẾT HÀNG</span>}
+          {!isOutOfStock && sp.isFlashSale && <span className="badge-item badge-promo-tag">⚡ FLASH SALE</span>}
+          {!isOutOfStock && sp.isMoi && <span className="badge-item badge-new">NEW</span>}
           {sp.phanTramGiam > 0 && <span className="badge-item badge-hot">-{sp.phanTramGiam}%</span>}
         </div>
+
+        {/* Nút xem nhanh chỉ hiện khi hover */}
         <div className="quick-view-btn" onClick={openQuickView} title="Xem nhanh">
           <i className="fa-solid fa-eye"></i>
         </div>
       </div>
+
       <Card.Body className="p-3 d-flex flex-column">
         <Link to={`/san-pham/${toSlug(sp.ten)}/${sp.id}`} className="text-decoration-none text-dark" onClick={()=>window.scrollTo(0,0)}>
           <Card.Title className="fs-6 fw-bold mb-1 text-truncate" title={sp.ten}>{sp.ten}</Card.Title>
         </Link>
         
-        {/* HIỂN THỊ GIÁ KÈM ĐƠN VỊ TÍNH */}
+        {/* HIỂN THỊ KHO & ĐƠN VỊ - QUAN TRỌNG */}
+        <div className="d-flex justify-content-between align-items-center mb-2" style={{fontSize: '0.8rem'}}>
+          <span className="text-muted">Đơn vị: <strong>{sp.donVi || 'Cái'}</strong></span>
+          <span className={isOutOfStock ? 'text-danger fw-bold' : 'text-success fw-bold'}>
+            Kho: {sp.soLuong || 0}
+          </span>
+        </div>
+
         <div className="mt-auto">
-          <div className="d-flex align-items-baseline flex-wrap">
-            <span className="text-danger fw-bold me-2" style={{fontSize: '1.1rem'}}>
-              {sp.giaBan?.toLocaleString()}¥ <span className="small text-muted fw-normal">/ {sp.donVi || 'cái'}</span>
-            </span>
-            {sp.phanTramGiam > 0 && <span className="text-muted text-decoration-line-through small">{sp.giaGoc?.toLocaleString()}¥</span>}
+          <div className="d-flex align-items-baseline gap-2 mb-2">
+            <span className="text-danger fw-bold fs-5">{sp.giaBan?.toLocaleString()} ¥</span>
+            {sp.phanTramGiam > 0 && <span className="text-decoration-line-through text-muted small">{sp.giaGoc?.toLocaleString()} ¥</span>}
           </div>
           
-          <Button variant="outline-success" size="sm" className="w-100 mt-2 rounded-pill fw-bold" onClick={() => themVaoGio(sp)}>
-            <i className="fa-solid fa-cart-plus me-1"></i> Thêm
+          {/* NÚT MUA HÀNG - Disable nếu hết kho */}
+          <Button 
+            variant={isOutOfStock ? "secondary" : "outline-success"} 
+            size="sm" 
+            className="w-100 rounded-pill fw-bold" 
+            onClick={() => !isOutOfStock && themVaoGio(sp)}
+            disabled={isOutOfStock}
+          >
+            {isOutOfStock ? 'HẾT HÀNG' : <><i className="fa-solid fa-cart-plus me-1"></i> Thêm</>}
           </Button>
         </div>
       </Card.Body>

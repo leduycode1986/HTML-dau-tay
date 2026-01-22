@@ -3,11 +3,7 @@ import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
 import { db, auth } from './firebase'; 
 import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-
-// --- IMPORT ĐẦY ĐỦ CÁC COMPONENT UI ĐỂ TRÁNH LỖI TRẮNG TRANG ---
-import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col } from 'react-bootstrap';
-// ----------------------------------------------------------------
-
+import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col, Card } from 'react-bootstrap';
 import { ToastContainer, toast } from 'react-toastify'; 
 import Slider from "react-slick"; 
 import 'react-toastify/dist/ReactToastify.css'; 
@@ -15,7 +11,6 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import AOS from 'aos'; import 'aos/dist/aos.css';
 
-// --- IMPORT CÁC TRANG CON ---
 import Home from './Home';
 import ProductDetail from './ProductDetail';
 import Cart from './Cart';
@@ -24,9 +19,8 @@ import Auth from './Auth';
 import Member from './Member';
 import OrderLookup from './OrderLookup';
 import FlashSale from './FlashSale'; 
-import Checkout from './Checkout'; // Trang thanh toán riêng
+import Checkout from './Checkout'; 
 
-// Hàm tạo slug URL chuẩn SEO
 export const toSlug = (str) => {
   if (!str) return '';
   str = str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
@@ -37,196 +31,166 @@ export const toSlug = (str) => {
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // --- KHỞI TẠO STATE ---
   const [dsSanPham, setDsSanPham] = useState([]);
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [dsDonHang, setDsDonHang] = useState([]);
   const [banners, setBanners] = useState([]); 
   const [gioHang, setGioHang] = useState(() => JSON.parse(localStorage.getItem('cart') || '[]'));
   const [tuKhoa, setTuKhoa] = useState('');
-  
-  // Cấu hình mặc định để tránh lỗi undefined
-  const [shopConfig, setShopConfig] = useState({ 
-    tenShop: 'MaiVang Shop', slogan: 'Tươi Ngon - Rẻ - Chất Lượng', logo: '', diaChi: '', sdt: '', zalo: '', linkFacebook: '', copyright: '', tyLeDiem: 1000, gioiThieu: '', flashSaleEnd: '',
-    topBarText: '🚀 Nhận giao hàng miễn phí trong bán kính 5km!', openingHours: '8:00 - 22:00'
-  });
-  
+  const [shopConfig, setShopConfig] = useState({ tenShop: 'MaiVang Shop', slogan: '', logo: '', diaChi: '', sdt: '', openingHours: '', topBarText: '', flashSaleEnd: '' });
   const [currentUser, setCurrentUser] = useState(null);
   const [userData, setUserData] = useState(null); 
   const [showTopBtn, setShowTopBtn] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [recentProducts, setRecentProducts] = useState([]); // State cho SP vừa xem
 
-  // --- USE EFFECTS ---
   useEffect(() => { AOS.init({ duration: 800, once: false, offset: 50 }); }, []);
-  useEffect(() => { window.scrollTo(0, 0); }, [location]); // Cuộn lên đầu khi chuyển trang
+  useEffect(() => { window.scrollTo(0, 0); }, [location]);
 
-  // Lấy dữ liệu từ Firebase
+  // LOAD DỮ LIỆU
   useEffect(() => {
-    const unsubSP = onSnapshot(collection(db, "sanPham"), (sn) => setDsSanPham(sn.docs.map(d => ({id: d.id, ...d.data()}))));
-    const unsubDM = onSnapshot(collection(db, "danhMuc"), (sn) => { 
-      const data = sn.docs.map(d => ({id: d.id, ...d.data()})); 
-      data.sort((a, b) => parseFloat(a.order || 0) - parseFloat(b.order || 0)); 
-      setDsDanhMuc(data); 
-    });
-    const unsubDH = onSnapshot(collection(db, "donHang"), (sn) => setDsDonHang(sn.docs.map(d => ({id: d.id, ...d.data()}))));
-    const unsubBanner = onSnapshot(collection(db, "banners"), (sn) => setBanners(sn.docs.map(d => ({id: d.id, ...d.data()}))));
-    const unsubConfig = onSnapshot(doc(db, "cauHinh", "thongTinChung"), (doc) => { if (doc.exists()) setShopConfig(prev => ({...prev, ...doc.data()})); });
+    const unsubSP = onSnapshot(collection(db, "sanPham"), sn => setDsSanPham(sn.docs.map(d=>({id:d.id,...d.data()}))));
+    const unsubDM = onSnapshot(collection(db, "danhMuc"), sn => { const d=sn.docs.map(x=>({id:x.id,...x.data()})); d.sort((a,b)=>parseFloat(a.order||0)-parseFloat(b.order||0)); setDsDanhMuc(d); });
+    const unsubConfig = onSnapshot(doc(db, "cauHinh", "thongTinChung"), d => d.exists() && setShopConfig(d.data()));
+    const unsubAuth = onAuthStateChanged(auth, async u => { setCurrentUser(u); if(u) { const d = await getDoc(doc(db,"users",u.uid)); setUserData(d.exists()?d.data():{}); } });
+    onSnapshot(collection(db, "banners"), sn => setBanners(sn.docs.map(d=>({id:d.id,...d.data()}))));
     
-    const unsubAuth = onAuthStateChanged(auth, async (user) => { 
-      setCurrentUser(user); 
-      if (user) { 
-        const userDoc = await getDoc(doc(db, "users", user.uid)); 
-        if (userDoc.exists()) setUserData(userDoc.data()); 
-        else setUserData({ diemTichLuy: 0, ten: user.displayName || user.email }); 
-      } else { 
-        setUserData(null); 
-      } 
-    });
-    
-    const handleScroll = () => setShowTopBtn(window.scrollY > 300);
-    window.addEventListener('scroll', handleScroll);
-    
-    return () => { unsubSP(); unsubDM(); unsubDH(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', handleScroll); };
+    // Load SP vừa xem từ LocalStorage
+    const recentIds = JSON.parse(localStorage.getItem('recent') || '[]');
+    // Cần đợi dsSanPham load xong mới map được, tạm thời check length > 0
+    return () => { unsubSP(); unsubDM(); unsubConfig(); unsubAuth(); };
   }, []);
 
-  // Lưu giỏ hàng vào LocalStorage mỗi khi thay đổi
+  // Cập nhật Recent Products khi dsSanPham thay đổi
+  useEffect(() => {
+    if(dsSanPham.length > 0) {
+      const recentIds = JSON.parse(localStorage.getItem('recent') || '[]');
+      const found = recentIds.map(id => dsSanPham.find(p => p.id === id)).filter(Boolean);
+      setRecentProducts(found);
+    }
+  }, [dsSanPham, location.pathname]); // Update khi chuyển trang
+
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
 
-  // --- CÁC HÀM XỬ LÝ GIỎ HÀNG (QUAN TRỌNG) ---
   const themVaoGio = (sp) => { 
     const check = gioHang.find(i => i.id === sp.id); 
     if (check) setGioHang(gioHang.map(i => i.id === sp.id ? {...i, soLuong: i.soLuong + 1} : i)); 
     else setGioHang([...gioHang, {...sp, soLuong: 1}]); 
     toast.success(`Đã thêm "${sp.ten}" vào giỏ!`); 
   };
+  const chinhSuaSoLuong = (id, type) => setGioHang(gioHang.map(i => i.id===id ? {...i, soLuong: type==='tang'?i.soLuong+1:Math.max(1,i.soLuong-1)} : i));
+  const xoaSanPham = (id) => setGioHang(gioHang.filter(i=>i.id!==id));
+  const handleLogout = async () => { await signOut(auth); setUserData(null); navigate('/'); };
 
-  const chinhSuaSoLuong = (id, kieu) => { 
-    setGioHang(gioHang.map(i => i.id === id ? {...i, soLuong: kieu === 'tang' ? i.soLuong + 1 : Math.max(1, i.soLuong - 1)} : i)); 
-  };
-
-  const xoaSanPham = (id) => { 
-    setGioHang(gioHang.filter(i => i.id !== id)); 
-    toast.warning("Đã xóa sản phẩm khỏi giỏ."); 
-  };
-
-  const handleLogout = async () => { await signOut(auth); setUserData(null); navigate('/'); toast.info("Đã đăng xuất."); };
-  
-  // --- CẤU HÌNH HIỂN THỊ ---
   const sanPhamHienThi = dsSanPham.filter(sp => sp.ten?.toLowerCase().includes(tuKhoa.toLowerCase()));
   const isAdminPage = location.pathname.startsWith('/admin');
-  const sliderSettings = { dots: true, infinite: true, speed: 500, slidesToShow: 1, slidesToScroll: 1, autoplay: true, autoplaySpeed: 3000, arrows: true };
+  const sliderSettings = { dots: true, infinite: true, speed: 500, slidesToShow: 1, autoplay: true };
 
   return (
     <div className="app-container d-flex flex-column min-vh-100">
-      <ToastContainer position="top-right" autoClose={3000} />
-      <div className={`back-to-top ${showTopBtn ? 'visible' : ''}`} onClick={() => window.scrollTo({top:0, behavior:'smooth'})}><i className="fa-solid fa-arrow-up"></i></div>
-
+      <ToastContainer autoClose={2000} />
       {!isAdminPage && (
         <>
-          {/* 1. TOP BAR CHẠY CHỮ + GIỜ MỞ CỬA */}
-          <div className="top-bar-notification d-flex justify-content-center align-items-center">
-            <div className="marquee-text">
-              <span className="me-5">{shopConfig.topBarText || "Chào mừng quý khách!"}</span>
-              {shopConfig.openingHours && <span><i className="fa-regular fa-clock"></i> Giờ mở cửa: {shopConfig.openingHours}</span>}
-            </div>
-          </div>
-
-          {/* 2. NAVBAR */}
-          <Navbar bg="white" variant="light" expand="lg" className="sticky-top shadow-sm py-2 border-bottom">
+          <div className="top-bar-notification"><div className="marquee-text"><span className="me-5">{shopConfig.topBarText}</span>{shopConfig.openingHours && <span><i className="fa-regular fa-clock"></i> Mở cửa: {shopConfig.openingHours}</span>}</div></div>
+          <Navbar bg="white" expand="lg" className="sticky-top shadow-sm py-2 border-bottom">
             <Container>
-              <Navbar.Brand as={Link} to="/">{shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" className="me-2 rounded shop-logo" /> : <span className="fs-2 me-2">🦁</span>}<div className="d-flex flex-column"><span className="fw-bold text-success text-uppercase" style={{fontSize: '1.1rem'}}>{shopConfig.tenShop}</span><span className="text-warning small fw-bold" style={{fontSize: '0.7rem'}}>⭐ {shopConfig.slogan} ⭐</span></div></Navbar.Brand>
-              <Navbar.Toggle aria-controls="basic-navbar-nav" />
-              <Navbar.Collapse id="basic-navbar-nav">
-                <Nav className="w-100 d-flex justify-content-between align-items-center ms-lg-4 mt-3 mt-lg-0">
-                  <Form className="d-flex flex-grow-1 mx-lg-3"><Form.Control type="search" placeholder="🔍 Tìm sản phẩm..." className="rounded-start border-1 bg-light px-3 py-2" value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)} /><Button variant="success" className="rounded-end px-3"><i className="fa-solid fa-magnifying-glass"></i></Button></Form>
-                  {shopConfig.sdt && (<div className="d-none d-lg-block ms-3 me-3" style={{minWidth: 'fit-content'}}><div className="d-flex align-items-center border rounded-pill px-3 py-1 bg-light"><i className="fa-solid fa-phone-volume fa-shake text-danger fs-5 me-2"></i><div className="lh-1"><span className="d-block text-muted" style={{fontSize:'10px', textTransform:'uppercase', fontWeight:'bold'}}>Hotline</span><span className="fw-bold text-danger" style={{fontSize:'1.1rem'}}>{shopConfig.sdt}</span></div></div></div>)}
-                  <div className="d-flex align-items-center gap-2">
-                    <Link to="/tra-cuu" className="text-decoration-none"><Button variant="outline-info" size="sm" className="rounded-pill fw-bold text-nowrap me-2"><i className="fa-solid fa-truck-fast"></i> Tra đơn</Button></Link>
-                    {currentUser ? (<Dropdown align="end"><Dropdown.Toggle variant="light" className="d-flex align-items-center gap-2 border-0 bg-transparent"><div className="text-end lh-1"><div className="fw-bold small">{userData?.ten || 'Thành viên'}</div><div className="text-warning small fw-bold" style={{fontSize:'0.7rem'}}>💎 {userData?.diemTichLuy || 0} điểm</div></div><i className="fa-solid fa-circle-user fs-4 text-secondary"></i></Dropdown.Toggle><Dropdown.Menu><Dropdown.Item as={Link} to="/member">Quản lý tài khoản</Dropdown.Item><Dropdown.Item onClick={handleLogout}>Đăng xuất</Dropdown.Item></Dropdown.Menu></Dropdown>) : ( <Link to="/auth" className="text-decoration-none"><Button variant="outline-primary" size="sm" className="rounded-pill fw-bold text-nowrap"><i className="fa-regular fa-user me-1"></i> Đăng nhập</Button></Link> )}
-                    <Link to="/cart" className="text-decoration-none"><Button variant="success" className="rounded-pill fw-bold px-3 py-2 d-flex align-items-center gap-2 shadow-sm text-nowrap"><i className="fa-solid fa-cart-shopping"></i> <Badge bg="warning" text="dark" pill>{gioHang.reduce((acc, item) => acc + item.soLuong, 0)}</Badge></Button></Link>
-                  </div>
+              <Navbar.Brand as={Link} to="/"><img src={shopConfig.logo} className="me-2 rounded" style={{height:45}} alt=""/><span className="fw-bold text-success fs-5">{shopConfig.tenShop}</span></Navbar.Brand>
+              <Navbar.Toggle />
+              <Navbar.Collapse>
+                <Nav className="w-100 align-items-center ms-lg-4">
+                  <Form className="d-flex flex-grow-1 mx-lg-3"><Form.Control type="search" placeholder="🔍 Tìm kiếm..." value={tuKhoa} onChange={e=>setTuKhoa(e.target.value)} className="rounded-pill border-1 bg-light px-3"/></Form>
+                  <Link to="/cart" className="btn btn-success rounded-pill fw-bold ms-2"><i className="fa-solid fa-cart-shopping"></i> <Badge bg="warning" text="dark" pill>{gioHang.reduce((a,b)=>a+b.soLuong,0)}</Badge></Link>
+                  {currentUser ? <Dropdown className="ms-2"><Dropdown.Toggle variant="light" className="border-0 fw-bold"><i className="fa-solid fa-user me-1"></i> {userData?.ten}</Dropdown.Toggle><Dropdown.Menu><Dropdown.Item as={Link} to="/member">Tài khoản</Dropdown.Item><Dropdown.Item onClick={handleLogout}>Đăng xuất</Dropdown.Item></Dropdown.Menu></Dropdown> : <Link to="/auth" className="btn btn-outline-primary rounded-pill ms-2 fw-bold">Đăng nhập</Link>}
                 </Nav>
               </Navbar.Collapse>
             </Container>
           </Navbar>
-
-          {/* 3. BANNER TOÀN TRANG (GLOBAL) */}
-          {banners.length > 0 && (
-            <div className="banner-global-container">
-              <Slider {...sliderSettings}>
-                {banners.map(b => (
-                  <div key={b.id}>
-                    {b.link ? (<Link to={b.link}><img src={b.img} alt="Banner" className="banner-img" /></Link>) : (<img src={b.img} alt="Banner" className="banner-img" />)}
-                  </div>
-                ))}
-              </Slider>
-            </div>
-          )}
         </>
       )}
 
-      {/* --- PHẦN ROUTES CHÍNH --- */}
-      <div className="flex-grow-1">
-        <Routes>
-          <Route path="/" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
-          <Route path="/san-pham/:slug/:id" element={<ProductDetail dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} />} />
-          <Route path="/danh-muc/:slug/:id" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
-          
-          <Route path="/cart" element={
-            <Cart 
-              gioHang={gioHang} 
-              dsDanhMuc={dsDanhMuc} 
-              chinhSuaSoLuong={chinhSuaSoLuong} 
-              xoaSanPham={xoaSanPham} 
-              currentUser={currentUser} 
-              userData={userData} 
-            />
-          } />
-          
-          {/* Route Thanh Toán Riêng */}
-          <Route path="/checkout" element={
-            <Checkout 
-              gioHang={gioHang} 
-              setGioHang={setGioHang} 
-              userData={userData} 
-            />
-          } />
+      <div className="flex-grow-1 py-3" style={{background: '#f4f6f9'}}>
+        <Container fluid>
+          <Row>
+            {/* --- MENU BÊN TRÁI (HIỂN THỊ MỌI TRANG TRỪ ADMIN) --- */}
+            {!isAdminPage && (
+              <Col lg={2} className="d-none d-lg-block">
+                <div className="sidebar-main">
+                  <div className="sidebar-header"><i className="fa-solid fa-bars"></i> DANH MỤC</div>
+                  
+                  {/* NÚT FLASH SALE CỐ ĐỊNH TRONG MENU */}
+                  {shopConfig.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date() && (
+                    <Link to="/flash-sale" className="flash-sale-mini-banner m-2 text-decoration-none">
+                      <div className="fw-bold"><i className="fa-solid fa-bolt fa-shake"></i> FLASH SALE</div>
+                      <Badge bg="white" text="danger">Đang diễn ra</Badge>
+                    </Link>
+                  )}
 
-          <Route path="/auth" element={<Auth />} />
-          
-          {/* Route Member (Truyền themVaoGio để Mua lại) */}
-          <Route path="/member" element={<Member themVaoGio={themVaoGio} />} />
-          
-          <Route path="/tra-cuu" element={<OrderLookup />} />
-          <Route path="/flash-sale" element={<FlashSale dsSanPham={dsSanPham} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
-          
-          <Route path="/admin" element={
-            <Admin 
-              dsSanPham={dsSanPham} 
-              dsDanhMuc={dsDanhMuc} 
-              dsDonHang={dsDonHang} 
-              handleUpdateDS_SP={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"sanPham",d)):(t==='ADD'?await addDoc(collection(db,"sanPham"),d):await updateDoc(doc(db,"sanPham",d.id),d))} 
-              handleUpdateDS_DM={async (t, d) => t==='DELETE'?await deleteDoc(doc(db,"danhMuc",d)):(t==='ADD'?await addDoc(collection(db,"danhMuc"),d):await updateDoc(doc(db,"danhMuc",d.id),d))} 
-              handleUpdateStatusOrder={async (id, s) => await updateDoc(doc(db,"donHang",id),{trangThai:s})} 
-              handleDeleteOrder={async (id) => await deleteDoc(doc(db,"donHang",id))} 
-            />
-          } />
-        </Routes>
+                  <div className="category-list">
+                    {dsDanhMuc.filter(d => !d.parent).map(parent => {
+                      const hasChild = dsDanhMuc.some(c => c.parent === parent.id);
+                      return (
+                        <div key={parent.id}>
+                          <div className="category-item">
+                            <Link to={`/danh-muc/${toSlug(parent.ten)}/${parent.id}`} className="flex-grow-1 d-flex align-items-center"><span className="me-2">{parent.icon}</span> {parent.ten}</Link>
+                            {hasChild && <span onClick={()=>setOpenMenuId(openMenuId===parent.id?null:parent.id)} style={{cursor:'pointer'}}>{openMenuId===parent.id?'▲':'▼'}</span>}
+                          </div>
+                          {hasChild && openMenuId===parent.id && <div className="submenu">{dsDanhMuc.filter(c=>c.parent===parent.id).map(child=><Link key={child.id} to={`/danh-muc/${toSlug(child.ten)}/${child.id}`}>• {child.ten}</Link>)}</div>}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </Col>
+            )}
+
+            {/* --- NỘI DUNG CHÍNH --- */}
+            <Col lg={!isAdminPage ? 10 : 12}>
+              {!isAdminPage && banners.length > 0 && location.pathname === '/' && <div className="mb-3 rounded overflow-hidden shadow-sm"><Slider {...sliderSettings}>{banners.map(b=><Link key={b.id} to={b.link||'#'}><img src={b.img} className="w-100" style={{height:300, objectFit:'cover'}}/></Link>)}</Slider></div>}
+              
+              <Routes>
+                <Route path="/" element={<Home dsSanPham={sanPhamHienThi} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
+                <Route path="/danh-muc/:slug/:id" element={<Home dsSanPham={sanPhamHienThi} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
+                <Route path="/san-pham/:slug/:id" element={<ProductDetail dsSanPham={dsSanPham} themVaoGio={themVaoGio} />} />
+                <Route path="/cart" element={<Cart gioHang={gioHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} currentUser={currentUser} userData={userData} />} />
+                <Route path="/checkout" element={<Checkout gioHang={gioHang} setGioHang={setGioHang} userData={userData} />} />
+                <Route path="/member" element={<Member themVaoGio={themVaoGio} />} />
+                <Route path="/tra-cuu" element={<OrderLookup />} />
+                <Route path="/flash-sale" element={<FlashSale dsSanPham={dsSanPham} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/admin" element={<Admin dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} dsDonHang={dsDonHang} handleUpdateDS_SP={async (t,d)=>t==='ADD'?addDoc(collection(db,"sanPham"),d):t==='DELETE'?deleteDoc(doc(db,"sanPham",d)):updateDoc(doc(db,"sanPham",d.id),d)} handleUpdateDS_DM={async (t,d)=>t==='ADD'?addDoc(collection(db,"danhMuc"),d):t==='DELETE'?deleteDoc(doc(db,"danhMuc",d)):updateDoc(doc(db,"danhMuc",d.id),d)} handleUpdateStatusOrder={(id,s)=>updateDoc(doc(db,"donHang",id),{trangThai:s})} handleDeleteOrder={(id)=>deleteDoc(doc(db,"donHang",id))} />} />
+              </Routes>
+            </Col>
+          </Row>
+        </Container>
       </div>
 
-      {!isAdminPage && (
-        <footer className="footer-section pt-5 mt-4">
-           <Container>
-            <Row className="pb-4">
-              <Col md={4} className="mb-4"><div className="d-flex align-items-center mb-3"><span className="fw-bold text-success fs-5 text-uppercase">{shopConfig.tenShop}</span></div><p className="text-muted small" style={{textAlign: 'justify'}}>{shopConfig.gioiThieu || 'Chuyên cung cấp thực phẩm tươi ngon...'}</p></Col>
-              <Col md={4} className="mb-4"><div className="footer-title">Thông tin liên hệ</div><div className="footer-info-item"><i className="fa-solid fa-location-dot mt-1 text-success"></i> <span>{shopConfig.diaChi}</span></div><div className="footer-info-item"><i className="fa-solid fa-phone mt-1 text-success"></i> <span>{shopConfig.sdt}</span></div><div className="footer-info-item"><i className="fa-brands fa-facebook mt-1 text-success"></i> <a href={shopConfig.linkFacebook} target="_blank" rel="noreferrer" className="text-dark">Fanpage Facebook</a></div></Col>
-              <Col md={4} className="mb-4"><div className="footer-title">Hỗ trợ khách hàng</div><div className="footer-info-item"><i className="fa-solid fa-check text-success"></i> Hướng dẫn mua hàng</div><div className="footer-info-item"><i className="fa-solid fa-check text-success"></i> Chính sách đổi trả</div>{shopConfig.zalo && <div className="footer-info-item"><i className="fa-solid fa-comment-dots text-primary"></i> Zalo: {shopConfig.zalo}</div>}</Col>
-            </Row>
+      {/* --- SẢN PHẨM VỪA XEM (TOÀN TRANG) --- */}
+      {!isAdminPage && recentProducts.length > 0 && (
+        <div className="recent-view-bar">
+          <Container>
+            <h5 className="fw-bold text-secondary mb-3"><i className="fa-solid fa-clock-rotate-left me-2"></i> SẢN PHẨM BẠN VỪA XEM</h5>
+            <div className="recent-scroll">
+              {recentProducts.map(sp => (
+                <div key={sp.id} className="recent-card bg-white">
+                  <Link to={`/san-pham/${toSlug(sp.ten)}/${sp.id}`}>
+                    <img src={sp.anh} style={{width:'100%', height:100, objectFit:'cover'}} />
+                    <div className="p-2 text-center" style={{fontSize:12}}>
+                      <div className="fw-bold text-truncate">{sp.ten}</div>
+                      <div className="text-danger fw-bold">{sp.giaBan?.toLocaleString()}¥</div>
+                    </div>
+                  </Link>
+                </div>
+              ))}
+            </div>
           </Container>
-          <div className="copyright-bar">{shopConfig.copyright}</div>
+        </div>
+      )}
+
+      {!isAdminPage && (
+        <footer className="footer-section pt-5 pb-3">
+          <Container><Row><Col md={4}><h5 className="footer-title">{shopConfig.tenShop}</h5><p>{shopConfig.gioiThieu}</p></Col><Col md={4}><h5 className="footer-title">Liên hệ</h5><p>🏠 {shopConfig.diaChi}</p><p>☎️ {shopConfig.sdt}</p></Col><Col md={4}><h5 className="footer-title">Hỗ trợ</h5><p>Chính sách đổi trả</p><p>Hướng dẫn mua hàng</p></Col></Row><div className="text-center mt-4 pt-3 border-top">{shopConfig.copyright}</div></Container>
         </footer>
       )}
-      {!isAdminPage && (<div className="floating-chat-container">{shopConfig.linkFacebook && (<a href={shopConfig.linkFacebook} target="_blank" rel="noreferrer" className="chat-btn mess-btn"><i className="fa-brands fa-facebook-messenger"></i></a>)}{shopConfig.zalo && (<a href={`https://zalo.me/${shopConfig.zalo}`} target="_blank" rel="noreferrer" className="chat-btn zalo-btn"><i className="fa-solid fa-comment-dots"></i></a>)}</div>)}
     </div>
   );
 }
