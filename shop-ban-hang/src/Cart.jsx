@@ -3,67 +3,65 @@ import { Table, Button, Container, Row, Col, Alert } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { toSlug } from './App';
 
-function Cart({ gioHang, dsDanhMuc, chinhSuaSoLuong, xoaSanPham, currentUser }) {
+function Cart({ gioHang, chinhSuaSoLuong, xoaSanPham, currentUser }) {
   const tamTinh = gioHang.reduce((t, s) => t + (s.giaBan || s.giaGoc) * s.soLuong, 0);
 
   if (gioHang.length === 0) return (
     <Container className="py-5 text-center">
-      <div className="p-5 bg-white rounded-4 shadow-sm">
-        <h1 className="display-1 text-muted mb-4">🛒</h1>
-        <h3 className="fw-bold text-dark mb-3">Giỏ hàng trống!</h3>
-        <Link to="/"><Button variant="success" size="lg" className="rounded-pill px-5">TIẾP TỤC MUA SẮM</Button></Link>
+      <div className="p-5 bg-white rounded shadow-sm">
+        <h2 className="text-muted display-4 mb-3"><i className="fa-solid fa-cart-arrow-down"></i></h2>
+        <h3>Giỏ hàng của bạn đang trống</h3>
+        <p className="text-secondary">Hãy dạo một vòng và chọn những món ngon nhé!</p>
+        <Link to="/"><Button variant="success" size="lg" className="rounded-pill px-5 fw-bold mt-3">TIẾP TỤC MUA SẮM</Button></Link>
       </div>
     </Container>
   );
 
   return (
     <Container className="py-4">
-      <h2 className="fw-bold text-uppercase text-success mb-4"><i className="fa-solid fa-cart-shopping me-2"></i> Giỏ hàng của bạn</h2>
+      <h3 className="fw-bold text-success text-uppercase mb-4"><i className="fa-solid fa-cart-shopping me-2"></i> Giỏ hàng của bạn</h3>
       <Row>
         <Col lg={8}>
-          <div className="bg-white shadow-sm p-4 rounded-4 mb-3 table-responsive">
-            <Table hover className="align-middle">
-              <thead><tr><th>Sản phẩm</th><th>Đơn giá</th><th>Số lượng</th><th>Thành tiền</th><th>Xóa</th></tr></thead>
+          <div className="bg-white rounded shadow-sm border overflow-hidden mb-4">
+            <Table responsive className="mb-0 align-middle">
+              <thead className="cart-header bg-light"><tr><th className="ps-4">Sản phẩm</th><th>Đơn giá</th><th>Số lượng</th><th>Thành tiền</th><th>Xóa</th></tr></thead>
               <tbody>
                 {gioHang.map(i => (
                   <tr key={i.id}>
-                    <td>
+                    <td className="ps-4">
                       <div className="d-flex align-items-center">
-                        <img src={i.anh} width="60" height="60" style={{objectFit:'cover', borderRadius:'8px', marginRight:'10px'}} alt=""/>
+                        <img src={i.anh} width="70" height="70" className="rounded border me-3" style={{objectFit:'cover'}} />
                         <div>
-                          <Link to={`/san-pham/${toSlug(i.ten)}/${i.id}`} className="fw-bold text-decoration-none text-dark">{i.ten}</Link>
-                          <div className="small text-muted">Đơn vị: {i.donVi || 'Cái'}</div>
+                          <Link to={`/san-pham/${toSlug(i.ten)}`} className="fw-bold text-dark text-decoration-none d-block mb-1">{i.ten}</Link>
+                          <span className="badge bg-light text-secondary border">Đơn vị: {i.donVi || 'Cái'}</span>
                         </div>
                       </div>
                     </td>
-                    <td>{i.giaBan?.toLocaleString()} ¥</td>
+                    <td className="fw-bold text-secondary">{i.giaBan?.toLocaleString()} ¥</td>
                     <td>
-                      <div className="d-flex align-items-center border rounded px-2" style={{width:'fit-content'}}>
-                        <Button variant="link" size="sm" className="text-dark p-0" onClick={()=>chinhSuaSoLuong(i.id, 'giam')}>-</Button>
-                        <span className="mx-2 fw-bold">{i.soLuong}</span>
-                        <Button variant="link" size="sm" className="text-dark p-0" onClick={()=>chinhSuaSoLuong(i.id, 'tang')}>+</Button>
+                      <div className="d-flex border rounded" style={{width: 100}}>
+                        <Button variant="light" size="sm" onClick={()=>chinhSuaSoLuong(i.id,'giam')}>-</Button>
+                        <div className="flex-grow-1 text-center py-1 fw-bold bg-white">{i.soLuong}</div>
+                        <Button variant="light" size="sm" onClick={()=>chinhSuaSoLuong(i.id,'tang')}>+</Button>
                       </div>
                     </td>
                     <td className="fw-bold text-danger">{(i.giaBan * i.soLuong).toLocaleString()} ¥</td>
-                    <td><Button variant="link" className="text-danger p-0" onClick={()=>xoaSanPham(i.id)}><i className="fa-solid fa-trash"></i></Button></td>
+                    <td><Button variant="link" className="text-danger" onClick={()=>xoaSanPham(i.id)}><i className="fa-solid fa-trash-can"></i></Button></td>
                   </tr>
                 ))}
               </tbody>
             </Table>
           </div>
+          <Link to="/"><Button variant="outline-secondary" className="fw-bold"><i className="fa-solid fa-arrow-left me-2"></i> Tiếp tục xem sản phẩm</Button></Link>
         </Col>
         <Col lg={4}>
-          <div className="cart-summary-box bg-white p-4 rounded-4 shadow-sm border">
-            <h5 className="fw-bold mb-3 border-bottom pb-2">CỘNG GIỎ HÀNG</h5>
-            <div className="d-flex justify-content-between mb-3">
-              <span className="text-muted">Tạm tính:</span>
-              <span className="fw-bold fs-5">{tamTinh.toLocaleString()} ¥</span>
-            </div>
-            {!currentUser && <Alert variant="warning" className="small mb-3">Đăng nhập để tích điểm!</Alert>}
-            <Link to="/checkout">
-              <Button variant="success" size="lg" className="w-100 fw-bold rounded-pill shadow-sm">TIẾN HÀNH THANH TOÁN <i className="fa-solid fa-arrow-right ms-2"></i></Button>
-            </Link>
-            <Link to="/"><Button variant="outline-secondary" className="w-100 mt-2 rounded-pill fw-bold">MUA THÊM</Button></Link>
+          <div className="bg-white p-4 rounded shadow-sm border">
+            <h5 className="fw-bold text-uppercase border-bottom pb-3 mb-3">Cộng giỏ hàng</h5>
+            <div className="d-flex justify-content-between mb-3"><span className="text-secondary">Tạm tính:</span><span className="fw-bold">{tamTinh.toLocaleString()} ¥</span></div>
+            <div className="d-flex justify-content-between mb-4"><span className="text-secondary">Phí ship:</span><span className="text-muted small">(Tính ở bước sau)</span></div>
+            <div className="d-flex justify-content-between border-top pt-3 mb-4"><span className="h5 fw-bold">TỔNG CỘNG:</span><span className="h4 text-danger fw-bold">{tamTinh.toLocaleString()} ¥</span></div>
+            <Link to="/checkout"><Button variant="success" size="lg" className="w-100 fw-bold rounded shadow-sm">TIẾN HÀNH THANH TOÁN <i className="fa-solid fa-arrow-right ms-2"></i></Button></Link>
+            {!currentUser && <Alert variant="warning" className="mt-3 small mb-0"><i className="fa-solid fa-triangle-exclamation me-1"></i> Bạn chưa đăng nhập. Hãy <Link to="/auth" className="fw-bold text-dark">đăng nhập</Link> để tích điểm nhé!</Alert>}
           </div>
         </Col>
       </Row>
