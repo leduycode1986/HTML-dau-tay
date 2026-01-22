@@ -1,58 +1,150 @@
 /* --- 1. BASE --- */
-body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; font-size: 14px; overflow-x: hidden; }
+body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 14px; overflow-x: hidden; }
 a { text-decoration: none; color: inherit; transition: 0.2s; }
 img { max-width: 100%; height: auto; }
 
-/* --- 2. HEADER & TOP BAR --- */
-.top-bar-notification { background: #b71c1c; color: white; padding: 6px 0; font-size: 12px; font-weight: 600; overflow: hidden; position: relative; z-index: 100; }
+/* --- 2. HEADER & MARQUEE --- */
+.top-bar-notification { background: #d32f2f; color: white; padding: 8px 0; font-size: 13px; font-weight: bold; overflow: hidden; position: relative; z-index: 100; }
 .marquee-text { display: inline-block; white-space: nowrap; padding-left: 100%; animation: marquee 35s linear infinite; will-change: transform; }
 @keyframes marquee { 0% { transform: translate3d(0,0,0); } 100% { transform: translate3d(-100%,0,0); } }
 
-.shop-name { font-weight: 800; color: #198754; text-transform: uppercase; font-size: 1.1rem; line-height: 1.2; }
-.shop-slogan { font-size: 0.7rem; color: #666; font-weight: 600; }
-
-/* HOTLINE HEADER ĐẸP */
-.header-hotline-box { display: flex; align-items: center; gap: 8px; border: 1px solid #e9ecef; padding: 5px 12px; border-radius: 20px; background: #fff; }
-.header-hotline-icon { color: #d32f2f; font-size: 14px; }
-.header-hotline-text { font-weight: 700; color: #333; font-size: 13px; }
-
 /* --- 3. MENU SIDEBAR --- */
-.sidebar-main { background: white; border-radius: 8px; overflow: hidden; position: sticky; top: 85px; z-index: 9; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #eee; }
-.sidebar-header { background: #198754; color: white; padding: 10px 15px; font-weight: 700; text-transform: uppercase; font-size: 13px; }
-.category-item { padding: 9px 15px; border-bottom: 1px solid #f8f9fa; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; font-size: 13px; }
-.category-item:hover, .category-item.active { background: #e8f5e9; color: #198754; padding-left: 18px; }
-.submenu { background: #f8f9fa; border-left: 3px solid #198754; }
-.submenu a { display: block; padding: 7px 15px 7px 25px; font-size: 12px; color: #666; border-bottom: 1px dashed #eee; }
+.sidebar-main { background: white; border-radius: 8px; overflow: hidden; position: sticky; top: 90px; z-index: 9; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #dee2e6; }
+.sidebar-header { background: #198754; color: white; padding: 12px 15px; font-weight: 700; text-transform: uppercase; }
+.category-item { padding: 10px 15px; border-bottom: 1px solid #f1f1f1; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
+.category-item:hover, .category-item.active { background: #e8f5e9; color: #198754; padding-left: 20px; }
+.submenu { background: #f8f9fa; border-left: 4px solid #198754; }
+.submenu a { display: block; padding: 8px 15px 8px 25px; font-size: 13px; color: #666; border-bottom: 1px dashed #eee; }
 .submenu a:hover { color: #198754; background: white; }
 
 /* --- 4. SẢN PHẨM & ẢNH --- */
 .product-card { background: white; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; transition: 0.3s; height: 100%; display: flex; flex-direction: column; position: relative; }
-.product-card:hover { border-color: #198754; box-shadow: 0 5px 15px rgba(0,0,0,0.08); transform: translateY(-2px); }
+.product-card:hover { border-color: #198754; box-shadow: 0 5px 15px rgba(0,0,0,0.1); transform: translateY(-3px); }
 .product-img-fixed { width: 100%; height: 180px; object-fit: cover; display: block; }
 
-.badge-overlay { position: absolute; top: 8px; left: 8px; display: flex; flex-direction: column; gap: 4px; z-index: 2; }
-.badge-item { font-size: 9px; font-weight: bold; color: white; padding: 2px 6px; border-radius: 3px; text-transform: uppercase; }
+.badge-overlay { position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; gap: 5px; z-index: 2; }
+.badge-item { font-size: 10px; font-weight: bold; color: white; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; }
 .badge-flash { background: #ffc107; color: #000; } 
 .badge-new { background: #198754; } 
 .badge-hot { background: #dc3545; }
 
-/* --- 5. FLASH SALE (BANNER NHỎ GỌN) --- */
-.flash-sale-hero { background: linear-gradient(135deg, #d32f2f, #ff5252); color: white; padding: 30px 0; position: relative; overflow: hidden; }
-.flash-sale-title { font-weight: 800; font-size: 2rem; text-transform: uppercase; margin-bottom: 10px; }
-.time-box { background: rgba(0,0,0,0.2); color: white; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); }
+/* Nút Xem Nhanh */
+.quick-view-btn { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0); width: 40px; height: 40px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.3s; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+.product-card:hover .quick-view-btn { transform: translate(-50%,-50%) scale(1); }
 
-/* Popup */
+/* --- 5. ADMIN LOGIN (FIX LỖI VỠ GIAO DIỆN) --- */
+.admin-login-wrapper {
+  position: fixed; /* Ép full màn hình */
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.admin-login-card {
+  width: 100%;
+  max-width: 450px; /* Giới hạn chiều rộng */
+  background: white;
+  padding: 40px;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+/* --- 6. ADMIN UI (HEADER XANH ĐẸP) --- */
+.admin-header {
+  background-color: #198754; /* Màu xanh lá chuẩn */
+  color: white;
+  padding: 15px 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* --- 7. SẢN PHẨM VỪA XEM (FIX LỖI VỠ) --- */
+.recent-view-bar { 
+  background: white; 
+  border-top: 4px solid #198754; 
+  padding: 20px 0; 
+  margin-top: 30px; 
+}
+.recent-scroll { 
+  display: flex; 
+  overflow-x: auto; 
+  gap: 15px; 
+  padding: 10px 5px;
+  scrollbar-width: thin;
+}
+/* Ép thẻ sản phẩm không bị co lại */
+.recent-card { 
+  flex: 0 0 auto; /* Không cho phép co giãn */
+  width: 150px; 
+  border: 1px solid #eee; 
+  border-radius: 8px; 
+  overflow: hidden; 
+  background: white;
+  transition: 0.2s;
+}
+.recent-card:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+
+/* --- 8. FOOTER --- */
+.footer-section { background-color: #212529; color: #e9ecef; padding-top: 40px; margin-top: 40px; border-top: 4px solid #198754; }
+.footer-title { color: #198754; font-weight: 700; text-transform: uppercase; margin-bottom: 15px; }
+.footer-link { display: block; color: #adb5bd; margin-bottom: 8px; }
+.footer-link:hover { color: white; padding-left: 5px; }
+.copyright-bar { background: #000; color: #6c757d; text-align: center; padding: 15px; font-size: 0.85rem; margin-top: 20px; }
+
+/* POPUP */
 .flash-popup-content { background: transparent !important; border: none !important; box-shadow: none !important; }
-.flash-popup-body { background: white; border-radius: 12px; overflow: hidden; text-align: center; position: relative; max-width: 400px; margin: 0 auto; }
-.flash-header-bg { background: #d32f2f; padding: 15px; color: white; }
+.flash-popup-body { background: white; border-radius: 16px; overflow: hidden; text-align: center; position: relative; }
+.flash-header-bg { background: linear-gradient(135deg, #ff416c, #ff4b2b); padding: 20px; color: white; }
+.time-box { background: #333; color: white; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; border-radius: 8px; }
+/* --- CSS RIÊNG CHO TRANG FLASH SALE (FlashSale.jsx) --- */
 
-/* --- 6. FOOTER --- */
-.footer-section { background-color: #2c3e50; color: #bdc3c7; padding-top: 40px; margin-top: 40px; border-top: 3px solid #198754; }
-.footer-title { color: #fff; font-weight: 700; text-transform: uppercase; margin-bottom: 15px; font-size: 0.95rem; }
-.footer-link { display: block; color: #95a5a6; margin-bottom: 6px; font-size: 0.9rem; }
-.footer-link:hover { color: #198754; padding-left: 3px; }
-.copyright-bar { background: #1a252f; color: #7f8c8d; text-align: center; padding: 15px; font-size: 0.8rem; margin-top: 20px; }
+/* 1. Banner Flash Sale (Nhỏ gọn & Đẹp) */
+.flash-sale-hero {
+  background: linear-gradient(135deg, #d32f2f, #ff5252); /* Màu đỏ rực rỡ */
+  color: white;
+  padding: 30px 0; /* Độ cao vừa phải, không quá to thô */
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 20px;
+  border-bottom: 4px solid #b71c1c; /* Viền dưới đậm tạo khối */
+}
 
-/* --- 7. KHÁC --- */
-.recent-view-bar { background: white; border-top: 1px solid #eee; padding: 15px 0; margin-top: 20px; }
-.recent-card { min-width: 120px; width: 120px; border: 1px solid #eee; border-radius: 6px; overflow: hidden; }
+/* 2. Tiêu đề Flash Sale */
+.flash-sale-title {
+  font-weight: 800;
+  font-size: 2rem;
+  text-transform: uppercase;
+  margin-bottom: 15px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.2); /* Đổ bóng chữ cho nổi */
+}
+
+/* 3. Ô Vuông Đếm Ngược (Time Box) */
+.time-box {
+  width: 50px;
+  height: 50px;
+  background: rgba(0, 0, 0, 0.2); /* Nền đen mờ sang trọng */
+  border: 1px solid rgba(255, 255, 255, 0.4); /* Viền trắng mờ */
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 20px;
+  border-radius: 8px; /* Bo góc mềm mại */
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Hiệu ứng rung nhẹ cho icon tia sét */
+.fa-bolt {
+  animation: shake 2s infinite;
+}
+
+@keyframes shake {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-15deg); }
+  75% { transform: rotate(15deg); }
+}

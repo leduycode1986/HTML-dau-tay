@@ -21,7 +21,6 @@ import OrderLookup from './OrderLookup';
 import FlashSale from './FlashSale'; 
 import Checkout from './Checkout'; 
 
-// HÀM TẠO SLUG CHUẨN
 export const toSlug = (str) => {
   if (!str) return '';
   str = str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
@@ -58,15 +57,18 @@ function App() {
     const unsubBanner = onSnapshot(collection(db, "banners"), sn => setBanners(sn.docs.map(d=>({id:d.id,...d.data()}))));
     const unsubConfig = onSnapshot(doc(db, "cauHinh", "thongTinChung"), d => { if(d.exists()) setShopConfig(d.data()); });
     const unsubAuth = onAuthStateChanged(auth, async u => { setCurrentUser(u); if(u) { const d = await getDoc(doc(db,"users",u.uid)); setUserData(d.exists()?d.data():{}); } else setUserData(null); });
+    
     const scrollH = () => setShowTopBtn(window.scrollY > 300); window.addEventListener('scroll', scrollH);
     return () => { unsubSP(); unsubDM(); unsubDH(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
   }, []);
 
-  // Update Recent Products
+  // Logic Recent Products
   useEffect(() => {
     if(dsSanPham.length > 0) {
       const recentIds = JSON.parse(localStorage.getItem('recent') || '[]');
-      setRecentProducts(recentIds.map(id => dsSanPham.find(p => p.id === id)).filter(Boolean));
+      // Lọc ra các sản phẩm có ID trong danh sách recent
+      const found = recentIds.map(id => dsSanPham.find(p => p.id === id)).filter(Boolean);
+      setRecentProducts(found);
     }
   }, [dsSanPham, location.pathname]);
 
@@ -99,7 +101,7 @@ function App() {
           <Navbar bg="white" expand="lg" className="sticky-top shadow-sm py-2" style={{zIndex: 100}}>
             <Container>
               <Navbar.Brand as={Link} to="/" className="d-flex align-items-center me-4">
-                {shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" className="me-2" style={{height: 40, objectFit:'contain'}} /> : <span className="fs-1 me-2">🦁</span>}
+                {shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" className="me-2" style={{height: 50, objectFit:'contain'}} /> : <span className="fs-1 me-2">🦁</span>}
                 <div className="shop-brand-col">
                   <div className="shop-name">{shopConfig.tenShop}</div>
                   <div className="shop-slogan">{shopConfig.slogan}</div>
@@ -113,26 +115,24 @@ function App() {
                     <Button variant="light" className="border border-start-0 bg-light"><i className="fa-solid fa-magnifying-glass"></i></Button>
                   </div>
                 </Form>
-                <Nav className="align-items-center gap-3">
-                  {/* HOTLINE HEADER ĐẸP HƠN */}
-                  <div className="header-hotline-box d-none d-lg-flex">
-                    <i className="fa-solid fa-phone-volume header-hotline-icon fa-shake"></i>
-                    <span className="header-hotline-text">{shopConfig.sdt}</span>
+                <Nav className="align-items-center gap-2">
+                  <div className="d-none d-lg-block text-end me-3">
+                    <div className="small text-muted fw-bold">HOTLINE</div>
+                    <div className="text-danger fw-bold fs-5">{shopConfig.sdt}</div>
                   </div>
-                  
-                  <Link to="/tra-cuu" className="text-secondary fw-bold text-decoration-none small"><i className="fa-solid fa-truck-fast"></i> Tra đơn</Link>
-                  <Link to="/cart" className="btn btn-success rounded-pill position-relative fw-bold px-3 btn-sm">
-                    <i className="fa-solid fa-cart-shopping me-1"></i> Giỏ <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{gioHang.reduce((a,b)=>a+b.soLuong,0)}</span>
+                  <Link to="/tra-cuu" className="btn btn-outline-secondary rounded-pill btn-sm fw-bold">Tra đơn</Link>
+                  <Link to="/cart" className="btn btn-success rounded-pill position-relative fw-bold px-3">
+                    Giỏ <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{gioHang.reduce((a,b)=>a+b.soLuong,0)}</span>
                   </Link>
                   {currentUser ? (
                     <Dropdown align="end">
-                      <Dropdown.Toggle variant="light" className="border-0 fw-bold btn-sm"><i className="fa-solid fa-user me-1"></i> {userData?.ten}</Dropdown.Toggle>
+                      <Dropdown.Toggle variant="light" className="border-0 fw-bold"><i className="fa-solid fa-user me-1"></i> {userData?.ten}</Dropdown.Toggle>
                       <Dropdown.Menu>
                         <Dropdown.Item as={Link} to="/member">Tài khoản</Dropdown.Item>
                         <Dropdown.Item onClick={handleLogout} className="text-danger">Đăng xuất</Dropdown.Item>
                       </Dropdown.Menu>
                     </Dropdown>
-                  ) : <Link to="/auth" className="fw-bold text-dark ms-2 small">Đăng nhập</Link>}
+                  ) : <Link to="/auth" className="fw-bold text-dark ms-2">Đăng nhập</Link>}
                 </Nav>
               </Navbar.Collapse>
             </Container>
@@ -147,18 +147,18 @@ function App() {
               <Col lg={3} className="d-none d-lg-block mb-4">
                 <div className="sidebar-main">
                   <div className="sidebar-header"><i className="fa-solid fa-bars me-2"></i> DANH MỤC</div>
-                  {shopConfig.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date() && <Link to="/flash-sale" className="d-block p-2 bg-danger text-white fw-bold text-center text-decoration-none" style={{fontSize:12}}>⚡ FLASH SALE</Link>}
+                  {shopConfig.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date() && <Link to="/flash-sale" className="d-block p-2 bg-danger text-white fw-bold text-center text-decoration-none">⚡ FLASH SALE ĐANG DIỄN RA</Link>}
                   <div className="category-list">
                     {dsDanhMuc.filter(d => !d.parent).map(parent => {
                       const hasChild = dsDanhMuc.some(c => c.parent === parent.id);
                       const isOpen = openMenuId === parent.id;
                       return (
                         <div key={parent.id}>
-                          <div className={`category-item ${location.pathname.includes(parent.slug || parent.id) ? 'active' : ''}`} onClick={() => { if(hasChild) setOpenMenuId(isOpen ? null : parent.id); else navigate(`/danh-muc/${parent.slug || toSlug(parent.ten)}`); }}>
+                          <div className={`category-item ${location.pathname.includes(parent.slug || parent.id) ? 'active' : ''}`} onClick={() => { if(hasChild) setOpenMenuId(isOpen ? null : parent.id); else navigate(`/danh-muc/${toSlug(parent.ten)}/${parent.id}`); }}>
                             <span>{parent.icon} {parent.ten}</span>
-                            {hasChild && <i className={`fa-solid fa-chevron-${isOpen?'down':'right'} small text-muted`}></i>}
+                            {hasChild && <i className={`fa-solid fa-chevron-${isOpen?'down':'right'} small`}></i>}
                           </div>
-                          {hasChild && isOpen && <div className="submenu">{dsDanhMuc.filter(c=>c.parent===parent.id).map(child=><Link key={child.id} to={`/danh-muc/${child.slug || toSlug(child.ten)}`}>{child.ten}</Link>)}</div>}
+                          {hasChild && isOpen && <div className="submenu">{dsDanhMuc.filter(c=>c.parent===parent.id).map(child=><Link key={child.id} to={`/danh-muc/${toSlug(child.ten)}/${child.id}`}>{child.ten}</Link>)}</div>}
                         </div>
                       )
                     })}
@@ -168,14 +168,12 @@ function App() {
             )}
 
             <Col lg={!isAdminPage ? 9 : 12}>
-              {!isAdminPage && location.pathname === '/' && banners.length > 0 && <div className="mb-4 rounded overflow-hidden shadow-sm"><Slider {...sliderSettings}>{banners.map(b=><Link key={b.id} to={b.link||'#'}><img src={b.img} className="w-100" style={{height:300, objectFit:'cover'}}/></Link>)}</Slider></div>}
+              {!isAdminPage && location.pathname === '/' && banners.length > 0 && <div className="mb-4 rounded overflow-hidden shadow-sm"><Slider {...sliderSettings}>{banners.map(b=><Link key={b.id} to={b.link||'#'}><img src={b.img} className="w-100" style={{height:320, objectFit:'cover'}}/></Link>)}</Slider></div>}
               
               <Routes>
-                {/* --- ROUTES CHUẨN SEO (KHÔNG CÓ ID) --- */}
-                <Route path="/" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
-                <Route path="/danh-muc/:slug" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
-                <Route path="/san-pham/:slug" element={<ProductDetail dsSanPham={dsSanPham} themVaoGio={themVaoGio} />} />
-                
+                <Route path="/" element={<Home dsSanPham={sanPhamHienThi} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
+                <Route path="/danh-muc/:slug/:id" element={<Home dsSanPham={sanPhamHienThi} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
+                <Route path="/san-pham/:slug/:id" element={<ProductDetail dsSanPham={dsSanPham} themVaoGio={themVaoGio} />} />
                 <Route path="/cart" element={<Cart gioHang={gioHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} currentUser={currentUser} userData={userData} />} />
                 <Route path="/checkout" element={<Checkout gioHang={gioHang} setGioHang={setGioHang} userData={userData} />} />
                 <Route path="/member" element={<Member themVaoGio={themVaoGio} />} />
@@ -189,7 +187,22 @@ function App() {
         </Container>
       </div>
 
-      {!isAdminPage && recentProducts.length > 0 && <div className="recent-view-bar"><Container><h5 className="fw-bold text-secondary mb-3 small text-uppercase">Sản phẩm vừa xem</h5><div className="recent-scroll">{recentProducts.map(sp=><Link key={sp.id} to={`/san-pham/${sp.slug || toSlug(sp.ten)}`} className="recent-card"><img src={sp.anh} style={{width:'100%',height:80,objectFit:'cover'}}/><div className="p-2 text-center small fw-bold text-truncate">{sp.ten}</div></Link>)}</div></Container></div>}
+      {/* --- RECENT PRODUCTS FIX --- */}
+      {!isAdminPage && recentProducts.length > 0 && (
+        <div className="recent-view-bar">
+          <Container>
+            <h5 className="fw-bold text-secondary mb-3"><i className="fa-solid fa-clock-rotate-left"></i> VỪA XEM</h5>
+            <div className="recent-scroll">
+              {recentProducts.map(sp => (
+                <Link key={sp.id} to={`/san-pham/${toSlug(sp.ten)}/${sp.id}`} className="recent-card">
+                  <img src={sp.anh} style={{width:'100%', height:100, objectFit:'cover'}} />
+                  <div className="p-2 text-center small fw-bold text-truncate">{sp.ten}</div>
+                </Link>
+              ))}
+            </div>
+          </Container>
+        </div>
+      )}
 
       {!isAdminPage && (
         <footer className="footer-section">
