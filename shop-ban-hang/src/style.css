@@ -59,3 +59,45 @@ img { max-width: 100%; height: auto; }
 .recent-view-bar { background: white; border-top: 1px solid #eee; padding: 20px 0; margin-top: 30px; }
 .recent-scroll { display: flex; overflow-x: auto; gap: 15px; padding-bottom: 10px; scrollbar-width: thin; }
 .recent-card { min-width: 140px; width: 140px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
+/* ... (GIỮ NGUYÊN CSS CỦA TRANG CHỦ, SẢN PHẨM Ở TRÊN) ... */
+
+/* --- ADMIN LOGIN (CHUẨN NHƯ ẢNH) --- */
+.admin-login-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f0f2f5; /* Màu nền xám nhẹ */
+}
+.admin-login-card {
+  width: 100%;
+  max-width: 500px;
+  background: white;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.admin-login-title {
+  color: #198754; /* Màu xanh lá */
+  font-weight: 800;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+/* --- ADMIN DASHBOARD HEADER (CHUẨN NHƯ ẢNH) --- */
+.admin-header-bar {
+  background-color: #198754; /* Xanh lá đậm */
+  color: white;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.admin-header-title {
+  font-weight: 700;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  margin: 0;
+}
