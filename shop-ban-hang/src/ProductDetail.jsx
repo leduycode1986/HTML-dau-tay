@@ -13,6 +13,8 @@ function ProductDetail({ dsSanPham, themVaoGio }) {
   const [reviews, setReviews] = useState([]);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
+  const { slug } = useParams();
+  const found = dsSanPham.find(p => (p.slug === slug) || (toSlug(p.ten) === slug));
   
   useEffect(() => {
     const fetch = async () => {
