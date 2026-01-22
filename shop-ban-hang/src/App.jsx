@@ -191,12 +191,17 @@ function App() {
       {!isAdminPage && recentProducts.length > 0 && (
         <div className="recent-view-bar">
           <Container>
-            <h5 className="fw-bold text-secondary mb-3"><i className="fa-solid fa-clock-rotate-left"></i> VỪA XEM</h5>
+            <h5 className="fw-bold text-secondary mb-3 small text-uppercase" style={{letterSpacing:1}}>
+              <i className="fa-solid fa-clock-rotate-left me-2"></i> Sản phẩm bạn vừa xem
+            </h5>
             <div className="recent-scroll">
               {recentProducts.map(sp => (
-                <Link key={sp.id} to={`/san-pham/${toSlug(sp.ten)}/${sp.id}`} className="recent-card">
-                  <img src={sp.anh} style={{width:'100%', height:100, objectFit:'cover'}} />
-                  <div className="p-2 text-center small fw-bold text-truncate">{sp.ten}</div>
+                <Link key={sp.id} to={`/san-pham/${sp.slug || toSlug(sp.ten)}`} className="recent-card text-decoration-none">
+                  <img src={sp.anh} alt={sp.ten} />
+                  <div className="recent-card-body">
+                    <div className="recent-name">{sp.ten}</div>
+                    <div className="recent-price">{sp.giaBan?.toLocaleString()}₫</div>
+                  </div>
                 </Link>
               ))}
             </div>

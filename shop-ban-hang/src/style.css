@@ -148,3 +148,75 @@ img { max-width: 100%; height: auto; }
   25% { transform: rotate(-15deg); }
   75% { transform: rotate(15deg); }
 }
+/* ... (GIỮ NGUYÊN CSS CŨ CỦA HEADER, MENU, SẢN PHẨM) ... */
+
+/* --- 5. ADMIN UI (HEADER XANH ĐẬM - KHÔNG HOTLINE) --- */
+.admin-header {
+  background-color: #198754; /* Xanh lá đậm chuẩn */
+  color: white;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.admin-login-wrapper {
+  background: #f0f2f5; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+}
+.admin-login-card {
+  background: white; padding: 40px; border-radius: 8px; width: 100%; max-width: 450px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+/* --- 6. SẢN PHẨM VỪA XEM (FIX GIAO DIỆN) --- */
+.recent-view-bar {
+  background: white;
+  border-top: 4px solid #198754; /* Viền xanh tạo điểm nhấn */
+  padding: 20px 0;
+  margin-top: 40px;
+}
+.recent-scroll {
+  display: flex;
+  gap: 15px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  scrollbar-width: thin; /* Thanh cuộn nhỏ */
+}
+.recent-card {
+  flex: 0 0 auto; /* Không co giãn */
+  width: 140px; /* Chiều rộng cố định */
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+  transition: 0.2s;
+  text-decoration: none;
+  color: #333;
+}
+.recent-card:hover {
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  transform: translateY(-3px);
+  border-color: #198754;
+}
+.recent-card img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+}
+.recent-card-body {
+  padding: 8px;
+  text-align: center;
+}
+.recent-name {
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 3px;
+}
+.recent-price {
+  font-size: 12px;
+  color: #dc3545;
+  font-weight: 700;
+}
