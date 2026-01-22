@@ -40,7 +40,6 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
     check(); const t = setInterval(check, 1000); return () => clearInterval(t);
   }, [shopConfig]);
 
-  // AN TOÀN DỮ LIỆU ĐỂ TRÁNH LỖI FILTER
   const safeDS = Array.isArray(dsSanPham) ? dsSanPham : [];
   const safeDM = Array.isArray(dsDanhMuc) ? dsDanhMuc : [];
 
@@ -71,8 +70,6 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
           {visibleCount < finalProducts.length && <div className="text-center mt-4"><Button variant="outline-success" onClick={() => setVisibleCount(v => v + 10)}>Xem thêm</Button></div>}
         </div>
       </Col></Row>
-
-      {/* MODAL & POPUP GIỮ NGUYÊN (NHƯ ĐÃ GỬI BẢN ĐẸP) */}
       <Modal show={!!quickViewSP} onHide={()=>setQuickViewSP(null)} size="lg" centered><Modal.Body className="p-0">{quickViewSP && (<Row className="g-0"><Col md={6}><img src={quickViewSP.anh} className="w-100 h-100 object-fit-cover" /></Col><Col md={6} className="p-4 d-flex flex-column justify-content-center"><h4 className="fw-bold text-success">{quickViewSP.ten}</h4><div className="mb-2 text-danger fw-bold fs-4">{quickViewSP.giaBan?.toLocaleString()} ¥</div><div className="mb-3 text-muted" dangerouslySetInnerHTML={{__html: quickViewSP.moTa}}></div><Button variant="success" onClick={()=>{themVaoGio(quickViewSP); setQuickViewSP(null)}}>Thêm vào giỏ</Button></Col></Row>)}</Modal.Body></Modal>
       <Modal show={showPopupAds} onHide={()=>setShowPopupAds(false)} centered contentClassName="flash-popup-content"><div className="flash-popup-body"><div className="flash-header-bg"><h3 className="fw-bold m-0">🔥 FLASH SALE</h3></div><div className="p-4"><p className="mb-3 fw-bold text-secondary">Kết thúc sau:</p><div className="d-flex justify-content-center gap-2 mb-4"><div className="time-box">{String(timeLeft.d).padStart(2,'0')}</div>:<div className="time-box">{String(timeLeft.h).padStart(2,'0')}</div>:<div className="time-box">{String(timeLeft.m).padStart(2,'0')}</div>:<div className="time-box bg-danger">{String(timeLeft.s).padStart(2,'0')}</div></div><Button variant="danger" className="w-100 rounded-pill fw-bold shadow" onClick={()=>{setShowPopupAds(false); navigate('/flash-sale')}}>XEM NGAY</Button><div className="mt-3 text-muted small cursor-pointer text-decoration-underline" onClick={()=>setShowPopupAds(false)}>Đóng lại</div></div></div></Modal>
     </Container>

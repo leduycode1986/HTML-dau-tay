@@ -4,14 +4,14 @@ import { Link } from 'react-router-dom';
 import { toSlug } from './App';
 
 function Product({ sp, themVaoGio, openQuickView }) {
-  const tonKho = sp.soLuong !== undefined ? parseInt(sp.soLuong) : 0;
-  const isHetHang = tonKho <= 0;
+  const soLuong = sp.soLuong !== undefined ? sp.soLuong : 0;
+  const isHetHang = soLuong <= 0;
 
   return (
     <Card className={`product-card ${isHetHang ? 'opacity-75' : ''}`}>
       <div className="position-relative">
         <Link to={`/san-pham/${toSlug(sp.ten)}/${sp.id}`} onClick={()=>window.scrollTo(0,0)}>
-          {/* CLASS product-img-fixed GIÚP ẢNH KHÔNG BỊ TO ĐÙNG */}
+          {/* SỬ DỤNG CLASS MỚI ĐỂ ẢNH GỌN */}
           <img src={sp.anh} alt={sp.ten} className="product-img-fixed" style={{filter: isHetHang ? 'grayscale(100%)' : 'none'}} />
         </Link>
         <div className="badge-overlay">
@@ -27,10 +27,9 @@ function Product({ sp, themVaoGio, openQuickView }) {
           <Card.Title className="fs-6 fw-bold mb-1 text-truncate" title={sp.ten}>{sp.ten}</Card.Title>
         </Link>
         
-        {/* HIỂN THỊ KHO & ĐƠN VỊ */}
         <div className="d-flex justify-content-between small text-muted mb-2">
           <span>Đơn vị: {sp.donVi || 'Cái'}</span>
-          <span className={isHetHang ? 'text-danger fw-bold' : 'text-success fw-bold'}>Kho: {tonKho}</span>
+          <span className={isHetHang ? 'text-danger fw-bold' : 'text-success fw-bold'}>Kho: {soLuong}</span>
         </div>
 
         <div className="mt-auto">
@@ -38,7 +37,6 @@ function Product({ sp, themVaoGio, openQuickView }) {
             <span className="text-danger fw-bold">{sp.giaBan?.toLocaleString()} ¥</span>
             {sp.phanTramGiam > 0 && <span className="text-decoration-line-through text-muted small">{sp.giaGoc?.toLocaleString()} ¥</span>}
           </div>
-          
           <Button 
             variant={isHetHang ? "secondary" : "outline-success"} 
             size="sm" 

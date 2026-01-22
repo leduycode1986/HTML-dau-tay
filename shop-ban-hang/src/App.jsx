@@ -62,10 +62,6 @@ function App() {
     const unsubConfig = onSnapshot(doc(db, "cauHinh", "thongTinChung"), d => { if(d.exists()) setShopConfig(d.data()); });
     const unsubAuth = onAuthStateChanged(auth, async u => { setCurrentUser(u); if(u) { const d = await getDoc(doc(db,"users",u.uid)); setUserData(d.exists()?d.data():{}); } else setUserData(null); });
     
-    // Load SP vừa xem
-    const recentIds = JSON.parse(localStorage.getItem('recent') || '[]');
-    // Tạm thời chưa set ở đây, sẽ set trong useEffect phụ thuộc dsSanPham
-    
     const scrollH = () => setShowTopBtn(window.scrollY > 300); window.addEventListener('scroll', scrollH);
     return () => { unsubSP(); unsubDM(); unsubDH(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
   }, []);
