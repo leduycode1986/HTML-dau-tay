@@ -66,7 +66,6 @@ function App() {
   useEffect(() => {
     if(dsSanPham.length > 0) {
       const recentIds = JSON.parse(localStorage.getItem('recent') || '[]');
-      // Lọc ra các sản phẩm có ID trong danh sách recent
       const found = recentIds.map(id => dsSanPham.find(p => p.id === id)).filter(Boolean);
       setRecentProducts(found);
     }
@@ -100,18 +99,15 @@ function App() {
           
           <Navbar bg="white" expand="lg" className="sticky-top shadow-sm py-2" style={{zIndex: 100}}>
             <Container>
-              <Navbar.Brand as={Link} to="/" className="me-4 text-decoration-none">
-                <div className="brand-group">
-                {/* Logo */}
-                  <img src={shopConfig.logo} alt="Logo" className="brand-logo-img" />
-    
-                {/* Tên Shop & Slogan */}
-                  <div className="brand-info">
+              {/* --- FIX LOGO ĐẸP --- */}
+              <Navbar.Brand as={Link} to="/" className="me-4 text-decoration-none d-flex align-items-center gap-2">
+                {shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" className="brand-logo-img" /> : <span className="fs-1">🦁</span>}
+                <div className="brand-info">
                   <h1 className="shop-name">{shopConfig.tenShop}</h1>
                   <span className="shop-slogan">{shopConfig.slogan}</span>
-                  </div>
                 </div>
               </Navbar.Brand>
+
               <Navbar.Toggle />
               <Navbar.Collapse>
                 <Form className="d-flex flex-grow-1 mx-lg-4" onSubmit={e=>e.preventDefault()}>
@@ -122,11 +118,11 @@ function App() {
                 </Form>
                 <Nav className="align-items-center gap-2">
                   <div className="d-none d-lg-block text-end me-3">
-                    <div className="hotline-box d-none d-lg-block">
+                    {/* --- FIX HOTLINE BỊ LẶP --- */}
+                    <div className="hotline-box">
                         <span className="hotline-label">Hotline</span>
                         <span className="hotline-number">{shopConfig.sdt}</span>
                     </div>
-                    <div className="text-danger fw-bold fs-5">{shopConfig.sdt}</div>
                   </div>
                   <Link to="/tra-cuu" className="btn btn-outline-secondary rounded-pill btn-sm fw-bold">Tra đơn</Link>
                   <Link to="/cart" className="btn btn-success rounded-pill position-relative fw-bold px-3">
@@ -162,11 +158,12 @@ function App() {
                       const isOpen = openMenuId === parent.id;
                       return (
                         <div key={parent.id}>
-                          <div className={`category-item ${location.pathname.includes(parent.slug || parent.id) ? 'active' : ''}`} onClick={() => { if(hasChild) setOpenMenuId(isOpen ? null : parent.id); else navigate(`/danh-muc/${toSlug(parent.ten)}/${parent.id}`); }}>
+                          {/* FIX LINK DANH MỤC DÙNG SLUG */}
+                          <div className={`category-item ${location.pathname.includes(parent.slug || toSlug(parent.ten)) ? 'active' : ''}`} onClick={() => { if(hasChild) setOpenMenuId(isOpen ? null : parent.id); else navigate(`/danh-muc/${parent.slug || toSlug(parent.ten)}`); }}>
                             <span>{parent.icon} {parent.ten}</span>
                             {hasChild && <i className={`fa-solid fa-chevron-${isOpen?'down':'right'} small`}></i>}
                           </div>
-                          {hasChild && isOpen && <div className="submenu">{dsDanhMuc.filter(c=>c.parent===parent.id).map(child=><Link key={child.id} to={`/danh-muc/${toSlug(child.ten)}/${child.id}`}>{child.ten}</Link>)}</div>}
+                          {hasChild && isOpen && <div className="submenu">{dsDanhMuc.filter(c=>c.parent===parent.id).map(child=><Link key={child.id} to={`/danh-muc/${child.slug || toSlug(child.ten)}`}>{child.ten}</Link>)}</div>}
                         </div>
                       )
                     })}
@@ -179,10 +176,12 @@ function App() {
               {!isAdminPage && location.pathname === '/' && banners.length > 0 && <div className="mb-4 rounded overflow-hidden shadow-sm"><Slider {...sliderSettings}>{banners.map(b=><Link key={b.id} to={b.link||'#'}><img src={b.img} className="w-100" style={{height:320, objectFit:'cover'}}/></Link>)}</Slider></div>}
               
               <Routes>
+                {/* --- ROUTES CHUẨN SEO (CHỈ DÙNG SLUG) --- */}
                 <Route path="/" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
                 <Route path="/danh-muc/:slug" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
                 <Route path="/san-pham/:slug" element={<ProductDetail dsSanPham={dsSanPham} themVaoGio={themVaoGio} />} />
-               <Route path="/cart" element={<Cart gioHang={gioHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} currentUser={currentUser} />} />
+                
+                <Route path="/cart" element={<Cart gioHang={gioHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} currentUser={currentUser} />} />
                 <Route path="/checkout" element={<Checkout gioHang={gioHang} setGioHang={setGioHang} userData={userData} />} />
                 <Route path="/member" element={<Member themVaoGio={themVaoGio} />} />
                 <Route path="/tra-cuu" element={<OrderLookup />} />
@@ -195,7 +194,7 @@ function App() {
         </Container>
       </div>
 
-      {/* --- RECENT PRODUCTS FIX --- */}
+      {/* --- SẢN PHẨM VỪA XEM (DÙNG CLASS MỚI ĐỂ FIX VỠ) --- */}
       {!isAdminPage && recentProducts.length > 0 && (
         <div className="recent-view-bar">
           <Container>

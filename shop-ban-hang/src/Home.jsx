@@ -4,7 +4,6 @@ import Product from './Product';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { toSlug } from './App';
 
-// --- SLIDER COMPONENT ---
 const ProductSlider = ({ title, products, icon, themVaoGio, setQuickViewSP }) => {
   const scrollRef = useRef(null);
   const scroll = (d) => { if(scrollRef.current) scrollRef.current.scrollLeft += d==='left'?-300:300; };
@@ -19,10 +18,8 @@ const ProductSlider = ({ title, products, icon, themVaoGio, setQuickViewSP }) =>
   );
 };
 
-// --- MAIN HOME COMPONENT ---
 function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
-  // 1. LẤY SLUG TỪ URL (THAY VÌ ID CŨ)
-  const { slug } = useParams(); 
+  const { slug } = useParams(); // Lấy slug từ URL
   const navigate = useNavigate();
   
   const [sortType, setSortType] = useState('default');
@@ -32,7 +29,6 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
   const [showPopupAds, setShowPopupAds] = useState(false);
   const [quickViewSP, setQuickViewSP] = useState(null);
 
-  // Logic Popup Flash Sale
   useEffect(() => {
     if(!shopConfig?.flashSaleEnd) return;
     const check = () => {
@@ -45,31 +41,30 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
     check(); const t = setInterval(check, 1000); return () => clearInterval(t);
   }, [shopConfig]);
 
-  // Đảm bảo dữ liệu an toàn
   const safeDS = Array.isArray(dsSanPham) ? dsSanPham : [];
   const safeDM = Array.isArray(dsDanhMuc) ? dsDanhMuc : [];
 
-  // =========================================================
-  // 2. LOGIC LỌC MỚI THEO SLUG (CHÈN VÀO ĐÂY)
-  // =========================================================
-  let finalProducts = safeDS; // Mặc định lấy tất cả
+  // --- LOGIC LỌC SẢN PHẨM THEO SLUG ---
+  let finalProducts = safeDS; 
 
   if (slug) {
-    // Tìm danh mục dựa trên slug (so sánh slug hoặc toSlug tên)
+    // 1. Tìm danh mục khớp với slug trên URL
     const danhMucHienTai = safeDM.find(d => (d.slug === slug) || (toSlug(d.ten) === slug));
     
     if (danhMucHienTai) {
       const idDM = danhMucHienTai.id;
-      // Lọc sản phẩm thuộc danh mục đó hoặc con của nó
+      // 2. Lọc sản phẩm thuộc danh mục đó hoặc danh mục con của nó
       finalProducts = safeDS.filter(sp => 
         sp.phanLoai === idDM || 
         safeDM.filter(d => d.parent === idDM).map(c => c.id).includes(sp.phanLoai)
       );
+    } else {
+      // Nếu không tìm thấy danh mục (URL sai), trả về rỗng
+      finalProducts = []; 
     }
   }
-  // =========================================================
 
-  // Logic lọc giá và sắp xếp (áp dụng lên finalProducts)
+  // Logic lọc giá và sắp xếp
   if (minPrice || maxPrice) finalProducts = finalProducts.filter(sp => { const g = sp.giaBan||0; return g>=(minPrice||0) && g<=(maxPrice||Infinity); });
   if (sortType === 'price-asc') finalProducts.sort((a, b) => (a.giaBan||0) - (b.giaBan||0));
   if (sortType === 'price-desc') finalProducts.sort((a, b) => (b.giaBan||0) - (a.giaBan||0));
@@ -85,10 +80,10 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
         )}
         <div className="bg-white p-3 rounded shadow-sm">
           <div className="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-            <h5 className="fw-bold text-success m-0"><i className="fa-solid fa-list me-2"></i> {slug ? 'DANH SÁCH' : 'TẤT CẢ SẢN PHẨM'}</h5>
+            <h5 className="fw-bold text-success m-0"><i className="fa-solid fa-list me-2"></i> {slug ? 'DANH SÁCH SẢN PHẨM' : 'TẤT CẢ SẢN PHẨM'}</h5>
             <select className="form-select form-select-sm w-auto" value={sortType} onChange={e=>setSortType(e.target.value)}><option value="default">Mặc định</option><option value="price-asc">Giá tăng dần</option><option value="price-desc">Giá giảm dần</option></select>
           </div>
-          {finalProducts.length === 0 ? <Alert variant="warning" className="text-center">Không tìm thấy sản phẩm.</Alert> : (
+          {finalProducts.length === 0 ? <Alert variant="warning" className="text-center">Chưa có sản phẩm trong danh mục này.</Alert> : (
             <Row className="g-3 row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5">
               {finalProducts.slice(0, visibleCount).map(sp => (<Col key={sp.id}><Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} /></Col>))}
             </Row>
