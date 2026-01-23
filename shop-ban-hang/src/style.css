@@ -300,3 +300,115 @@ img { max-width: 100%; height: auto; }
   background-color: #e8f5e9;
   box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.1); /* Viền sáng xung quanh */
 }
+/* --- 1. HEADER LOGO & HOTLINE (CHUẨN HÌNH 1) --- */
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-logo-img {
+  width: 60px; /* Kích thước logo chuẩn */
+  height: auto;
+}
+.brand-info {
+  display: flex;
+  flex-direction: column;
+}
+.shop-name {
+  font-weight: 800;
+  font-size: 1.4rem;
+  color: #000; /* Màu đen như hình */
+  text-transform: uppercase;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.shop-slogan {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #000; /* Màu đen đậm */
+}
+
+/* Hotline bên phải */
+.header-right-action {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.hotline-box {
+  text-align: right;
+  margin-right: 10px;
+}
+.hotline-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  display: block;
+}
+.hotline-number {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #d32f2f; /* Màu đỏ như hình */
+  line-height: 1;
+}
+
+/* --- 2. SẢN PHẨM VỪA XEM (CHUẨN HÌNH 2) --- */
+.recent-view-bar {
+  background: white;
+  border-top: 3px solid #198754; /* Viền xanh lá trên cùng */
+  padding: 20px 0;
+  margin-top: 30px;
+}
+.recent-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #666;
+  text-transform: uppercase;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.recent-scroll {
+  display: flex;
+  gap: 15px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+}
+/* Card sản phẩm vừa xem giống hệt hình */
+.recent-card {
+  min-width: 160px;
+  width: 160px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+  text-decoration: none;
+  color: inherit;
+  transition: 0.2s;
+}
+.recent-card:hover {
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+.recent-card img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+}
+.recent-card-body {
+  padding: 10px;
+  text-align: center;
+}
+.recent-name {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.recent-price {
+  color: #d32f2f;
+  font-weight: 700;
+  font-size: 14px;
+}

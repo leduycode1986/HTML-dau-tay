@@ -1,93 +1,115 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Form, Button, Card, Badge, Alert, Row, Col } from 'react-bootstrap';
+import React, { useState } from 'react';
+import { Container, Form, Button, Card, Alert, Row, Col, Table, Badge } from 'react-bootstrap';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db, auth } from './firebase'; // Import thêm auth
+import { db } from './firebase';
 
 function OrderLookup() {
-  const [keyword, setKeyword] = useState('');
-  const [orders, setOrders] = useState([]);
+  const [searchParams, setSearchParams] = useState({ id: '', phone: '' });
+  const [orderResult, setOrderResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
-  const user = auth.currentUser;
+  const [error, setError] = useState('');
 
-  // --- TỰ ĐỘNG TRA CỨU NẾU LÀ THÀNH VIÊN ---
-  useEffect(() => {
-    if (user) {
-      setLoading(true);
-      const fetchUserOrders = async () => {
-        try {
-          // Tìm theo UserId
-          const q = query(collection(db, "donHang"), where("userId", "==", user.uid));
-          const querySnapshot = await getDocs(q);
-          const result = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          result.sort((a, b) => b.ngayDat - a.ngayDat);
-          setOrders(result);
-        } catch (err) { console.error(err); }
-        setLoading(false);
-        setSearched(true); // Đánh dấu đã tìm để hiện kết quả
-      };
-      fetchUserOrders();
-    }
-  }, [user]);
-  // ------------------------------------------
-
-  const handleLookup = async (e) => {
-    e.preventDefault(); if (!keyword.trim()) return;
-    setLoading(true); setOrders([]); setSearched(false);
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchParams.phone) { setError("Vui lòng nhập số điện thoại đặt hàng!"); return; }
+    
+    setLoading(true); setError(''); setOrderResult(null);
     try {
-      const val = keyword.trim();
-      let q;
-      // Nếu là số > 8 ký tự -> Tìm theo SĐT, ngược lại tìm theo Mã đơn
-      if (/^\d+$/.test(val) && val.length >= 8) q = query(collection(db, "donHang"), where("khachHang.sdt", "==", val));
-      else q = query(collection(db, "donHang"), where("maDonHang", "==", val));
-
+      // Tìm theo SĐT
+      const q = query(collection(db, "donHang"), where("khachHang.sdt", "==", searchParams.phone));
       const querySnapshot = await getDocs(q);
-      const result = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      result.sort((a, b) => b.ngayDat - a.ngayDat);
-      setOrders(result);
-    } catch (err) { console.error(err); }
-    setLoading(false); setSearched(true);
-  };
-
-  const getStepStatus = (status) => {
-    const steps = ['Mới đặt', 'Đang xử lý', 'Đang giao', 'Hoàn thành'];
-    const currentIdx = steps.indexOf(status);
-    return steps.map((step, idx) => ({ name: step, active: idx <= currentIdx || status === 'Hoàn thành' }));
+      
+      if (querySnapshot.empty) {
+        setError("Không tìm thấy đơn hàng nào với số điện thoại này.");
+      } else {
+        const orders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Nếu có nhập mã đơn thì lọc thêm mã đơn
+        if (searchParams.id) {
+          const specificOrder = orders.find(o => o.maDonHang === searchParams.id || o.id === searchParams.id);
+          if (specificOrder) setOrderResult([specificOrder]);
+          else setError("Không tìm thấy mã đơn hàng này của số điện thoại trên.");
+        } else {
+          setOrderResult(orders); // Hiện tất cả đơn của SĐT đó
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Đã xảy ra lỗi khi tra cứu.");
+    }
+    setLoading(false);
   };
 
   return (
-    <Container className="py-5" data-aos="fade-up" style={{maxWidth: '800px'}}>
-      
-      {/* CHỈ HIỆN Ô TÌM KIẾM NẾU CHƯA ĐĂNG NHẬP */}
-      {!user && (
-        <Card className="border-0 shadow-sm p-4 text-center mb-4">
-          <h2 className="fw-bold text-success mb-3"><i className="fa-solid fa-magnifying-glass-location me-2"></i>TRA CỨU ĐƠN HÀNG</h2>
-          <p className="text-muted">Nhập <strong>Số điện thoại</strong> hoặc <strong>Mã đơn hàng</strong>.</p>
-          <Form onSubmit={handleLookup}>
-            <div className="input-group mb-3">
-              <Form.Control size="lg" placeholder="VD: 0901234567 hoặc MV-123456" value={keyword} onChange={e=>setKeyword(e.target.value)} required />
-              <Button variant="success" type="submit" size="lg" disabled={loading} className="fw-bold px-4">{loading ? 'Đang tìm...' : 'TRA CỨU'}</Button>
-            </div>
+    <Container className="py-5" style={{maxWidth: 800}}>
+      <Card className="shadow-sm border-0 mb-4">
+        <Card.Header className="bg-success text-white fw-bold text-uppercase text-center py-3">
+          <i className="fa-solid fa-magnifying-glass me-2"></i> Tra cứu đơn hàng
+        </Card.Header>
+        <Card.Body className="p-4">
+          <Form onSubmit={handleSearch}>
+            <Row className="g-3">
+              <Col md={6}>
+                <Form.Label className="fw-bold">Số điện thoại đặt hàng <span className="text-danger">*</span></Form.Label>
+                <Form.Control 
+                  type="text" 
+                  placeholder="Nhập SĐT..." 
+                  value={searchParams.phone} 
+                  onChange={e => setSearchParams({...searchParams, phone: e.target.value})} 
+                />
+              </Col>
+              <Col md={6}>
+                <Form.Label className="fw-bold">Mã đơn hàng (Tùy chọn)</Form.Label>
+                <Form.Control 
+                  type="text" 
+                  placeholder="VD: MV-123456" 
+                  value={searchParams.id} 
+                  onChange={e => setSearchParams({...searchParams, id: e.target.value})} 
+                />
+              </Col>
+              <Col md={12} className="text-center mt-4">
+                <Button type="submit" variant="success" className="px-5 rounded-pill fw-bold" disabled={loading}>
+                  {loading ? 'Đang tìm...' : 'TRA CỨU NGAY'}
+                </Button>
+              </Col>
+            </Row>
           </Form>
-        </Card>
+        </Card.Body>
+      </Card>
+
+      {error && <Alert variant="danger" className="text-center">{error}</Alert>}
+
+      {orderResult && (
+        <div className="animate__animated animate__fadeIn">
+          <h5 className="fw-bold text-success mb-3">KẾT QUẢ TRA CỨU ({orderResult.length} đơn)</h5>
+          {orderResult.map(order => (
+            <Card key={order.id} className="mb-3 border-success shadow-sm">
+              <Card.Header className="d-flex justify-content-between align-items-center bg-light">
+                <span className="fw-bold text-primary">#{order.maDonHang || order.id}</span>
+                <Badge bg={order.trangThai === 'Hoàn thành' ? 'success' : (order.trangThai === 'Đã hủy' ? 'danger' : 'warning')}>
+                  {order.trangThai}
+                </Badge>
+              </Card.Header>
+              <Card.Body>
+                <p className="mb-1"><strong>Ngày đặt:</strong> {order.ngayDat?.toDate ? order.ngayDat.toDate().toLocaleString('vi-VN') : ''}</p>
+                <p className="mb-1"><strong>Địa chỉ:</strong> {order.khachHang?.diachi}, {order.khachHang?.quanHuyen}</p>
+                <div className="border-top mt-2 pt-2">
+                  {order.gioHang?.map((sp, idx) => (
+                    <div key={idx} className="d-flex justify-content-between small mb-1">
+                      <span>{sp.ten} x {sp.soLuong}</span>
+                      <span className="fw-bold">{sp.giaBan?.toLocaleString()}₫</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-end border-top mt-2 pt-2 h5 text-danger fw-bold">
+                  Tổng: {order.tongTien?.toLocaleString()}₫
+                </div>
+              </Card.Body>
+            </Card>
+          ))}
+        </div>
       )}
-
-      {user && orders.length > 0 && <h4 className="mb-4 text-center text-primary">📦 Đơn hàng của bạn ({orders.length})</h4>}
-
-      {searched && orders.length === 0 && (<Alert variant="warning" className="text-center">❌ Không tìm thấy đơn hàng nào.</Alert>)}
-
-      {orders.length > 0 && (<div data-aos="fade-in">
-        {orders.map((order, index) => (
-          <Card key={index} className="mb-4 border-0 shadow-sm overflow-hidden">
-            <Card.Header className="bg-white border-bottom p-3 d-flex justify-content-between align-items-center flex-wrap gap-2"><div><span className="text-muted small me-2">Mã đơn:</span><span className="fw-bold text-primary fs-5 me-3">{order.maDonHang || `#${order.id.slice(0,6)}`}</span><span className="text-muted small"><i className="fa-regular fa-clock me-1"></i>{order.ngayDat?.toDate ? order.ngayDat.toDate().toLocaleString('vi-VN') : ''}</span></div><Badge bg={order.trangThai === 'Hoàn thành' ? 'success' : order.trangThai === 'Đang giao' ? 'info' : 'warning'} className="px-3 py-2">{order.trangThai}</Badge></Card.Header>
-            <Card.Body className="p-0">
-              <div className="tracking-step p-4 bg-light">{getStepStatus(order.trangThai).map((step, idx) => (<div key={idx} className={`step-item ${step.active ? 'active' : ''}`}><div className="step-icon"><i className="fa-solid fa-check"></i></div><small className="fw-bold d-block mt-1" style={{fontSize:'11px'}}>{step.name}</small></div>))}</div>
-              <div className="p-4"><Row><Col md={6}><h6 className="fw-bold text-success"><i className="fa-solid fa-user me-2"></i>Thông tin nhận hàng</h6><p className="mb-1 small"><strong>Người nhận:</strong> {order.khachHang?.ten}</p><p className="mb-1 small"><strong>SĐT:</strong> {order.khachHang?.sdt}</p><p className="mb-1 small"><strong>Địa chỉ:</strong> {order.khachHang?.diachi}</p></Col><Col md={6} className="mt-3 mt-md-0 border-start ps-md-4"><h6 className="fw-bold text-success"><i className="fa-solid fa-basket-shopping me-2"></i>Sản phẩm ({order.gioHang?.length})</h6><ul className="list-unstyled mb-2 small" style={{maxHeight:'100px', overflowY:'auto'}}>{order.gioHang?.map((item, i) => (<li key={i} className="d-flex justify-content-between mb-1 border-bottom pb-1"><span>{item.soLuong}x {item.ten}</span><span className="fw-bold">{item.giaBan?.toLocaleString()} ¥</span></li>))}</ul><div className="d-flex justify-content-between align-items-center pt-2 border-top"><span className="fw-bold text-uppercase">Tổng tiền:</span><span className="text-danger fw-bold fs-5">{order.tongTien?.toLocaleString()} ¥</span></div></Col></Row></div>
-            </Card.Body>
-          </Card>
-        ))}
-      </div>)}
     </Container>
   );
 }
+
 export default OrderLookup;

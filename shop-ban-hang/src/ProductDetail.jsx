@@ -15,7 +15,8 @@ function ProductDetail({ dsSanPham, themVaoGio }) {
   const [comment, setComment] = useState('');
   const { slug } = useParams();
   const found = dsSanPham.find(p => (p.slug === slug) || (toSlug(p.ten) === slug));
-  
+  const sp = dsSanPham.find(p => (p.slug === slug) || (toSlug(p.ten) === slug));
+  if (!sp) return <div className="text-center py-5">Đang tải hoặc không tìm thấy sản phẩm...</div>;
   useEffect(() => {
     const fetch = async () => {
       const found = dsSanPham.find(p => p.id === id);

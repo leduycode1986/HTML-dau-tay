@@ -100,11 +100,16 @@ function App() {
           
           <Navbar bg="white" expand="lg" className="sticky-top shadow-sm py-2" style={{zIndex: 100}}>
             <Container>
-              <Navbar.Brand as={Link} to="/" className="d-flex align-items-center me-4">
-                {shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" className="me-2" style={{height: 50, objectFit:'contain'}} /> : <span className="fs-1 me-2">🦁</span>}
-                <div className="shop-brand-col">
-                  <div className="shop-name">{shopConfig.tenShop}</div>
-                  <div className="shop-slogan">{shopConfig.slogan}</div>
+              <Navbar.Brand as={Link} to="/" className="me-4 text-decoration-none">
+                <div className="brand-group">
+                {/* Logo */}
+                  <img src={shopConfig.logo} alt="Logo" className="brand-logo-img" />
+    
+                {/* Tên Shop & Slogan */}
+                  <div className="brand-info">
+                  <h1 className="shop-name">{shopConfig.tenShop}</h1>
+                  <span className="shop-slogan">{shopConfig.slogan}</span>
+                  </div>
                 </div>
               </Navbar.Brand>
               <Navbar.Toggle />
@@ -117,7 +122,10 @@ function App() {
                 </Form>
                 <Nav className="align-items-center gap-2">
                   <div className="d-none d-lg-block text-end me-3">
-                    <div className="small text-muted fw-bold">HOTLINE</div>
+                    <div className="hotline-box d-none d-lg-block">
+                        <span className="hotline-label">Hotline</span>
+                        <span className="hotline-number">{shopConfig.sdt}</span>
+                    </div>
                     <div className="text-danger fw-bold fs-5">{shopConfig.sdt}</div>
                   </div>
                   <Link to="/tra-cuu" className="btn btn-outline-secondary rounded-pill btn-sm fw-bold">Tra đơn</Link>
@@ -171,10 +179,10 @@ function App() {
               {!isAdminPage && location.pathname === '/' && banners.length > 0 && <div className="mb-4 rounded overflow-hidden shadow-sm"><Slider {...sliderSettings}>{banners.map(b=><Link key={b.id} to={b.link||'#'}><img src={b.img} className="w-100" style={{height:320, objectFit:'cover'}}/></Link>)}</Slider></div>}
               
               <Routes>
-                <Route path="/" element={<Home dsSanPham={sanPhamHienThi} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
-                <Route path="/danh-muc/:slug/:id" element={<Home dsSanPham={sanPhamHienThi} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
-                <Route path="/san-pham/:slug/:id" element={<ProductDetail dsSanPham={dsSanPham} themVaoGio={themVaoGio} />} />
-                <Route path="/cart" element={<Cart gioHang={gioHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} currentUser={currentUser} userData={userData} />} />
+                <Route path="/" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
+                <Route path="/danh-muc/:slug" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
+                <Route path="/san-pham/:slug" element={<ProductDetail dsSanPham={dsSanPham} themVaoGio={themVaoGio} />} />
+               <Route path="/cart" element={<Cart gioHang={gioHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} currentUser={currentUser} />} />
                 <Route path="/checkout" element={<Checkout gioHang={gioHang} setGioHang={setGioHang} userData={userData} />} />
                 <Route path="/member" element={<Member themVaoGio={themVaoGio} />} />
                 <Route path="/tra-cuu" element={<OrderLookup />} />
