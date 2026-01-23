@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Container, Form, Button, Card, Alert, Row, Col, Table, Badge } from 'react-bootstrap';
+import { Container, Form, Button, Card, Alert, Row, Col, Badge } from 'react-bootstrap';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -11,7 +11,7 @@ function OrderLookup() {
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    if (!searchParams.phone) { setError("Vui lòng nhập số điện thoại đặt hàng!"); return; }
+    if (!searchParams.phone) { setError("Vui lòng nhập số điện thoại!"); return; }
     
     setLoading(true); setError(''); setOrderResult(null);
     try {
@@ -20,56 +20,37 @@ function OrderLookup() {
       const querySnapshot = await getDocs(q);
       
       if (querySnapshot.empty) {
-        setError("Không tìm thấy đơn hàng nào với số điện thoại này.");
+        setError("Không tìm thấy đơn hàng nào với SĐT này.");
       } else {
-        const orders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        // Nếu có nhập mã đơn thì lọc thêm mã đơn
+        let orders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Nếu có mã đơn, lọc kỹ hơn
         if (searchParams.id) {
-          const specificOrder = orders.find(o => o.maDonHang === searchParams.id || o.id === searchParams.id);
-          if (specificOrder) setOrderResult([specificOrder]);
-          else setError("Không tìm thấy mã đơn hàng này của số điện thoại trên.");
-        } else {
-          setOrderResult(orders); // Hiện tất cả đơn của SĐT đó
+          orders = orders.filter(o => o.maDonHang === searchParams.id || o.id === searchParams.id);
+          if (orders.length === 0) setError("Không tìm thấy mã đơn hàng này.");
         }
+        setOrderResult(orders);
       }
-    } catch (err) {
-      console.error(err);
-      setError("Đã xảy ra lỗi khi tra cứu.");
-    }
+    } catch (err) { setError("Lỗi khi tra cứu."); }
     setLoading(false);
   };
 
   return (
     <Container className="py-5" style={{maxWidth: 800}}>
       <Card className="shadow-sm border-0 mb-4">
-        <Card.Header className="bg-success text-white fw-bold text-uppercase text-center py-3">
-          <i className="fa-solid fa-magnifying-glass me-2"></i> Tra cứu đơn hàng
-        </Card.Header>
+        <Card.Header className="bg-success text-white fw-bold text-center py-3 text-uppercase">Tra cứu đơn hàng</Card.Header>
         <Card.Body className="p-4">
           <Form onSubmit={handleSearch}>
             <Row className="g-3">
               <Col md={6}>
-                <Form.Label className="fw-bold">Số điện thoại đặt hàng <span className="text-danger">*</span></Form.Label>
-                <Form.Control 
-                  type="text" 
-                  placeholder="Nhập SĐT..." 
-                  value={searchParams.phone} 
-                  onChange={e => setSearchParams({...searchParams, phone: e.target.value})} 
-                />
+                <Form.Label className="fw-bold">Số điện thoại (*)</Form.Label>
+                <Form.Control type="text" placeholder="Nhập SĐT đặt hàng..." value={searchParams.phone} onChange={e => setSearchParams({...searchParams, phone: e.target.value})} />
               </Col>
               <Col md={6}>
                 <Form.Label className="fw-bold">Mã đơn hàng (Tùy chọn)</Form.Label>
-                <Form.Control 
-                  type="text" 
-                  placeholder="VD: MV-123456" 
-                  value={searchParams.id} 
-                  onChange={e => setSearchParams({...searchParams, id: e.target.value})} 
-                />
+                <Form.Control type="text" placeholder="VD: MV-123456" value={searchParams.id} onChange={e => setSearchParams({...searchParams, id: e.target.value})} />
               </Col>
-              <Col md={12} className="text-center mt-4">
-                <Button type="submit" variant="success" className="px-5 rounded-pill fw-bold" disabled={loading}>
-                  {loading ? 'Đang tìm...' : 'TRA CỨU NGAY'}
-                </Button>
+              <Col md={12} className="text-center mt-3">
+                <Button type="submit" variant="success" className="px-5 rounded-pill fw-bold" disabled={loading}>{loading ? 'Đang tìm...' : 'TRA CỨU'}</Button>
               </Col>
             </Row>
           </Form>
@@ -79,19 +60,16 @@ function OrderLookup() {
       {error && <Alert variant="danger" className="text-center">{error}</Alert>}
 
       {orderResult && (
-        <div className="animate__animated animate__fadeIn">
-          <h5 className="fw-bold text-success mb-3">KẾT QUẢ TRA CỨU ({orderResult.length} đơn)</h5>
+        <div>
+          <h5 className="fw-bold text-success mb-3">KẾT QUẢ TÌM KIẾM ({orderResult.length} đơn)</h5>
           {orderResult.map(order => (
             <Card key={order.id} className="mb-3 border-success shadow-sm">
               <Card.Header className="d-flex justify-content-between align-items-center bg-light">
                 <span className="fw-bold text-primary">#{order.maDonHang || order.id}</span>
-                <Badge bg={order.trangThai === 'Hoàn thành' ? 'success' : (order.trangThai === 'Đã hủy' ? 'danger' : 'warning')}>
-                  {order.trangThai}
-                </Badge>
+                <Badge bg={order.trangThai === 'Hoàn thành' ? 'success' : 'warning'}>{order.trangThai}</Badge>
               </Card.Header>
               <Card.Body>
                 <p className="mb-1"><strong>Ngày đặt:</strong> {order.ngayDat?.toDate ? order.ngayDat.toDate().toLocaleString('vi-VN') : ''}</p>
-                <p className="mb-1"><strong>Địa chỉ:</strong> {order.khachHang?.diachi}, {order.khachHang?.quanHuyen}</p>
                 <div className="border-top mt-2 pt-2">
                   {order.gioHang?.map((sp, idx) => (
                     <div key={idx} className="d-flex justify-content-between small mb-1">
@@ -100,9 +78,7 @@ function OrderLookup() {
                     </div>
                   ))}
                 </div>
-                <div className="text-end border-top mt-2 pt-2 h5 text-danger fw-bold">
-                  Tổng: {order.tongTien?.toLocaleString()}₫
-                </div>
+                <div className="text-end border-top mt-2 pt-2 h5 text-danger fw-bold">Tổng: {order.tongTien?.toLocaleString()}₫</div>
               </Card.Body>
             </Card>
           ))}
@@ -111,5 +87,4 @@ function OrderLookup() {
     </Container>
   );
 }
-
 export default OrderLookup;

@@ -19,7 +19,7 @@ const ProductSlider = ({ title, products, icon, themVaoGio, setQuickViewSP }) =>
 };
 
 function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
-  const { slug } = useParams(); // Lấy slug từ URL
+  const { slug } = useParams(); 
   const navigate = useNavigate();
   
   const [sortType, setSortType] = useState('default');
@@ -44,23 +44,22 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
   const safeDS = Array.isArray(dsSanPham) ? dsSanPham : [];
   const safeDM = Array.isArray(dsDanhMuc) ? dsDanhMuc : [];
 
-  // --- LOGIC LỌC SẢN PHẨM THEO SLUG ---
+  // --- LOGIC LỌC MỚI THEO SLUG ---
   let finalProducts = safeDS; 
 
   if (slug) {
-    // 1. Tìm danh mục khớp với slug trên URL
+    // Tìm ID danh mục dựa trên slug (so sánh slug DB hoặc slug tạo từ tên)
     const danhMucHienTai = safeDM.find(d => (d.slug === slug) || (toSlug(d.ten) === slug));
     
     if (danhMucHienTai) {
       const idDM = danhMucHienTai.id;
-      // 2. Lọc sản phẩm thuộc danh mục đó hoặc danh mục con của nó
+      // Lọc sản phẩm thuộc danh mục đó hoặc con của nó
       finalProducts = safeDS.filter(sp => 
         sp.phanLoai === idDM || 
         safeDM.filter(d => d.parent === idDM).map(c => c.id).includes(sp.phanLoai)
       );
     } else {
-      // Nếu không tìm thấy danh mục (URL sai), trả về rỗng
-      finalProducts = []; 
+      finalProducts = []; // Không tìm thấy danh mục
     }
   }
 
@@ -83,7 +82,7 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
             <h5 className="fw-bold text-success m-0"><i className="fa-solid fa-list me-2"></i> {slug ? 'DANH SÁCH SẢN PHẨM' : 'TẤT CẢ SẢN PHẨM'}</h5>
             <select className="form-select form-select-sm w-auto" value={sortType} onChange={e=>setSortType(e.target.value)}><option value="default">Mặc định</option><option value="price-asc">Giá tăng dần</option><option value="price-desc">Giá giảm dần</option></select>
           </div>
-          {finalProducts.length === 0 ? <Alert variant="warning" className="text-center">Chưa có sản phẩm trong danh mục này.</Alert> : (
+          {finalProducts.length === 0 ? <Alert variant="warning" className="text-center">Không tìm thấy sản phẩm nào.</Alert> : (
             <Row className="g-3 row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5">
               {finalProducts.slice(0, visibleCount).map(sp => (<Col key={sp.id}><Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} /></Col>))}
             </Row>
@@ -91,34 +90,7 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
           {visibleCount < finalProducts.length && <div className="text-center mt-4"><Button variant="outline-success" onClick={() => setVisibleCount(v => v + 10)}>Xem thêm</Button></div>}
         </div>
       </Col></Row>
-      <Modal show={!!quickViewSP} onHide={() => setQuickViewSP(null)} size="lg" centered contentClassName="border-0 rounded-3 overflow-hidden">
-        <div className="btn-close-custom" onClick={() => setQuickViewSP(null)}><i className="fa-solid fa-xmark"></i></div>
-      <Modal.Body className="p-0">
-        {quickViewSP && (
-        <Row className="g-0">
-        <Col md={5} className="quick-view-img-box">
-          <img src={quickViewSP.anh} alt={quickViewSP.ten} />
-        </Col>
-        <Col md={7} className="p-4 d-flex flex-column justify-content-center">
-          <h4 className="fw-bold text-success text-uppercase">{quickViewSP.ten}</h4>
-          <div className="mb-3">
-            <span className="h4 text-danger fw-bold me-3">{quickViewSP.giaBan?.toLocaleString()} ¥</span>
-            {quickViewSP.phanTramGiam > 0 && <span className="text-muted text-decoration-line-through">{quickViewSP.giaGoc?.toLocaleString()} ¥</span>}
-          </div>
-          <div className="mb-4 text-secondary small" dangerouslySetInnerHTML={{__html: quickViewSP.moTa ? quickViewSP.moTa.substring(0, 150)+'...' : 'Đang cập nhật...'}}></div>
-          <div className="d-flex gap-2">
-            <Button variant="success" className="flex-grow-1 rounded-pill fw-bold" onClick={()=>{themVaoGio(quickViewSP); setQuickViewSP(null)}}>
-              <i className="fa-solid fa-cart-plus me-2"></i> THÊM VÀO GIỎ
-            </Button>
-            <Link to={`/san-pham/${toSlug(quickViewSP.ten)}`} className="btn btn-outline-secondary rounded-pill px-3" onClick={()=>setQuickViewSP(null)}>
-              Chi tiết
-            </Link>
-          </div>
-        </Col>
-        </Row>
-       )}
-        </Modal.Body>
-      </Modal>
+      <Modal show={!!quickViewSP} onHide={()=>setQuickViewSP(null)} size="lg" centered><Modal.Body className="p-0">{quickViewSP && (<Row className="g-0"><Col md={6}><img src={quickViewSP.anh} className="w-100 h-100 object-fit-cover" /></Col><Col md={6} className="p-4 d-flex flex-column justify-content-center"><h4 className="fw-bold text-success">{quickViewSP.ten}</h4><div className="mb-2 text-danger fw-bold fs-4">{quickViewSP.giaBan?.toLocaleString()} ¥</div><div className="mb-3 text-muted" dangerouslySetInnerHTML={{__html: quickViewSP.moTa}}></div><Button variant="success" onClick={()=>{themVaoGio(quickViewSP); setQuickViewSP(null)}}>Thêm vào giỏ</Button></Col></Row>)}</Modal.Body></Modal>
       <Modal show={showPopupAds} onHide={()=>setShowPopupAds(false)} centered contentClassName="flash-popup-content"><div className="flash-popup-body"><div className="flash-header-bg"><h3 className="fw-bold m-0">🔥 FLASH SALE</h3></div><div className="p-4"><p className="mb-3 fw-bold text-secondary">Kết thúc sau:</p><div className="d-flex justify-content-center gap-2 mb-4"><div className="time-box">{String(timeLeft.d).padStart(2,'0')}</div>:<div className="time-box">{String(timeLeft.h).padStart(2,'0')}</div>:<div className="time-box">{String(timeLeft.m).padStart(2,'0')}</div>:<div className="time-box bg-danger">{String(timeLeft.s).padStart(2,'0')}</div></div><Button variant="danger" className="w-100 rounded-pill fw-bold shadow" onClick={()=>{setShowPopupAds(false); navigate('/flash-sale')}}>XEM NGAY</Button><div className="mt-3 text-muted small cursor-pointer text-decoration-underline" onClick={()=>setShowPopupAds(false)}>Đóng lại</div></div></div></Modal>
     </Container>
   );
