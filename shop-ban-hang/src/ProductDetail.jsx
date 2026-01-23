@@ -1,109 +1,71 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Container, Row, Col, Button, Badge, Form, Card, ProgressBar } from 'react-bootstrap';
-import { doc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp, orderBy } from 'firebase/firestore';
-import { db, auth } from './firebase';
-import { toast } from 'react-toastify';
+import { Container, Row, Col, Button, Badge } from 'react-bootstrap';
 import { toSlug } from './App';
 
 function ProductDetail({ dsSanPham, themVaoGio }) {
-  const { id } = useParams();
-  const [product, setProduct] = useState(null);
-  const [quantity, setQuantity] = useState(1);
-  const [reviews, setReviews] = useState([]);
-  const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState('');
-  const { slug } = useParams();
-  const found = dsSanPham.find(p => (p.slug === slug) || (toSlug(p.ten) === slug));
-  const sp = dsSanPham.find(p => (p.slug === slug) || (toSlug(p.ten) === slug));
-  if (!sp) return <div className="text-center py-5">Đang tải hoặc không tìm thấy sản phẩm...</div>;
+  const { slug } = useParams(); // Lấy slug từ URL
+  const [sanPham, setSanPham] = useState(null);
+
   useEffect(() => {
-    const fetch = async () => {
-      const found = dsSanPham.find(p => p.id === id);
-      if (found) setProduct(found);
-      else {
-        const d = await getDoc(doc(db, "sanPham", id));
-        if (d.exists()) setProduct({ id: d.id, ...d.data() });
+    if (dsSanPham.length > 0) {
+      // TÌM KIẾM THÔNG MINH:
+      // 1. Tìm xem slug có khớp với trường 'slug' trong DB không?
+      // 2. Nếu không, thử tạo slug từ tên sản phẩm và so sánh (để hỗ trợ sản phẩm cũ)
+      // 3. Nếu vẫn không thấy, thử so sánh với ID (trường hợp URL dùng ID)
+      const found = dsSanPham.find(sp => 
+        (sp.slug === slug) || 
+        (toSlug(sp.ten) === slug) || 
+        (sp.id === slug)
+      );
+      setSanPham(found);
+
+      // Lưu lịch sử xem
+      if (found) {
+        const recent = JSON.parse(localStorage.getItem('recent') || '[]');
+        const newRecent = [found.id, ...recent.filter(id => id !== found.id)].slice(0, 10);
+        localStorage.setItem('recent', JSON.stringify(newRecent));
       }
-      const q = query(collection(db, "reviews"), where("productId", "==", id), orderBy("ngay", "desc"));
-      const snap = await getDocs(q);
-      setReviews(snap.docs.map(d => d.data()));
-    };
-    fetch(); window.scrollTo(0,0);
-  }, [id, dsSanPham]);
+    }
+  }, [slug, dsSanPham]);
 
-  const postReview = async (e) => {
-    e.preventDefault();
-    if (!auth.currentUser) return toast.warning("Đăng nhập để đánh giá!");
-    await addDoc(collection(db, "reviews"), { productId: id, userId: auth.currentUser.uid, userName: auth.currentUser.displayName, rating, comment, ngay: serverTimestamp() });
-    setReviews([{ userName: auth.currentUser.displayName, rating, comment, ngay: {toDate:()=>new Date()} }, ...reviews]);
-    setComment(''); toast.success("Đã gửi đánh giá!");
-  };
-
-  if (!product) return <div className="text-center py-5">Đang tải...</div>;
-  const related = dsSanPham.filter(p => p.phanLoai === product.phanLoai && p.id !== id).slice(0, 4);
+  if (!sanPham) return <div className="text-center py-5"><h3>Đang tìm sản phẩm...</h3></div>;
 
   return (
-    <Container className="py-4">
-      <Row className="product-detail-box mb-4">
-        <Col md={5}><img src={product.anh} className="w-100 rounded" /></Col>
-        <Col md={7}>
-          <h2 className="fw-bold text-success">{product.ten}</h2>
+    <Container className="py-5">
+      <Row className="g-4">
+        <Col md={6}>
+          <div className="border rounded p-2 bg-white shadow-sm">
+            <img src={sanPham.anh} alt={sanPham.ten} className="w-100 rounded" />
+          </div>
+        </Col>
+        <Col md={6}>
+          <h2 className="fw-bold text-success text-uppercase mb-3">{sanPham.ten}</h2>
           <div className="mb-3">
-            <span className="h3 text-danger fw-bold me-2">{product.giaBan?.toLocaleString()} ¥</span>
-            <span className="text-muted small">/ {product.donVi || 'Cái'}</span>
-            {product.isFlashSale && <Badge bg="warning" className="ms-2">⚡ Flash Sale</Badge>}
+            <span className="h3 text-danger fw-bold me-3">{sanPham.giaBan?.toLocaleString()} ¥</span>
+            {sanPham.phanTramGiam > 0 && <span className="text-muted text-decoration-line-through">{sanPham.giaGoc?.toLocaleString()} ¥</span>}
           </div>
-          <p><strong>Tình trạng:</strong> {product.soLuong > 0 ? <span className="text-success">Còn hàng ({product.soLuong})</span> : <span className="text-danger">Hết hàng</span>}</p>
-          <div className="my-3 text-secondary" dangerouslySetInnerHTML={{__html: product.moTa}}></div>
-          <div className="d-flex gap-2 mb-4">
-            <div className="d-flex border rounded" style={{width: 120}}><Button variant="light" onClick={()=>setQuantity(q=>Math.max(1,q-1))}>-</Button><div className="flex-grow-1 text-center py-2 fw-bold">{quantity}</div><Button variant="light" onClick={()=>setQuantity(q=>Math.min(q+1,product.soLuong||99))}>+</Button></div>
-            <Button variant="success" size="lg" className="px-5 rounded-pill shadow" onClick={()=>{for(let i=0;i<quantity;i++) themVaoGio(product)}}>THÊM VÀO GIỎ</Button>
+          
+          <div className="mb-4">
+            <Badge bg={sanPham.soLuong > 0 ? "success" : "secondary"} className="me-2 p-2">
+              {sanPham.soLuong > 0 ? "Còn hàng" : "Hết hàng"}
+            </Badge>
+            <span className="text-muted">Đơn vị: <strong>{sanPham.donVi}</strong></span>
           </div>
-        </Col>
-      </Row>
 
-      <Row>
-        <Col md={8}>
-          <div className="product-detail-box mb-4">
-            <h5 className="fw-bold border-bottom pb-2 mb-3">ĐÁNH GIÁ SẢN PHẨM ({reviews.length})</h5>
-            <div className="review-list">
-              {reviews.map((r, i) => (
-                <div key={i} className="review-item">
-                  <div className="d-flex">
-                    <div className="review-avatar">{r.userName?.charAt(0)}</div>
-                    <div>
-                      <div className="review-name">{r.userName}</div>
-                      <div className="text-warning small">{'⭐'.repeat(r.rating)}</div>
-                      <div className="review-date">{r.ngay?.toDate ? r.ngay.toDate().toLocaleString() : 'Vừa xong'}</div>
-                      <div className="review-content">{r.comment}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {reviews.length===0 && <p className="text-center text-muted">Chưa có đánh giá nào.</p>}
-            </div>
-            <Form onSubmit={postReview} className="mt-4 bg-light p-3 rounded">
-              <h6>Viết đánh giá của bạn</h6>
-              <div className="mb-2">{[1,2,3,4,5].map(s=><i key={s} onClick={()=>setRating(s)} className={`fa-star fs-4 me-1 cursor-pointer ${s<=rating?'fa-solid text-warning':'fa-regular text-secondary'}`}></i>)}</div>
-              <Form.Control as="textarea" value={comment} onChange={e=>setComment(e.target.value)} placeholder="Nhập nội dung..." required className="mb-2"/>
-              <Button type="submit" variant="success">Gửi đánh giá</Button>
-            </Form>
+          <div className="p-3 bg-light rounded border mb-4">
+            <div dangerouslySetInnerHTML={{__html: sanPham.moTa || 'Chưa có mô tả chi tiết.'}}></div>
           </div>
-        </Col>
-        <Col md={4}>
-          <div className="product-detail-box">
-            <h5 className="fw-bold mb-3">SẢN PHẨM CÙNG LOẠI</h5>
-            {related.map(p => (
-              <div key={p.id} className="d-flex align-items-center mb-3 pb-3 border-bottom">
-                <Link to={`/san-pham/${toSlug(p.ten)}/${p.id}`}><img src={p.anh} width="60" className="rounded border me-2"/></Link>
-                <div>
-                  <Link to={`/san-pham/${toSlug(p.ten)}/${p.id}`} className="fw-bold text-dark d-block text-truncate" style={{maxWidth:180}}>{p.ten}</Link>
-                  <span className="text-danger fw-bold small">{p.giaBan?.toLocaleString()} ¥</span>
-                </div>
-              </div>
-            ))}
-          </div>
+
+          <Button 
+            variant={sanPham.soLuong > 0 ? "success" : "secondary"} 
+            size="lg" 
+            className="w-100 fw-bold rounded-pill shadow-sm"
+            onClick={() => sanPham.soLuong > 0 && themVaoGio(sanPham)}
+            disabled={sanPham.soLuong <= 0}
+          >
+            <i className="fa-solid fa-cart-plus me-2"></i> {sanPham.soLuong > 0 ? "THÊM VÀO GIỎ NGAY" : "TẠM HẾT HÀNG"}
+          </Button>
         </Col>
       </Row>
     </Container>

@@ -62,7 +62,7 @@ function App() {
     return () => { unsubSP(); unsubDM(); unsubDH(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
   }, []);
 
-  // Logic Recent Products
+  // Update Recent Products
   useEffect(() => {
     if(dsSanPham.length > 0) {
       const recentIds = JSON.parse(localStorage.getItem('recent') || '[]');
@@ -99,38 +99,39 @@ function App() {
           
           <Navbar bg="white" expand="lg" className="sticky-top shadow-sm py-2" style={{zIndex: 100}}>
             <Container>
-              {/* --- FIX LOGO ĐẸP --- */}
-              <Navbar.Brand as={Link} to="/" className="me-4 text-decoration-none d-flex align-items-center gap-2">
-                {shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" className="brand-logo-img" /> : <span className="fs-1">🦁</span>}
-                <div className="brand-info">
-                  <h1 className="shop-name">{shopConfig.tenShop}</h1>
-                  <span className="shop-slogan">{shopConfig.slogan}</span>
+              {/* --- FIX 1: LOGO & SLOGAN DÙNG GROUP --- */}
+              <Navbar.Brand as={Link} to="/" className="me-4 text-decoration-none">
+                <div className="brand-group">
+                  {shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" className="brand-logo-img" /> : <span className="fs-1">🦁</span>}
+                  <div className="brand-info">
+                    <h1 className="shop-name">{shopConfig.tenShop}</h1>
+                    <span className="shop-slogan">{shopConfig.slogan}</span>
+                  </div>
                 </div>
               </Navbar.Brand>
 
               <Navbar.Toggle />
               <Navbar.Collapse>
-                <Form className="d-flex flex-grow-1 mx-lg-4" onSubmit={e=>e.preventDefault()}>
+                <Form className="d-flex flex-grow-1 mx-lg-4 my-2 my-lg-0" onSubmit={e=>e.preventDefault()}>
                   <div className="input-group">
                     <Form.Control type="search" placeholder="Bạn tìm gì...?" value={tuKhoa} onChange={e=>setTuKhoa(e.target.value)} className="border-end-0 bg-light" />
-                    <Button variant="light" className="border border-start-0 bg-light"><i className="fa-solid fa-magnifying-glass"></i></Button>
+                    <Button variant="light" className="border border-start-0 bg-light"><i className="fa-solid fa-magnifying-glass text-muted"></i></Button>
                   </div>
                 </Form>
-                <Nav className="align-items-center gap-2">
-                  <div className="d-none d-lg-block text-end me-3">
-                    {/* --- FIX HOTLINE BỊ LẶP --- */}
-                    <div className="hotline-box">
-                        <span className="hotline-label">Hotline</span>
-                        <span className="hotline-number">{shopConfig.sdt}</span>
-                    </div>
+                <Nav className="align-items-center gap-3">
+                  {/* --- FIX 2: HOTLINE GỌN ĐẸP, KHÔNG BỊ LẶP --- */}
+                  <div className="header-hotline-box d-none d-lg-flex">
+                    <span className="hotline-label">Tổng đài hỗ trợ</span>
+                    <span className="hotline-number">{shopConfig.sdt}</span>
                   </div>
+
                   <Link to="/tra-cuu" className="btn btn-outline-secondary rounded-pill btn-sm fw-bold">Tra đơn</Link>
                   <Link to="/cart" className="btn btn-success rounded-pill position-relative fw-bold px-3">
                     Giỏ <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{gioHang.reduce((a,b)=>a+b.soLuong,0)}</span>
                   </Link>
                   {currentUser ? (
                     <Dropdown align="end">
-                      <Dropdown.Toggle variant="light" className="border-0 fw-bold"><i className="fa-solid fa-user me-1"></i> {userData?.ten}</Dropdown.Toggle>
+                      <Dropdown.Toggle variant="light" className="border-0 fw-bold"><i className="fa-solid fa-circle-user fs-4 text-secondary"></i></Dropdown.Toggle>
                       <Dropdown.Menu>
                         <Dropdown.Item as={Link} to="/member">Tài khoản</Dropdown.Item>
                         <Dropdown.Item onClick={handleLogout} className="text-danger">Đăng xuất</Dropdown.Item>
@@ -158,7 +159,6 @@ function App() {
                       const isOpen = openMenuId === parent.id;
                       return (
                         <div key={parent.id}>
-                          {/* FIX LINK DANH MỤC DÙNG SLUG */}
                           <div className={`category-item ${location.pathname.includes(parent.slug || toSlug(parent.ten)) ? 'active' : ''}`} onClick={() => { if(hasChild) setOpenMenuId(isOpen ? null : parent.id); else navigate(`/danh-muc/${parent.slug || toSlug(parent.ten)}`); }}>
                             <span>{parent.icon} {parent.ten}</span>
                             {hasChild && <i className={`fa-solid fa-chevron-${isOpen?'down':'right'} small`}></i>}
@@ -176,11 +176,9 @@ function App() {
               {!isAdminPage && location.pathname === '/' && banners.length > 0 && <div className="mb-4 rounded overflow-hidden shadow-sm"><Slider {...sliderSettings}>{banners.map(b=><Link key={b.id} to={b.link||'#'}><img src={b.img} className="w-100" style={{height:320, objectFit:'cover'}}/></Link>)}</Slider></div>}
               
               <Routes>
-                {/* --- ROUTES CHUẨN SEO (CHỈ DÙNG SLUG) --- */}
                 <Route path="/" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
                 <Route path="/danh-muc/:slug" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
                 <Route path="/san-pham/:slug" element={<ProductDetail dsSanPham={dsSanPham} themVaoGio={themVaoGio} />} />
-                
                 <Route path="/cart" element={<Cart gioHang={gioHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} currentUser={currentUser} />} />
                 <Route path="/checkout" element={<Checkout gioHang={gioHang} setGioHang={setGioHang} userData={userData} />} />
                 <Route path="/member" element={<Member themVaoGio={themVaoGio} />} />
@@ -194,7 +192,7 @@ function App() {
         </Container>
       </div>
 
-      {/* --- SẢN PHẨM VỪA XEM (DÙNG CLASS MỚI ĐỂ FIX VỠ) --- */}
+      {/* --- FIX 3: SẢN PHẨM VỪA XEM DÙNG CSS MỚI --- */}
       {!isAdminPage && recentProducts.length > 0 && (
         <div className="recent-view-bar">
           <Container>
