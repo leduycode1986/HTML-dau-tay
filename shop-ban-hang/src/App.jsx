@@ -20,13 +20,7 @@ import Member from './Member';
 import OrderLookup from './OrderLookup';
 import FlashSale from './FlashSale'; 
 import Checkout from './Checkout'; 
-
-export const toSlug = (str) => {
-  if (!str) return '';
-  str = str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
-  str = str.replace(/[đĐ]/g, 'd').replace(/([^0-9a-z-\s])/g, '').replace(/(\s+)/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
-  return str;
-};
+import { toSlug } from './utils'; // IMPORT TỪ FILE MỚI TẠO
 
 function App() {
   const navigate = useNavigate();
@@ -99,7 +93,6 @@ function App() {
           
           <Navbar bg="white" expand="lg" className="sticky-top shadow-sm py-2" style={{zIndex: 100}}>
             <Container>
-              {/* --- FIX 1: HEADER LOGO DÙNG ĐÚNG CLASS CSS MỚI --- */}
               <Navbar.Brand as={Link} to="/" className="me-4 text-decoration-none">
                 <div className="brand-group">
                   {shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" className="brand-logo-img" /> : <span className="fs-1">🦁</span>}
@@ -119,7 +112,6 @@ function App() {
                   </div>
                 </Form>
                 <Nav className="align-items-center gap-3">
-                  {/* --- FIX 2: HOTLINE DÙNG ĐÚNG CLASS CSS MỚI --- */}
                   <div className="header-hotline-box d-none d-lg-flex">
                     <span className="hotline-label">Tổng đài hỗ trợ</span>
                     <span className="hotline-number">{shopConfig.sdt}</span>
@@ -192,7 +184,6 @@ function App() {
         </Container>
       </div>
 
-      {/* --- FIX 3: SẢN PHẨM VỪA XEM DÙNG ĐÚNG CLASS CSS MỚI --- */}
       {!isAdminPage && recentProducts.length > 0 && (
         <div className="recent-view-bar">
           <Container>

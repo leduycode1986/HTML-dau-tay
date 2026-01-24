@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Row, Col, Container, Alert, Button, Modal } from 'react-bootstrap';
 import Product from './Product';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { toSlug } from './App';
+import { toSlug } from './utils'; // IMPORT TỪ UTILS
 
 const ProductSlider = ({ title, products, icon, themVaoGio, setQuickViewSP }) => {
   const scrollRef = useRef(null);
@@ -44,15 +44,12 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
   const safeDS = Array.isArray(dsSanPham) ? dsSanPham : [];
   const safeDM = Array.isArray(dsDanhMuc) ? dsDanhMuc : [];
 
-  // --- LOGIC LỌC SẢN PHẨM MẠNH MẼ ---
   let finalProducts = safeDS; 
 
   if (slug) {
-    // Tìm danh mục: Ưu tiên khớp slug trong DB, sau đó thử khớp slug tạo từ tên, cuối cùng thử khớp ID
+    // TÌM KIẾM THÔNG MINH
     const danhMucHienTai = safeDM.find(d => 
-        (d.slug === slug) || 
-        (toSlug(d.ten) === slug) || 
-        (d.id === slug)
+      (d.slug === slug) || (toSlug(d.ten) === slug) || (d.id === slug)
     );
     
     if (danhMucHienTai) {
@@ -75,6 +72,22 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
       <Row className="g-0"><Col xs={12} className="p-3">
         {!slug && (
           <>
+            {/* --- FLASH SALE BANNER --- */}
+            {shopConfig?.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date() && (
+              <div className="flash-sale-hero text-center shadow-sm rounded-3">
+                <Container>
+                  <h2 className="flash-sale-title"><i className="fa-solid fa-bolt fa-shake"></i> FLASH SALE</h2>
+                  <div className="d-flex justify-content-center gap-3 align-items-center">
+                    <div className="time-box">{String(timeLeft.d).padStart(2,'0')}</div>:
+                    <div className="time-box">{String(timeLeft.h).padStart(2,'0')}</div>:
+                    <div className="time-box">{String(timeLeft.m).padStart(2,'0')}</div>:
+                    <div className="time-box bg-white text-danger border-0">{String(timeLeft.s).padStart(2,'0')}</div>
+                  </div>
+                  <Button variant="light" className="mt-4 rounded-pill fw-bold text-danger px-4" onClick={()=>navigate('/flash-sale')}>XEM TẤT CẢ</Button>
+                </Container>
+              </div>
+            )}
+
             <ProductSlider title="SẢN PHẨM BÁN CHẠY" icon="🔥" products={safeDS.filter(sp => sp.isBanChay)} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />
             <ProductSlider title="SẢN PHẨM MỚI" icon="✨" products={safeDS.filter(sp => sp.isMoi)} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />
           </>

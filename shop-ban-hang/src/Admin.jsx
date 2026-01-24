@@ -5,7 +5,7 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { doc, setDoc, collection, onSnapshot, deleteDoc, updateDoc, addDoc } from 'firebase/firestore'; 
 import { db } from './firebase'; 
-import { toSlug } from './App';
+import { toSlug } from './utils'; // Đã sửa import từ utils để tránh lỗi
 
 const ICON_LIST = ['🏠','📦','🥩','🥦','🍎','🍞','🥫','❄️','🍬','🍫','🍪','🍦','🍺','🥤','🥛','🧃','🧺','🛋️','🍳','🧹','🧽','🧼','🧴','🪥','💄','🔖','⚡','🔥','🎉','🎁'];
 const NO_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg";
@@ -56,7 +56,28 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
   const onSaveSP = () => { handleUpdateDS_SP(editData.sp?'UPDATE':'ADD', {...formDataSP, slug: toSlug(formDataSP.ten)}); setModal({...modal,sp:false}); };
   const onSaveDM = () => { handleUpdateDS_DM(editData.dm?'UPDATE':'ADD', {...formDM, slug: toSlug(formDM.ten)}); setModal({...modal,dm:false}); };
 
-  if (!isLoggedIn) return (<div className="admin-login-wrapper"><div className="admin-login-card"><h3 className="text-center text-success fw-bold mb-4">QUẢN TRỊ SHOP</h3><Form onSubmit={handleLogin}><Form.Group className="mb-3"><Form.Label>Tài khoản</Form.Label><Form.Control className="p-3" value={loginInput.user} onChange={e=>setLoginInput({...loginInput, user:e.target.value})}/></Form.Group><Form.Group className="mb-4"><Form.Label>Mật khẩu</Form.Label><InputGroup><Form.Control className="p-3" type={showPass?"text":"password"} value={loginInput.pass} onChange={e=>setLoginInput({...loginInput, pass:e.target.value})}/><Button variant="outline-secondary" onClick={()=>setShowPass(!showPass)}><i className={showPass?"fa-solid fa-eye-slash":"fa-solid fa-eye"}></i></Button></InputGroup></Form.Group><Button type="submit" variant="success" className="w-100 py-3 fw-bold rounded-pill">ĐĂNG NHẬP</Button></Form></div></div>);
+  // --- GIAO DIỆN LOGIN (ĐÃ FIX CĂN GIỮA MÀN HÌNH) ---
+  if (!isLoggedIn) return (
+    <div className="admin-login-wrapper">
+      <div className="admin-login-card">
+        <h3 className="text-center text-success fw-bold mb-4">QUẢN TRỊ SHOP</h3>
+        <Form onSubmit={handleLogin}>
+          <Form.Group className="mb-3">
+            <Form.Label className="fw-bold">Tài khoản</Form.Label>
+            <Form.Control className="p-3" value={loginInput.user} onChange={e=>setLoginInput({...loginInput, user:e.target.value})}/>
+          </Form.Group>
+          <Form.Group className="mb-4">
+            <Form.Label className="fw-bold">Mật khẩu</Form.Label>
+            <InputGroup>
+              <Form.Control className="p-3" type={showPass?"text":"password"} value={loginInput.pass} onChange={e=>setLoginInput({...loginInput, pass:e.target.value})}/>
+              <Button variant="outline-secondary" onClick={()=>setShowPass(!showPass)}><i className={showPass?"fa-solid fa-eye-slash":"fa-solid fa-eye"}></i></Button>
+            </InputGroup>
+          </Form.Group>
+          <Button type="submit" variant="success" className="w-100 py-3 fw-bold rounded-pill">ĐĂNG NHẬP</Button>
+        </Form>
+      </div>
+    </div>
+  );
 
   return (
     <div style={{background: '#f8f9fa', minHeight:'100vh'}}>
@@ -68,7 +89,6 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
       <Container fluid className="p-3">
         <Tabs defaultActiveKey="orders" className="bg-white p-2 rounded border shadow-sm mb-3">
           
-          {/* TAB ĐƠN HÀNG (FULL) */}
           <Tab eventKey="orders" title={`📋 ĐƠN HÀNG (${dsDonHang.length})`}>
             <div className="table-responsive bg-white rounded shadow-sm p-3">
               <Table hover bordered className="align-middle">
@@ -86,7 +106,6 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
             </div>
           </Tab>
 
-          {/* TAB SẢN PHẨM */}
           <Tab eventKey="products" title="📦 SẢN PHẨM">
             <div className="bg-white p-3 rounded shadow-sm">
               <Button variant="success" className="mb-3 fw-bold" onClick={()=>{setEditData({...editData, sp:null}); setFormDataSP({ ten:'', giaGoc:'', phanTramGiam:0, giaBan:'', donVi:'Cái', soLuong:100, moTa:'', anh:'', phanLoai:'', isMoi:false, isKhuyenMai:false, isBanChay:false, isFlashSale:false }); setModal({...modal, sp:true})}}>+ THÊM MỚI</Button>
@@ -94,7 +113,6 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
             </div>
           </Tab>
 
-          {/* TAB CẤU HÌNH */}
           <Tab eventKey="config" title="⚙️ CẤU HÌNH">
             <div className="bg-white p-4 border rounded shadow-sm">
               <Row>
@@ -132,7 +150,6 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
           <Tab eventKey="banner" title="🖼️ BANNER"><div className="bg-white p-3"><div className="d-flex gap-2 mb-3"><Form.Control type="file" onChange={e=>handleUpload(e,'BANNER')}/><Form.Control placeholder="Link..." value={formBanner.link} onChange={e=>setFormBanner({...formBanner,link:e.target.value})}/><Button onClick={()=>{add('banners', formBanner); setFormBanner({img:'', link:''})}}>Thêm</Button></div><div className="d-flex flex-wrap gap-2">{dsBanner.map(b=><div key={b.id} className="position-relative" style={{width:200}}><img src={b.img} className="w-100 rounded"/><Button size="sm" variant="danger" className="position-absolute top-0 end-0" onClick={()=>del('banners', b.id)}>X</Button></div>)}</div></div></Tab>
           <Tab eventKey="marketing" title="🎟️ SHIP & COUPON"><Row><Col md={6} className="border-end p-3"><h6 className="fw-bold text-success">MÃ GIẢM GIÁ</h6><div className="d-flex gap-1 mb-2"><Form.Control placeholder="Mã" value={formCoupon.code} onChange={e=>setFormCoupon({...formCoupon,code:e.target.value.toUpperCase()})}/><Form.Control type="number" placeholder="Giảm (¥)" value={formCoupon.giamGia} onChange={e=>setFormCoupon({...formCoupon,giamGia:e.target.value})}/><Button size="sm" onClick={()=>{add('coupons',formCoupon); setFormCoupon({code:'',giamGia:0})}}>Thêm</Button></div><Table size="sm"><tbody>{dsCoupon.map(c=><tr key={c.id}><td>{c.code}</td><td>{parseInt(c.giamGia).toLocaleString()}¥</td><td><Button size="sm" variant="danger" onClick={()=>del('coupons',c.id)}>X</Button></td></tr>)}</tbody></Table></Col><Col md={6} className="p-3"><h6 className="fw-bold text-primary">PHÍ SHIP</h6><div className="d-flex gap-1 mb-2"><Form.Control placeholder="Khu vực" value={formShip.khuVuc} onChange={e=>setFormShip({...formShip,khuVuc:e.target.value})}/><Form.Control type="number" placeholder="Phí (¥)" value={formShip.phi} onChange={e=>setFormShip({...formShip,phi:e.target.value})}/><Button size="sm" onClick={()=>{add('shipping',formShip); setFormShip({khuVuc:'',phi:0})}}>Thêm</Button></div><Table size="sm"><tbody>{dsShip.map(s=><tr key={s.id}><td>{s.khuVuc}</td><td>{parseInt(s.phi).toLocaleString()}¥</td><td><Button size="sm" variant="danger" onClick={()=>del('shipping',s.id)}>X</Button></td></tr>)}</tbody></Table></Col></Row></Tab>
           
-          {/* TAB USER & REVIEW (ĐÃ KHÔI PHỤC) */}
           <Tab eventKey="users" title="👥 THÀNH VIÊN & ĐÁNH GIÁ">
             <Row>
               <Col md={7}>
@@ -152,7 +169,6 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
         </Tabs>
       </Container>
 
-      {/* MODAL CHI TIẾT ĐƠN HÀNG (ĐẸP & ĐỦ THÔNG TIN) */}
       <Modal show={modal.order} onHide={()=>setModal({...modal,order:false})} size="lg" centered>
         <Modal.Header closeButton className="bg-success text-white"><Modal.Title>Chi tiết đơn hàng #{selectedOrder?.maDonHang}</Modal.Title></Modal.Header>
         <Modal.Body>
@@ -178,7 +194,6 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
         <Modal.Footer><Button variant="secondary" onClick={()=>setModal({...modal,order:false})}>Đóng</Button></Modal.Footer>
       </Modal>
 
-      {/* MODAL SP, DM, USER GIỮ NGUYÊN */}
       <Modal show={modal.sp} onHide={()=>setModal({...modal,sp:false})} size="lg" centered><Modal.Header closeButton><Modal.Title>{editData.sp?'Cập nhật':'Thêm mới'}</Modal.Title></Modal.Header><Modal.Body><Form><Row><Col md={8}><Form.Group className="mb-2"><Form.Label>Tên sản phẩm</Form.Label><Form.Control value={formDataSP.ten} onChange={e=>setFormDataSP({...formDataSP,ten:e.target.value})}/></Form.Group><Form.Group className="mb-2"><Form.Label>Danh mục</Form.Label><Form.Select value={formDataSP.phanLoai} onChange={e=>setFormDataSP({...formDataSP,phanLoai:e.target.value})}><option value="">-- Chọn --</option>{dsDanhMuc.map(d=><option key={d.id} value={d.id}>{d.parent?'-- ':''}{d.ten}</option>)}</Form.Select></Form.Group><Row><Col><Form.Group className="mb-2"><Form.Label>Đơn vị</Form.Label><Form.Control value={formDataSP.donVi} onChange={e=>setFormDataSP({...formDataSP,donVi:e.target.value})}/></Form.Group></Col><Col><Form.Group className="mb-2"><Form.Label>Kho</Form.Label><Form.Control type="number" value={formDataSP.soLuong} onChange={e=>setFormDataSP({...formDataSP,soLuong:e.target.value})}/></Form.Group></Col></Row><Row><Col><Form.Group className="mb-2"><Form.Label>Giá Gốc</Form.Label><Form.Control type="number" value={formDataSP.giaGoc} onChange={e=>setFormDataSP({...formDataSP,giaGoc:e.target.value})}/></Form.Group></Col><Col><Form.Group className="mb-2"><Form.Label>% Giảm</Form.Label><Form.Control type="number" value={formDataSP.phanTramGiam} onChange={e=>setFormDataSP({...formDataSP,phanTramGiam:e.target.value})}/></Form.Group></Col></Row><Form.Group className="mb-2"><Form.Label className="fw-bold text-danger">Giá Bán</Form.Label><Form.Control className="bg-light fw-bold text-danger" readOnly value={formDataSP.giaBan}/></Form.Group></Col><Col md={4}><Form.Group><Form.Label>Hình ảnh</Form.Label><Form.Control type="file" onChange={e=>handleUpload(e,'PRODUCT')}/></Form.Group><img src={formDataSP.anh||NO_IMAGE} className="w-100 mt-2 border rounded"/></Col></Row><Form.Group className="mt-2"><Form.Label>Mô tả</Form.Label><ReactQuill theme="snow" value={formDataSP.moTa} onChange={v=>setFormDataSP({...formDataSP,moTa:v})}/></Form.Group></Form></Modal.Body><Modal.Footer><Button variant="secondary" onClick={()=>setModal({...modal,sp:false})}>Hủy</Button><Button onClick={onSaveSP}>Lưu</Button></Modal.Footer></Modal>
       <Modal show={modal.dm} onHide={()=>setModal({...modal,dm:false})} centered><Modal.Header closeButton><Modal.Title>Danh mục</Modal.Title></Modal.Header><Modal.Body><Form.Group className="mb-2"><Form.Label>Tên</Form.Label><Form.Control value={formDM.ten} onChange={e=>setFormDM({...formDM,ten:e.target.value})}/></Form.Group><Form.Group className="mb-2"><Form.Label>Thứ tự</Form.Label><Form.Control type="number" value={formDM.order} onChange={e=>setFormDM({...formDM,order:e.target.value})}/></Form.Group><Form.Group className="mb-2"><Form.Label>Icon</Form.Label><Form.Select value={formDM.icon} onChange={e=>setFormDM({...formDM,icon:e.target.value})}><option>-- Chọn --</option>{ICON_LIST.map(i=><option key={i} value={i}>{i}</option>)}</Form.Select></Form.Group><Form.Group><Form.Label>Cha</Form.Label><Form.Select value={formDM.parent} onChange={e=>setFormDM({...formDM,parent:e.target.value})}><option value="">Gốc</option>{dsDanhMuc.filter(d=>!d.parent).map(d=><option key={d.id} value={d.customId||d.id}>{d.ten}</option>)}</Form.Select></Form.Group></Modal.Body><Modal.Footer><Button variant="secondary" onClick={()=>setModal({...modal,dm:false})}>Hủy</Button><Button onClick={onSaveDM}>Lưu</Button></Modal.Footer></Modal>
       <Modal show={modal.user} onHide={()=>setModal({...modal,user:false})} centered><Modal.Header closeButton><Modal.Title>Sửa điểm</Modal.Title></Modal.Header><Modal.Body><Form.Group><Form.Label>Điểm tích lũy</Form.Label><Form.Control type="number" value={userPoint} onChange={e=>setUserPoint(e.target.value)}/></Form.Group></Modal.Body><Modal.Footer><Button variant="secondary" onClick={()=>setModal({...modal,user:false})}>Hủy</Button><Button onClick={async()=>{await updateDoc(doc(db,"users",editData.user.id),{diemTichLuy:parseInt(userPoint)}); setModal({...modal,user:false})}}>Lưu</Button></Modal.Footer></Modal>
