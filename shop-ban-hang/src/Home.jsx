@@ -19,7 +19,7 @@ const ProductSlider = ({ title, products, icon, themVaoGio, setQuickViewSP }) =>
 };
 
 function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
-  const { slug } = useParams(); 
+  const { slug } = useParams();
   const navigate = useNavigate();
   
   const [sortType, setSortType] = useState('default');
@@ -44,26 +44,28 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
   const safeDS = Array.isArray(dsSanPham) ? dsSanPham : [];
   const safeDM = Array.isArray(dsDanhMuc) ? dsDanhMuc : [];
 
-  // --- LOGIC LỌC MỚI THEO SLUG ---
+  // --- LOGIC LỌC SẢN PHẨM MẠNH MẼ ---
   let finalProducts = safeDS; 
 
   if (slug) {
-    // Tìm ID danh mục dựa trên slug (so sánh slug DB hoặc slug tạo từ tên)
-    const danhMucHienTai = safeDM.find(d => (d.slug === slug) || (toSlug(d.ten) === slug));
+    // Tìm danh mục: Ưu tiên khớp slug trong DB, sau đó thử khớp slug tạo từ tên, cuối cùng thử khớp ID
+    const danhMucHienTai = safeDM.find(d => 
+        (d.slug === slug) || 
+        (toSlug(d.ten) === slug) || 
+        (d.id === slug)
+    );
     
     if (danhMucHienTai) {
       const idDM = danhMucHienTai.id;
-      // Lọc sản phẩm thuộc danh mục đó hoặc con của nó
       finalProducts = safeDS.filter(sp => 
         sp.phanLoai === idDM || 
         safeDM.filter(d => d.parent === idDM).map(c => c.id).includes(sp.phanLoai)
       );
     } else {
-      finalProducts = []; // Không tìm thấy danh mục
+      finalProducts = []; 
     }
   }
 
-  // Logic lọc giá và sắp xếp
   if (minPrice || maxPrice) finalProducts = finalProducts.filter(sp => { const g = sp.giaBan||0; return g>=(minPrice||0) && g<=(maxPrice||Infinity); });
   if (sortType === 'price-asc') finalProducts.sort((a, b) => (a.giaBan||0) - (b.giaBan||0));
   if (sortType === 'price-desc') finalProducts.sort((a, b) => (b.giaBan||0) - (a.giaBan||0));

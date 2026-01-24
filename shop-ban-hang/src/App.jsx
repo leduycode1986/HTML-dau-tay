@@ -99,7 +99,7 @@ function App() {
           
           <Navbar bg="white" expand="lg" className="sticky-top shadow-sm py-2" style={{zIndex: 100}}>
             <Container>
-              {/* --- FIX 1: HEADER LOGO CHUẨN --- */}
+              {/* --- FIX 1: HEADER LOGO DÙNG ĐÚNG CLASS CSS MỚI --- */}
               <Navbar.Brand as={Link} to="/" className="me-4 text-decoration-none">
                 <div className="brand-group">
                   {shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" className="brand-logo-img" /> : <span className="fs-1">🦁</span>}
@@ -119,8 +119,8 @@ function App() {
                   </div>
                 </Form>
                 <Nav className="align-items-center gap-3">
-                  {/* --- FIX 2: HOTLINE CHỈ HIỆN 1 SỐ --- */}
-                  <div className="hotline-box d-none d-lg-flex">
+                  {/* --- FIX 2: HOTLINE DÙNG ĐÚNG CLASS CSS MỚI --- */}
+                  <div className="header-hotline-box d-none d-lg-flex">
                     <span className="hotline-label">Tổng đài hỗ trợ</span>
                     <span className="hotline-number">{shopConfig.sdt}</span>
                   </div>
@@ -159,7 +159,6 @@ function App() {
                       const isOpen = openMenuId === parent.id;
                       return (
                         <div key={parent.id}>
-                          {/* FIX URL LINK DANH MỤC KHÔNG CÓ ID VÔ NGHĨA */}
                           <div className={`category-item ${location.pathname.includes(parent.slug || toSlug(parent.ten)) ? 'active' : ''}`} onClick={() => { if(hasChild) setOpenMenuId(isOpen ? null : parent.id); else navigate(`/danh-muc/${parent.slug || toSlug(parent.ten)}`); }}>
                             <span>{parent.icon} {parent.ten}</span>
                             {hasChild && <i className={`fa-solid fa-chevron-${isOpen?'down':'right'} small`}></i>}
@@ -177,11 +176,9 @@ function App() {
               {!isAdminPage && location.pathname === '/' && banners.length > 0 && <div className="mb-4 rounded overflow-hidden shadow-sm"><Slider {...sliderSettings}>{banners.map(b=><Link key={b.id} to={b.link||'#'}><img src={b.img} className="w-100" style={{height:320, objectFit:'cover'}}/></Link>)}</Slider></div>}
               
               <Routes>
-                {/* --- ROUTES ĐÃ SỬA URL CHUẨN SEO --- */}
                 <Route path="/" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
                 <Route path="/danh-muc/:slug" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
                 <Route path="/san-pham/:slug" element={<ProductDetail dsSanPham={dsSanPham} themVaoGio={themVaoGio} />} />
-                
                 <Route path="/cart" element={<Cart gioHang={gioHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} currentUser={currentUser} />} />
                 <Route path="/checkout" element={<Checkout gioHang={gioHang} setGioHang={setGioHang} userData={userData} />} />
                 <Route path="/member" element={<Member themVaoGio={themVaoGio} />} />
@@ -195,7 +192,7 @@ function App() {
         </Container>
       </div>
 
-      {/* --- FIX 3: SẢN PHẨM VỪA XEM DÙNG CSS MỚI --- */}
+      {/* --- FIX 3: SẢN PHẨM VỪA XEM DÙNG ĐÚNG CLASS CSS MỚI --- */}
       {!isAdminPage && recentProducts.length > 0 && (
         <div className="recent-view-bar">
           <Container>
