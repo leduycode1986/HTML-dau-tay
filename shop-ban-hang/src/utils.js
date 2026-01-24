@@ -1,4 +1,4 @@
-// src/utils.js
+// File: src/utils.js
 export const toSlug = (str) => {
   if (!str) return '';
   str = str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");

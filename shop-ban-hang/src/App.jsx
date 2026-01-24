@@ -20,7 +20,7 @@ import Member from './Member';
 import OrderLookup from './OrderLookup';
 import FlashSale from './FlashSale'; 
 import Checkout from './Checkout'; 
-import { toSlug } from './utils'; // IMPORT TỪ FILE MỚI TẠO
+import { toSlug } from './utils'; // <--- QUAN TRỌNG: Import từ file mới
 
 function App() {
   const navigate = useNavigate();
