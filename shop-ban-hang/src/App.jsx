@@ -20,7 +20,7 @@ import Member from './Member';
 import OrderLookup from './OrderLookup';
 import FlashSale from './FlashSale'; 
 import Checkout from './Checkout'; 
-import { toSlug } from './utils'; // <--- QUAN TRỌNG: Import từ file mới
+import { toSlug } from './utils';
 
 function App() {
   const navigate = useNavigate();
@@ -56,7 +56,6 @@ function App() {
     return () => { unsubSP(); unsubDM(); unsubDH(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
   }, []);
 
-  // Logic Recent Products
   useEffect(() => {
     if(dsSanPham.length > 0) {
       const recentIds = JSON.parse(localStorage.getItem('recent') || '[]');
@@ -93,6 +92,7 @@ function App() {
           
           <Navbar bg="white" expand="lg" className="sticky-top shadow-sm py-2" style={{zIndex: 100}}>
             <Container>
+              {/* --- HEADER LOGO CHUẨN --- */}
               <Navbar.Brand as={Link} to="/" className="me-4 text-decoration-none">
                 <div className="brand-group">
                   {shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" className="brand-logo-img" /> : <span className="fs-1">🦁</span>}
@@ -112,6 +112,7 @@ function App() {
                   </div>
                 </Form>
                 <Nav className="align-items-center gap-3">
+                  {/* --- HOTLINE CHUẨN --- */}
                   <div className="header-hotline-box d-none d-lg-flex">
                     <span className="hotline-label">Tổng đài hỗ trợ</span>
                     <span className="hotline-number">{shopConfig.sdt}</span>
@@ -184,6 +185,7 @@ function App() {
         </Container>
       </div>
 
+      {/* --- RECENT PRODUCTS: FIX CẤU TRÚC ĐỂ KHÔNG BỊ VỠ --- */}
       {!isAdminPage && recentProducts.length > 0 && (
         <div className="recent-view-bar">
           <Container>
