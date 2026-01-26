@@ -22,23 +22,23 @@ import FlashSale from './FlashSale';
 import Checkout from './Checkout'; 
 import { toSlug } from './utils';
 
-// --- ĐÂY LÀ PHẦN QUAN TRỌNG NHẤT: CSS ÉP GIAO DIỆN (BẮT BUỘC PHẢI CÓ) ---
+// --- CSS ÉP GIAO DIỆN (GLOBAL STYLES) ---
 const GLOBAL_STYLES = `
-  /* 1. Ép Logo và Tên Shop To Đẹp */
+  /* 1. Logo & Tên Shop */
   .brand-logo-img { height: 75px !important; width: auto !important; object-fit: contain; }
   .shop-name { font-size: 1.8rem !important; font-weight: 900 !important; color: #198754 !important; text-transform: uppercase; margin: 0 !important; line-height: 1.1; }
   .shop-slogan { font-size: 0.9rem !important; color: #d63384; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
   .brand-group { display: flex !important; align-items: center !important; gap: 15px !important; }
   
-  /* 2. Ép Hotline To Đỏ */
+  /* 2. Hotline */
   .header-hotline-box { text-align: right; display: flex; flex-direction: column; justify-content: center; border-left: 2px solid #dee2e6 !important; padding-left: 25px !important; margin-left: 20px !important; height: 60px; }
   .hotline-label { font-size: 12px !important; font-weight: 700; color: #666; text-transform: uppercase; margin-bottom: 2px; display: block; }
   .hotline-number { font-size: 1.8rem !important; font-weight: 900 !important; color: #d32f2f !important; line-height: 1; }
 
-  /* 3. Ép Sản Phẩm Vừa Xem Thẳng Hàng */
+  /* 3. Sản Phẩm Vừa Xem */
   .recent-view-bar { background: white; border-top: 4px solid #198754; padding: 30px 0; margin-top: 40px; box-shadow: 0 -5px 15px rgba(0,0,0,0.05); }
   .recent-scroll { display: flex; gap: 20px; overflow-x: auto; padding: 15px 5px; scrollbar-width: thin; }
-  .recent-card { flex: 0 0 auto !important; width: 180px !important; border: 1px solid #eee; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 3px 8px rgba(0,0,0,0.05); }
+  .recent-card { flex: 0 0 auto !important; width: 170px !important; border: 1px solid #eee; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 3px 8px rgba(0,0,0,0.05); }
   .recent-card img { width: 100%; height: 130px !important; object-fit: cover; border-bottom: 1px solid #f1f1f1; }
   .recent-card-body { padding: 12px; text-align: center; }
   .recent-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; color: #333; }
@@ -85,7 +85,6 @@ function App() {
     return () => { unsubSP(); unsubDM(); unsubDH(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
   }, []);
 
-  // Logic Đếm ngược Flash Sale
   useEffect(() => {
     if(!shopConfig?.flashSaleEnd) return;
     const check = () => {
@@ -125,9 +124,9 @@ function App() {
   return (
     <div className="app-container d-flex flex-column min-vh-100">
       
-      {/* --- NHÚNG STYLE TRỰC TIẾP VÀO ĐÂY (BẮT BUỘC CÓ DÒNG NÀY ĐỂ ÉP GIAO DIỆN) --- */}
-      <style>{GLOBAL_STYLES}</style>
-      {/* --------------------------------------------------------------------------- */}
+      {/* --- SỬA LỖI QUAN TRỌNG TẠI ĐÂY: DÙNG dangerouslySetInnerHTML --- */}
+      <style dangerouslySetInnerHTML={{__html: GLOBAL_STYLES}} />
+      {/* ---------------------------------------------------------------- */}
 
       <ToastContainer autoClose={2000} />
       <div className={`back-to-top ${showTopBtn ? 'visible' : ''}`} onClick={() => window.scrollTo({top:0, behavior:'smooth'})}><i className="fa-solid fa-arrow-up"></i></div>
@@ -210,7 +209,6 @@ function App() {
             )}
 
             <Col lg={!isAdminPage ? 9 : 12}>
-              {/* --- BANNER FLASH SALE & SLIDER (HIỆN MỌI TRANG) --- */}
               {!isAdminPage && (
                 <>
                   {shopConfig?.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date() && (
