@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Button, Badge } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import { toSlug } from './App';
+import { toSlug } from './utils'; // <--- QUAN TRỌNG: Import từ utils (đã sửa)
 import Product from './Product';
 
 function FlashSale({ dsSanPham, themVaoGio, shopConfig }) {
@@ -22,7 +22,7 @@ function FlashSale({ dsSanPham, themVaoGio, shopConfig }) {
 
   return (
     <div style={{minHeight:'100vh', background:'#f8f9fa'}}>
-      {/* BANNER NHỎ GỌN HƠN */}
+      {/* BANNER FLASH SALE */}
       <div className="flash-sale-hero text-center shadow-sm">
         <Container>
           <h2 className="flash-sale-title"><i className="fa-solid fa-bolt fa-shake"></i> FLASH SALE</h2>
@@ -37,11 +37,19 @@ function FlashSale({ dsSanPham, themVaoGio, shopConfig }) {
 
       <Container className="py-5">
         {flashProducts.length === 0 ? (
-          <div className="text-center py-5 text-muted"><h3>Chưa có chương trình khuyến mãi nào.</h3><Link to="/"><Button variant="outline-danger" className="mt-3">Quay lại trang chủ</Button></Link></div>
+          <div className="text-center py-5 text-muted">
+            <div className="fs-1 mb-3"><i className="fa-regular fa-clock"></i></div>
+            <h3>Chưa có chương trình khuyến mãi nào.</h3>
+            <p>Vui lòng quay lại sau nhé!</p>
+            <Link to="/"><Button variant="outline-danger" className="mt-3 rounded-pill fw-bold px-4">Quay lại trang chủ</Button></Link>
+          </div>
         ) : (
           <Row className="g-4 row-cols-2 row-cols-md-4 row-cols-lg-5">
             {flashProducts.map(sp => (
-              <Col key={sp.id}><Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>{}} /></Col>
+              <Col key={sp.id}>
+                {/* Truyền hàm openQuickView rỗng để tránh lỗi nếu không cần xem nhanh ở đây */}
+                <Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>{}} />
+              </Col>
             ))}
           </Row>
         )}

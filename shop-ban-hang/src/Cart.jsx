@@ -1,7 +1,7 @@
 import React from 'react';
 import { Table, Button, Container, Row, Col, Alert } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import { toSlug } from './App';
+import { toSlug } from './utils'; // <--- SỬA DÒNG NÀY (Import từ utils)
 
 function Cart({ gioHang, chinhSuaSoLuong, xoaSanPham, currentUser }) {
   const tamTinh = gioHang.reduce((t, s) => t + (s.giaBan || s.giaGoc) * s.soLuong, 0);
