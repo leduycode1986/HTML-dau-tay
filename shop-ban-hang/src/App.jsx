@@ -22,34 +22,6 @@ import FlashSale from './FlashSale';
 import Checkout from './Checkout'; 
 import { toSlug } from './utils';
 
-// --- CSS ÉP GIAO DIỆN (GLOBAL STYLES) ---
-const GLOBAL_STYLES = `
-  /* 1. Logo & Tên Shop */
-  .brand-logo-img { height: 75px !important; width: auto !important; object-fit: contain; }
-  .shop-name { font-size: 1.8rem !important; font-weight: 900 !important; color: #198754 !important; text-transform: uppercase; margin: 0 !important; line-height: 1.1; }
-  .shop-slogan { font-size: 0.9rem !important; color: #d63384; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-  .brand-group { display: flex !important; align-items: center !important; gap: 15px !important; }
-  
-  /* 2. Hotline */
-  .header-hotline-box { text-align: right; display: flex; flex-direction: column; justify-content: center; border-left: 2px solid #dee2e6 !important; padding-left: 25px !important; margin-left: 20px !important; height: 60px; }
-  .hotline-label { font-size: 12px !important; font-weight: 700; color: #666; text-transform: uppercase; margin-bottom: 2px; display: block; }
-  .hotline-number { font-size: 1.8rem !important; font-weight: 900 !important; color: #d32f2f !important; line-height: 1; }
-
-  /* 3. Sản Phẩm Vừa Xem */
-  .recent-view-bar { background: white; border-top: 4px solid #198754; padding: 30px 0; margin-top: 40px; box-shadow: 0 -5px 15px rgba(0,0,0,0.05); }
-  .recent-scroll { display: flex; gap: 20px; overflow-x: auto; padding: 15px 5px; scrollbar-width: thin; }
-  .recent-card { flex: 0 0 auto !important; width: 170px !important; border: 1px solid #eee; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 3px 8px rgba(0,0,0,0.05); }
-  .recent-card img { width: 100%; height: 130px !important; object-fit: cover; border-bottom: 1px solid #f1f1f1; }
-  .recent-card-body { padding: 12px; text-align: center; }
-  .recent-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; color: #333; }
-  .recent-price { font-size: 15px !important; font-weight: 800; color: #d32f2f; }
-
-  /* 4. Banner Flash Sale */
-  .flash-sale-hero { background: linear-gradient(135deg, #d32f2f, #ff5252); color: white; padding: 25px 0; margin-bottom: 20px; border-bottom: 4px solid #b71c1c; border-radius: 8px; }
-  .flash-sale-title { font-weight: 800; font-size: 1.8rem; text-transform: uppercase; margin-bottom: 15px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
-  .time-box { width: 45px; height: 45px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; border-radius: 6px; }
-`;
-
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -85,6 +57,7 @@ function App() {
     return () => { unsubSP(); unsubDM(); unsubDH(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
   }, []);
 
+  // Logic Đếm ngược Flash Sale
   useEffect(() => {
     if(!shopConfig?.flashSaleEnd) return;
     const check = () => {
@@ -123,11 +96,6 @@ function App() {
 
   return (
     <div className="app-container d-flex flex-column min-vh-100">
-      
-      {/* --- SỬA LỖI QUAN TRỌNG TẠI ĐÂY: DÙNG dangerouslySetInnerHTML --- */}
-      <style dangerouslySetInnerHTML={{__html: GLOBAL_STYLES}} />
-      {/* ---------------------------------------------------------------- */}
-
       <ToastContainer autoClose={2000} />
       <div className={`back-to-top ${showTopBtn ? 'visible' : ''}`} onClick={() => window.scrollTo({top:0, behavior:'smooth'})}><i className="fa-solid fa-arrow-up"></i></div>
 
@@ -138,13 +106,21 @@ function App() {
           <Navbar bg="white" expand="lg" className="sticky-top shadow-sm py-2" style={{zIndex: 100}}>
             <Container>
               <Navbar.Brand as={Link} to="/" className="me-4 text-decoration-none">
-                <div className="brand-group">
-                  {shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" className="brand-logo-img" /> : <span className="fs-1">🦁</span>}
-                  <div className="brand-info">
-                    <h1 className="shop-name">{shopConfig.tenShop}</h1>
-                    <span className="shop-slogan">{shopConfig.slogan}</span>
+                {/* --- SỬA TRỰC TIẾP STYLE TẠI ĐÂY (INLINE STYLE) --- */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                  {shopConfig.logo ? 
+                    <img src={shopConfig.logo} alt="Logo" style={{ height: '75px', width: 'auto', objectFit: 'contain' }} /> 
+                    : <span className="fs-1">🦁</span>}
+                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', lineHeight: '1.1' }}>
+                    <h1 style={{ fontSize: '1.8rem', fontWeight: '900', color: '#198754', textTransform: 'uppercase', margin: 0 }}>
+                      {shopConfig.tenShop}
+                    </h1>
+                    <span style={{ fontSize: '0.9rem', color: '#d63384', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                      {shopConfig.slogan}
+                    </span>
                   </div>
                 </div>
+                {/* -------------------------------------------------- */}
               </Navbar.Brand>
 
               <Navbar.Toggle />
@@ -156,10 +132,12 @@ function App() {
                   </div>
                 </Form>
                 <Nav className="align-items-center gap-3">
-                  <div className="header-hotline-box d-none d-lg-flex">
-                    <span className="hotline-label">Tổng đài hỗ trợ</span>
-                    <span className="hotline-number">{shopConfig.sdt}</span>
+                  {/* --- SỬA TRỰC TIẾP STYLE HOTLINE --- */}
+                  <div className="d-none d-lg-flex" style={{ textAlign: 'right', flexDirection: 'column', justifyContent: 'center', borderLeft: '2px solid #dee2e6', paddingLeft: '25px', marginLeft: '20px', height: '60px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#666', textTransform: 'uppercase', marginBottom: '2px', display: 'block' }}>Tổng đài hỗ trợ</span>
+                    <span style={{ fontSize: '1.8rem', fontWeight: '900', color: '#d32f2f', lineHeight: 1 }}>{shopConfig.sdt}</span>
                   </div>
+                  {/* ----------------------------------- */}
 
                   <Link to="/tra-cuu" className="btn btn-outline-secondary rounded-pill btn-sm fw-bold">Tra đơn</Link>
                   <Link to="/cart" className="btn btn-success rounded-pill position-relative fw-bold px-3">
@@ -211,15 +189,18 @@ function App() {
             <Col lg={!isAdminPage ? 9 : 12}>
               {!isAdminPage && (
                 <>
+                  {/* Banner Flash Sale (Style Inline) */}
                   {shopConfig?.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date() && (
-                    <div className="flash-sale-hero text-center shadow-sm rounded-3 mb-4">
+                    <div className="text-center shadow-sm rounded-3 mb-4" style={{ background: 'linear-gradient(135deg, #d32f2f, #ff5252)', color: 'white', padding: '25px 0', borderBottom: '4px solid #b71c1c' }}>
                       <Container>
-                        <h2 className="flash-sale-title"><i className="fa-solid fa-bolt fa-shake"></i> FLASH SALE</h2>
+                        <h2 style={{ fontWeight: '800', fontSize: '1.8rem', textTransform: 'uppercase', marginBottom: '15px', textShadow: '2px 2px 4px rgba(0,0,0,0.2)' }}>
+                          <i className="fa-solid fa-bolt fa-shake"></i> FLASH SALE
+                        </h2>
                         <div className="d-flex justify-content-center gap-3 align-items-center">
-                          <div className="time-box">{String(timeLeft.d).padStart(2,'0')}</div>:
-                          <div className="time-box">{String(timeLeft.h).padStart(2,'0')}</div>:
-                          <div className="time-box">{String(timeLeft.m).padStart(2,'0')}</div>:
-                          <div className="time-box bg-white text-danger border-0">{String(timeLeft.s).padStart(2,'0')}</div>
+                          <div className="time-box" style={{ width: '45px', height: '45px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.4)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', borderRadius: '6px' }}>{String(timeLeft.d).padStart(2,'0')}</div>:
+                          <div className="time-box" style={{ width: '45px', height: '45px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.4)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', borderRadius: '6px' }}>{String(timeLeft.h).padStart(2,'0')}</div>:
+                          <div className="time-box" style={{ width: '45px', height: '45px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.4)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', borderRadius: '6px' }}>{String(timeLeft.m).padStart(2,'0')}</div>:
+                          <div className="time-box bg-white text-danger border-0" style={{ width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', borderRadius: '6px' }}>{String(timeLeft.s).padStart(2,'0')}</div>
                         </div>
                         <Button variant="light" className="mt-4 rounded-pill fw-bold text-danger px-4" onClick={()=>navigate('/flash-sale')}>XEM TẤT CẢ</Button>
                       </Container>
@@ -254,18 +235,21 @@ function App() {
       </div>
 
       {!isAdminPage && recentProducts.length > 0 && (
-        <div className="recent-view-bar">
+        <div style={{ background: 'white', borderTop: '4px solid #198754', padding: '30px 0', marginTop: '40px', boxShadow: '0 -5px 15px rgba(0,0,0,0.05)' }}>
           <Container>
             <h5 className="fw-bold text-secondary mb-3 small text-uppercase" style={{letterSpacing:1}}>
               <i className="fa-solid fa-clock-rotate-left me-2"></i> Sản phẩm bạn vừa xem
             </h5>
-            <div className="recent-scroll">
+            <div style={{ display: 'flex', gap: '20px', overflowX: 'auto', padding: '15px 5px', scrollbarWidth: 'thin' }}>
               {recentProducts.map(sp => (
-                <Link key={sp.id} to={`/san-pham/${sp.slug || toSlug(sp.ten)}`} className="recent-card text-decoration-none">
-                  <img src={sp.anh} alt={sp.ten} />
-                  <div className="recent-card-body">
-                    <div className="recent-name">{sp.ten}</div>
-                    <div className="recent-price">{sp.giaBan?.toLocaleString()}₫</div>
+                <Link key={sp.id} to={`/san-pham/${sp.slug || toSlug(sp.ten)}`} className="text-decoration-none" style={{ 
+                    flex: '0 0 auto', width: '180px', minWidth: '180px', border: '1px solid #eee', borderRadius: '8px', 
+                    overflow: 'hidden', background: 'white', boxShadow: '0 3px 8px rgba(0,0,0,0.05)', color: 'inherit' 
+                  }}>
+                  <img src={sp.anh} alt={sp.ten} style={{ width: '100%', height: '140px', objectFit: 'cover', borderBottom: '1px solid #f1f1f1' }} />
+                  <div style={{ padding: '12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '5px', color: '#333' }}>{sp.ten}</div>
+                    <div style={{ fontSize: '15px', fontWeight: '800', color: '#d32f2f' }}>{sp.giaBan?.toLocaleString()}₫</div>
                   </div>
                 </Link>
               ))}
