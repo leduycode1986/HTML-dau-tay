@@ -164,14 +164,14 @@ function App() {
             )}
 
             <Col lg={!isAdminPage ? 9 : 12}>
-              {/* --- ĐIỀU KIỆN HIỂN THỊ BANNER: Trang chủ HOẶC Trang Danh mục --- */}
-              {!isAdminPage && (location.pathname === '/' || location.pathname.includes('/danh-muc')) && banners.length > 0 && 
+              {/* --- ĐÃ SỬA: HIỆN BANNER Ở TẤT CẢ CÁC TRANG (TRỪ ADMIN) --- */}
+              {!isAdminPage && banners.length > 0 && (
                 <div className="mb-4 rounded overflow-hidden shadow-sm">
                   <Slider {...sliderSettings}>
                     {banners.map(b=><Link key={b.id} to={b.link||'#'}><img src={b.img} className="w-100" style={{height:320, objectFit:'cover'}}/></Link>)}
                   </Slider>
                 </div>
-              }
+              )}
               
               <Routes>
                 <Route path="/" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
