@@ -20,7 +20,7 @@ import Member from './Member';
 import OrderLookup from './OrderLookup';
 import FlashSale from './FlashSale'; 
 import Checkout from './Checkout'; 
-import { toSlug } from './utils'; // <--- QUAN TRỌNG: Import từ file mới
+import { toSlug } from './utils'; // QUAN TRỌNG: Import từ utils
 
 function App() {
   const navigate = useNavigate();
@@ -56,7 +56,6 @@ function App() {
     return () => { unsubSP(); unsubDM(); unsubDH(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
   }, []);
 
-  // Logic Recent Products
   useEffect(() => {
     if(dsSanPham.length > 0) {
       const recentIds = JSON.parse(localStorage.getItem('recent') || '[]');

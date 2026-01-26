@@ -1,9 +1,9 @@
-/* --- 1. BASE --- */
+/* --- 1. CẤU TRÚC CƠ BẢN --- */
 body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; font-size: 14px; overflow-x: hidden; }
 a { text-decoration: none; color: inherit; transition: 0.2s; }
 img { max-width: 100%; height: auto; }
 
-/* --- 2. HEADER: LOGO & HOTLINE --- */
+/* --- 2. HEADER: LOGO & HOTLINE (FIX CHUẨN) --- */
 .top-bar-notification { background: #b71c1c; color: white; padding: 6px 0; font-size: 12px; font-weight: 600; overflow: hidden; }
 .marquee-text { display: inline-block; white-space: nowrap; padding-left: 100%; animation: marquee 35s linear infinite; }
 @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
@@ -11,11 +11,11 @@ img { max-width: 100%; height: auto; }
 /* Logo Group */
 .brand-group { display: flex; align-items: center; gap: 12px; }
 .brand-logo-img { height: 55px; width: auto; object-fit: contain; }
-.brand-info { display: flex; flex-direction: column; justify-content: center; line-height: 1.1; }
+.brand-info { display: flex; flex-direction: column; justify-content: center; line-height: 1.2; }
 .shop-name { font-weight: 800; color: #198754; text-transform: uppercase; font-size: 1.4rem; margin: 0; letter-spacing: -0.5px; }
 .shop-slogan { font-size: 0.8rem; color: #d63384; font-weight: 700; margin: 0; text-transform: uppercase; }
 
-/* Hotline Box */
+/* Hotline Box - Chỉ hiện 1 số to đẹp */
 .header-hotline-box { 
   text-align: right; 
   display: flex; 
@@ -46,7 +46,7 @@ img { max-width: 100%; height: auto; }
 .recent-view-bar { background: white; border-top: 4px solid #198754; padding: 25px 0; margin-top: 40px; box-shadow: 0 -5px 10px rgba(0,0,0,0.02); }
 .recent-scroll { display: flex; gap: 15px; overflow-x: auto; padding: 10px 5px; scrollbar-width: thin; }
 .recent-card { 
-  flex: 0 0 auto; /* Không co giãn */
+  flex: 0 0 auto; 
   width: 150px; 
   border: 1px solid #eee; 
   border-radius: 8px; 
@@ -63,7 +63,7 @@ img { max-width: 100%; height: auto; }
 .recent-name { font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; color: #333; }
 .recent-price { font-size: 13px; font-weight: 800; color: #d32f2f; }
 
-/* --- 5. ADMIN UI (FIX VỠ LAYOUT) --- */
+/* --- 5. ADMIN LOGIN (FIX VỠ LAYOUT - QUAN TRỌNG) --- */
 .admin-login-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; background-color: #f0f2f5; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
 .admin-login-card { width: 100%; max-width: 450px; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
 .admin-header { background-color: #198754; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
