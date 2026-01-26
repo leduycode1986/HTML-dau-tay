@@ -3,7 +3,7 @@ body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; font-size
 a { text-decoration: none; color: inherit; transition: 0.2s; }
 img { max-width: 100%; height: auto; }
 
-/* --- 2. HEADER: LOGO & HOTLINE (FIX TO & RÕ) --- */
+/* --- 2. HEADER: LOGO & HOTLINE (FIX TO - RÕ - ĐẸP) --- */
 .top-bar-notification { background: #b71c1c; color: white; padding: 6px 0; font-size: 12px; font-weight: 600; overflow: hidden; }
 .marquee-text { display: inline-block; white-space: nowrap; padding-left: 100%; animation: marquee 35s linear infinite; }
 @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
@@ -15,7 +15,7 @@ img { max-width: 100%; height: auto; }
   gap: 15px; 
 }
 .brand-logo-img { 
-  height: 70px; /* Tăng kích thước logo */
+  height: 70px; /* Logo to 70px */
   width: auto; 
   object-fit: contain; 
 }
@@ -28,7 +28,7 @@ img { max-width: 100%; height: auto; }
   font-weight: 900; 
   color: #198754; 
   text-transform: uppercase; 
-  font-size: 1.8rem; /* Tên shop to hơn */
+  font-size: 1.8rem; /* Tên to 1.8rem */
   margin: 0 !important;
   line-height: 1.1;
   letter-spacing: -0.5px; 
@@ -42,13 +42,13 @@ img { max-width: 100%; height: auto; }
   letter-spacing: 1px;
 }
 
-/* Hotline Box - Nổi bật */
+/* Hotline Box - Nổi bật bên phải */
 .header-hotline-box { 
   text-align: right; 
   display: flex; 
   flex-direction: column; 
   justify-content: center; 
-  border-left: 2px solid #dee2e6; 
+  border-left: 2px solid #dee2e6; /* Đường gạch ngăn cách */
   padding-left: 25px; 
   margin-left: 20px;
   height: 60px; 
@@ -62,13 +62,13 @@ img { max-width: 100%; height: auto; }
   display: block;
 }
 .hotline-number { 
-  font-size: 1.8rem; /* Số hotline rất to */
+  font-size: 1.8rem; /* Số to 1.8rem */
   font-weight: 900; 
   color: #d32f2f; 
   line-height: 1; 
 }
 
-/* --- 3. SẢN PHẨM VỪA XEM (FIX CĂN LỀ & KHOẢNG CÁCH) --- */
+/* --- 3. SẢN PHẨM VỪA XEM (FIX THẲNG HÀNG) --- */
 .recent-view-bar { 
   background: white; 
   border-top: 4px solid #198754; 
@@ -78,14 +78,14 @@ img { max-width: 100%; height: auto; }
 }
 .recent-scroll { 
   display: flex; 
-  gap: 20px; /* Tăng khoảng cách giữa các thẻ */
+  gap: 20px; 
   overflow-x: auto; 
   padding: 10px 5px; 
   scrollbar-width: thin; 
 }
 .recent-card { 
   flex: 0 0 auto; 
-  width: 170px; /* Cố định chiều rộng thẻ */
+  width: 170px; /* Rộng 170px */
   border: 1px solid #eee; 
   border-radius: 8px; 
   overflow: hidden; 
@@ -126,14 +126,6 @@ img { max-width: 100%; height: auto; }
 }
 
 /* --- 4. CÁC PHẦN KHÁC (GIỮ NGUYÊN) --- */
-.sidebar-main { background: white; border-radius: 8px; overflow: hidden; position: sticky; top: 90px; z-index: 9; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #dee2e6; }
-.sidebar-header { background: #198754; color: white; padding: 12px 15px; font-weight: 700; text-transform: uppercase; }
-.category-item { padding: 10px 15px; border-bottom: 1px solid #f1f1f1; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
-.category-item:hover, .category-item.active { background: #e8f5e9; color: #198754; padding-left: 20px; }
-.submenu { background: #f8f9fa; border-left: 4px solid #198754; }
-.submenu a { display: block; padding: 8px 15px 8px 25px; font-size: 13px; color: #666; border-bottom: 1px dashed #eee; }
-.submenu a:hover { color: #198754; background: white; }
-
 .product-card { background: white; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; transition: 0.3s; height: 100%; display: flex; flex-direction: column; position: relative; }
 .product-card:hover { border-color: #198754; box-shadow: 0 5px 15px rgba(0,0,0,0.1); transform: translateY(-3px); }
 .product-img-fixed { width: 100%; height: 180px; object-fit: cover; display: block; }
@@ -158,3 +150,10 @@ img { max-width: 100%; height: auto; }
 .footer-link { display: block; color: #adb5bd; margin-bottom: 8px; transition: 0.2s; }
 .footer-link:hover { color: #198754; padding-left: 5px; }
 .copyright-bar { background: #000; color: #6c757d; text-align: center; padding: 20px; font-size: 0.85rem; margin-top: 30px; }
+.sidebar-main { background: white; border-radius: 8px; overflow: hidden; position: sticky; top: 90px; z-index: 9; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #dee2e6; }
+.sidebar-header { background: #198754; color: white; padding: 12px 15px; font-weight: 700; text-transform: uppercase; }
+.category-item { padding: 10px 15px; border-bottom: 1px solid #f1f1f1; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
+.category-item:hover, .category-item.active { background: #e8f5e9; color: #198754; padding-left: 20px; }
+.submenu { background: #f8f9fa; border-left: 4px solid #198754; }
+.submenu a { display: block; padding: 8px 15px 8px 25px; font-size: 13px; color: #666; border-bottom: 1px dashed #eee; }
+.submenu a:hover { color: #198754; background: white; }

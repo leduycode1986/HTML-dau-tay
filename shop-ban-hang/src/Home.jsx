@@ -64,7 +64,7 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
     <Container fluid className="p-0">
       <Row className="g-0"><Col xs={12} className="p-3">
         
-        {/* --- FIX: BANNER FLASH SALE HIỆN LUÔN CẢ KHI CÓ SLUG --- */}
+        {/* --- ĐÃ SỬA: ĐƯA BANNER FLASH SALE RA NGOÀI ĐỂ HIỆN MỌI TRANG --- */}
         {shopConfig?.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date() && (
           <div className="flash-sale-hero text-center shadow-sm rounded-3 mb-4">
             <Container>
