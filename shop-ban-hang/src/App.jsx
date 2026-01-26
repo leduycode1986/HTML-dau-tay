@@ -40,6 +40,7 @@ function App() {
   const [showTopBtn, setShowTopBtn] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [recentProducts, setRecentProducts] = useState([]);
+  const [timeLeft, setTimeLeft] = useState({ d:0, h:0, m:0, s:0 });
 
   useEffect(() => { AOS.init({ duration: 800, once: false }); }, []);
   useEffect(() => { window.scrollTo(0, 0); }, [location]);
@@ -55,6 +56,18 @@ function App() {
     const scrollH = () => setShowTopBtn(window.scrollY > 300); window.addEventListener('scroll', scrollH);
     return () => { unsubSP(); unsubDM(); unsubDH(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
   }, []);
+
+  // Logic Đếm ngược Flash Sale
+  useEffect(() => {
+    if(!shopConfig?.flashSaleEnd) return;
+    const check = () => {
+      const dist = new Date(shopConfig.flashSaleEnd).getTime() - new Date().getTime();
+      if (dist > 0) {
+        setTimeLeft({ d:Math.floor(dist/(1000*60*60*24)), h:Math.floor((dist%(1000*60*60*24))/(1000*60*60)), m:Math.floor((dist%(1000*60*60))/(1000*60)), s:Math.floor((dist%(1000*60))/1000) });
+      }
+    };
+    check(); const t = setInterval(check, 1000); return () => clearInterval(t);
+  }, [shopConfig]);
 
   useEffect(() => {
     if(dsSanPham.length > 0) {
@@ -84,6 +97,35 @@ function App() {
   return (
     <div className="app-container d-flex flex-column min-vh-100">
       <ToastContainer autoClose={2000} />
+      
+      {/* --- KHU VỰC CSS "ÉP BUỘC" (Sẽ đè lên mọi CSS cũ) --- */}
+      <style>{`
+        /* 1. Ép Logo và Tên Shop To Đẹp */
+        .brand-logo-img { height: 75px !important; width: auto !important; object-fit: contain; }
+        .shop-name { font-size: 1.8rem !important; font-weight: 900 !important; color: #198754 !important; text-transform: uppercase; margin: 0 !important; line-height: 1.1; }
+        .shop-slogan { font-size: 0.9rem !important; color: #d63384; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .brand-group { display: flex !important; align-items: center !important; gap: 15px !important; }
+        
+        /* 2. Ép Hotline To Đỏ */
+        .header-hotline-box { text-align: right; display: flex; flex-direction: column; justify-content: center; border-left: 2px solid #dee2e6 !important; padding-left: 25px !important; margin-left: 20px !important; height: 60px; }
+        .hotline-label { font-size: 12px !important; font-weight: 700; color: #666; text-transform: uppercase; margin-bottom: 2px; display: block; }
+        .hotline-number { font-size: 1.8rem !important; font-weight: 900 !important; color: #d32f2f !important; line-height: 1; }
+
+        /* 3. Ép Sản Phẩm Vừa Xem Thẳng Hàng */
+        .recent-view-bar { background: white; border-top: 4px solid #198754; padding: 30px 0; margin-top: 40px; box-shadow: 0 -5px 15px rgba(0,0,0,0.05); }
+        .recent-scroll { display: flex; gap: 20px; overflow-x: auto; padding: 15px 5px; scrollbar-width: thin; }
+        .recent-card { flex: 0 0 auto !important; width: 170px !important; border: 1px solid #eee; border-radius: 8px; overflow: hidden; background: white; box-shadow: 0 3px 8px rgba(0,0,0,0.05); }
+        .recent-card img { width: 100%; height: 130px !important; object-fit: cover; border-bottom: 1px solid #f1f1f1; }
+        .recent-card-body { padding: 12px; text-align: center; }
+        .recent-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; color: #333; }
+        .recent-price { font-size: 15px !important; font-weight: 800; color: #d32f2f; }
+
+        /* 4. Banner Flash Sale */
+        .flash-sale-hero { background: linear-gradient(135deg, #d32f2f, #ff5252); color: white; padding: 25px 0; margin-bottom: 20px; border-bottom: 4px solid #b71c1c; border-radius: 8px; }
+        .flash-sale-title { font-weight: 800; font-size: 1.8rem; text-transform: uppercase; margin-bottom: 15px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        .time-box { width: 45px; height: 45px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; border-radius: 6px; }
+      `}</style>
+
       <div className={`back-to-top ${showTopBtn ? 'visible' : ''}`} onClick={() => window.scrollTo({top:0, behavior:'smooth'})}><i className="fa-solid fa-arrow-up"></i></div>
 
       {!isAdminPage && (
@@ -164,13 +206,34 @@ function App() {
             )}
 
             <Col lg={!isAdminPage ? 9 : 12}>
-              {/* --- ĐÃ SỬA: HIỆN BANNER Ở TẤT CẢ CÁC TRANG (TRỪ ADMIN) --- */}
-              {!isAdminPage && banners.length > 0 && (
-                <div className="mb-4 rounded overflow-hidden shadow-sm">
-                  <Slider {...sliderSettings}>
-                    {banners.map(b=><Link key={b.id} to={b.link||'#'}><img src={b.img} className="w-100" style={{height:320, objectFit:'cover'}}/></Link>)}
-                  </Slider>
-                </div>
+              {/* --- LOGIC BANNER & FLASH SALE MỚI (HIỆN MỌI NƠI) --- */}
+              {!isAdminPage && (
+                <>
+                  {/* Banner Flash Sale */}
+                  {shopConfig?.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date() && (
+                    <div className="flash-sale-hero text-center shadow-sm mb-4">
+                      <Container>
+                        <h2 className="flash-sale-title"><i className="fa-solid fa-bolt fa-shake"></i> FLASH SALE</h2>
+                        <div className="d-flex justify-content-center gap-3 align-items-center">
+                          <div className="time-box">{String(timeLeft.d).padStart(2,'0')}</div>:
+                          <div className="time-box">{String(timeLeft.h).padStart(2,'0')}</div>:
+                          <div className="time-box">{String(timeLeft.m).padStart(2,'0')}</div>:
+                          <div className="time-box bg-white text-danger border-0">{String(timeLeft.s).padStart(2,'0')}</div>
+                        </div>
+                        <Button variant="light" className="mt-4 rounded-pill fw-bold text-danger px-4" onClick={()=>navigate('/flash-sale')}>XEM TẤT CẢ</Button>
+                      </Container>
+                    </div>
+                  )}
+
+                  {/* Banner Slider */}
+                  {banners.length > 0 && (
+                    <div className="mb-4 rounded overflow-hidden shadow-sm">
+                      <Slider {...sliderSettings}>
+                        {banners.map(b=><Link key={b.id} to={b.link||'#'}><img src={b.img} className="w-100" style={{height:320, objectFit:'cover'}}/></Link>)}
+                      </Slider>
+                    </div>
+                  )}
+                </>
               )}
               
               <Routes>
