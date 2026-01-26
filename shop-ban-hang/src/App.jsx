@@ -22,8 +22,8 @@ import FlashSale from './FlashSale';
 import Checkout from './Checkout'; 
 import { toSlug } from './utils';
 
-// Đổi tên component thành ShopApp cho khớp với file
-function ShopApp() {
+// --- PHIÊN BẢN APP GỐC VỚI GIAO DIỆN INLINE STYLE ---
+function App() {
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -107,7 +107,7 @@ function ShopApp() {
           <Navbar bg="white" expand="lg" className="sticky-top shadow-sm py-2" style={{zIndex: 100}}>
             <Container>
               <Navbar.Brand as={Link} to="/" className="me-4 text-decoration-none">
-                {/* --- HEADER ĐÃ ĐƯỢC CHỈNH SỬA (INLINE STYLE MẠNH) --- */}
+                {/* --- LOGO TO ĐẸP --- */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                   {shopConfig.logo ? 
                     <img src={shopConfig.logo} alt="Logo" style={{ height: '75px', width: 'auto', objectFit: 'contain' }} /> 
@@ -121,7 +121,6 @@ function ShopApp() {
                     </span>
                   </div>
                 </div>
-                {/* -------------------------------------------------- */}
               </Navbar.Brand>
 
               <Navbar.Toggle />
@@ -133,6 +132,7 @@ function ShopApp() {
                   </div>
                 </Form>
                 <Nav className="align-items-center gap-3">
+                  {/* --- HOTLINE ĐỎ RỰC --- */}
                   <div className="d-none d-lg-flex" style={{ textAlign: 'right', flexDirection: 'column', justifyContent: 'center', borderLeft: '2px solid #dee2e6', paddingLeft: '25px', marginLeft: '20px', height: '60px' }}>
                     <span style={{ fontSize: '12px', fontWeight: '700', color: '#666', textTransform: 'uppercase', marginBottom: '2px', display: 'block' }}>Tổng đài hỗ trợ</span>
                     <span style={{ fontSize: '1.8rem', fontWeight: '900', color: '#d32f2f', lineHeight: 1 }}>{shopConfig.sdt}</span>
@@ -265,4 +265,4 @@ function ShopApp() {
     </div>
   );
 }
-export default ShopApp; // Xuất ShopApp
+export default App;
