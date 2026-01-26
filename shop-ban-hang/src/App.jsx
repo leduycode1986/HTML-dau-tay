@@ -92,7 +92,6 @@ function App() {
           
           <Navbar bg="white" expand="lg" className="sticky-top shadow-sm py-2" style={{zIndex: 100}}>
             <Container>
-              {/* --- HEADER LOGO CHUẨN --- */}
               <Navbar.Brand as={Link} to="/" className="me-4 text-decoration-none">
                 <div className="brand-group">
                   {shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" className="brand-logo-img" /> : <span className="fs-1">🦁</span>}
@@ -112,7 +111,6 @@ function App() {
                   </div>
                 </Form>
                 <Nav className="align-items-center gap-3">
-                  {/* --- HOTLINE CHUẨN --- */}
                   <div className="header-hotline-box d-none d-lg-flex">
                     <span className="hotline-label">Tổng đài hỗ trợ</span>
                     <span className="hotline-number">{shopConfig.sdt}</span>
@@ -166,7 +164,14 @@ function App() {
             )}
 
             <Col lg={!isAdminPage ? 9 : 12}>
-              {!isAdminPage && location.pathname === '/' && banners.length > 0 && <div className="mb-4 rounded overflow-hidden shadow-sm"><Slider {...sliderSettings}>{banners.map(b=><Link key={b.id} to={b.link||'#'}><img src={b.img} className="w-100" style={{height:320, objectFit:'cover'}}/></Link>)}</Slider></div>}
+              {/* --- FIX: BANNER HIỆN Ở CẢ TRANG CHỦ VÀ TRANG DANH MỤC --- */}
+              {!isAdminPage && (location.pathname === '/' || location.pathname.includes('/danh-muc')) && banners.length > 0 && 
+                <div className="mb-4 rounded overflow-hidden shadow-sm">
+                  <Slider {...sliderSettings}>
+                    {banners.map(b=><Link key={b.id} to={b.link||'#'}><img src={b.img} className="w-100" style={{height:320, objectFit:'cover'}}/></Link>)}
+                  </Slider>
+                </div>
+              }
               
               <Routes>
                 <Route path="/" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
@@ -185,7 +190,6 @@ function App() {
         </Container>
       </div>
 
-      {/* --- RECENT PRODUCTS: FIX CẤU TRÚC ĐỂ KHÔNG BỊ VỠ --- */}
       {!isAdminPage && recentProducts.length > 0 && (
         <div className="recent-view-bar">
           <Container>

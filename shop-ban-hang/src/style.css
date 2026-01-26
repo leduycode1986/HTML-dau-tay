@@ -1,21 +1,21 @@
-/* --- 1. CẤU TRÚC CƠ BẢN --- */
+/* --- 1. BASE --- */
 body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; font-size: 14px; overflow-x: hidden; }
 a { text-decoration: none; color: inherit; transition: 0.2s; }
 img { max-width: 100%; height: auto; }
 
-/* --- 2. HEADER: LOGO & HOTLINE (FIX CHUẨN ĐẸP) --- */
+/* --- 2. HEADER: LOGO & HOTLINE (FIX TO & RÕ) --- */
 .top-bar-notification { background: #b71c1c; color: white; padding: 6px 0; font-size: 12px; font-weight: 600; overflow: hidden; }
 .marquee-text { display: inline-block; white-space: nowrap; padding-left: 100%; animation: marquee 35s linear infinite; }
 @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-/* Căn chỉnh Logo đẹp hơn */
+/* Logo Group */
 .brand-group { 
   display: flex; 
   align-items: center; 
-  gap: 15px; /* Tăng khoảng cách logo và chữ */
+  gap: 15px; 
 }
 .brand-logo-img { 
-  height: 65px; /* Logo to hơn (cũ là 55px) */
+  height: 70px; /* Tăng kích thước logo */
   width: auto; 
   object-fit: contain; 
 }
@@ -23,71 +23,69 @@ img { max-width: 100%; height: auto; }
   display: flex; 
   flex-direction: column; 
   justify-content: center; 
-  line-height: 1.1; 
 }
 .shop-name { 
-  font-weight: 900; /* Chữ đậm nét hơn */
+  font-weight: 900; 
   color: #198754; 
   text-transform: uppercase; 
-  font-size: 1.6rem; /* Chữ to hơn */
-  margin: 0; 
+  font-size: 1.8rem; /* Tên shop to hơn */
+  margin: 0 !important;
+  line-height: 1.1;
   letter-spacing: -0.5px; 
 }
 .shop-slogan { 
-  font-size: 0.85rem; 
+  font-size: 0.9rem; 
   color: #d63384; 
   font-weight: 700; 
   margin: 0; 
   text-transform: uppercase; 
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
 }
 
-/* Hotline Box - Số to, màu đỏ, có gạch ngăn */
+/* Hotline Box - Nổi bật */
 .header-hotline-box { 
   text-align: right; 
   display: flex; 
   flex-direction: column; 
   justify-content: center; 
-  border-left: 2px solid #e9ecef; /* Gạch ngăn rõ hơn */
-  padding-left: 20px; 
+  border-left: 2px solid #dee2e6; 
+  padding-left: 25px; 
   margin-left: 20px;
-  height: 55px; 
+  height: 60px; 
 }
 .hotline-label { 
-  font-size: 11px; 
+  font-size: 12px; 
   font-weight: 700; 
   color: #666; 
   text-transform: uppercase; 
-  line-height: 1; 
-  margin-bottom: 4px; 
+  margin-bottom: 2px;
+  display: block;
 }
 .hotline-number { 
-  font-size: 1.6rem; /* Số to hẳn lên */
+  font-size: 1.8rem; /* Số hotline rất to */
   font-weight: 900; 
   color: #d32f2f; 
   line-height: 1; 
-  letter-spacing: 0.5px; 
 }
 
-/* --- 3. SẢN PHẨM VỪA XEM (FIX LỖI DÍNH LỀ) --- */
+/* --- 3. SẢN PHẨM VỪA XEM (FIX CĂN LỀ & KHOẢNG CÁCH) --- */
 .recent-view-bar { 
   background: white; 
   border-top: 4px solid #198754; 
   padding: 25px 0; 
   margin-top: 40px; 
-  box-shadow: 0 -5px 15px rgba(0,0,0,0.03); 
+  box-shadow: 0 -5px 10px rgba(0,0,0,0.03); 
 }
 .recent-scroll { 
   display: flex; 
   gap: 20px; /* Tăng khoảng cách giữa các thẻ */
   overflow-x: auto; 
-  padding: 15px 10px; /* Thêm đệm để không bị cắt bóng đổ */
+  padding: 10px 5px; 
   scrollbar-width: thin; 
 }
-/* Card cố định kích thước, đẹp hơn */
 .recent-card { 
   flex: 0 0 auto; 
-  width: 170px; /* Rộng hơn chút để tên không bị xuống dòng xấu */
+  width: 170px; /* Cố định chiều rộng thẻ */
   border: 1px solid #eee; 
   border-radius: 8px; 
   overflow: hidden; 
@@ -95,21 +93,21 @@ img { max-width: 100%; height: auto; }
   transition: 0.2s; 
   text-decoration: none !important; 
   color: inherit; 
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+  box-shadow: 0 3px 6px rgba(0,0,0,0.05); 
 }
 .recent-card:hover { 
-  box-shadow: 0 8px 20px rgba(0,0,0,0.15); 
+  box-shadow: 0 8px 15px rgba(0,0,0,0.1); 
   border-color: #198754; 
-  transform: translateY(-5px); 
+  transform: translateY(-3px); 
 }
 .recent-card img { 
   width: 100%; 
-  height: 130px; /* Ảnh cao hơn chút */
+  height: 130px; 
   object-fit: cover; 
   border-bottom: 1px solid #f1f1f1; 
 }
 .recent-card-body { 
-  padding: 12px; 
+  padding: 10px; 
   text-align: center; 
 }
 .recent-name { 
@@ -127,7 +125,7 @@ img { max-width: 100%; height: auto; }
   color: #d32f2f; 
 }
 
-/* --- 4. CÁC PHẦN KHÁC (GIỮ NGUYÊN TÍNH NĂNG) --- */
+/* --- 4. CÁC PHẦN KHÁC (GIỮ NGUYÊN) --- */
 .sidebar-main { background: white; border-radius: 8px; overflow: hidden; position: sticky; top: 90px; z-index: 9; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #dee2e6; }
 .sidebar-header { background: #198754; color: white; padding: 12px 15px; font-weight: 700; text-transform: uppercase; }
 .category-item { padding: 10px 15px; border-bottom: 1px solid #f1f1f1; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
@@ -140,6 +138,13 @@ img { max-width: 100%; height: auto; }
 .product-card:hover { border-color: #198754; box-shadow: 0 5px 15px rgba(0,0,0,0.1); transform: translateY(-3px); }
 .product-img-fixed { width: 100%; height: 180px; object-fit: cover; display: block; }
 
+.flash-sale-hero { background: linear-gradient(135deg, #d32f2f, #ff5252); color: white; padding: 30px 0; margin-bottom: 20px; border-bottom: 4px solid #b71c1c; }
+.flash-sale-title { font-weight: 800; font-size: 2rem; text-transform: uppercase; margin-bottom: 15px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+.time-box { width: 50px; height: 50px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; border-radius: 8px; }
+.flash-popup-content { background: transparent !important; border: none !important; box-shadow: none !important; }
+.flash-popup-body { background: white; border-radius: 16px; overflow: hidden; text-align: center; position: relative; }
+.flash-header-bg { background: linear-gradient(135deg, #ff416c, #ff4b2b); padding: 20px; color: white; }
+
 .admin-login-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; background-color: #f0f2f5; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
 .admin-login-card { width: 100%; max-width: 450px; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
 .admin-header { background-color: #198754; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -147,13 +152,6 @@ img { max-width: 100%; height: auto; }
 .checkout-box { background: white; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 30px; margin-bottom: 20px; border: 1px solid #eee; }
 .payment-option { border: 2px solid #e9ecef; border-radius: 8px; padding: 15px; cursor: pointer; transition: 0.2s; position: relative; }
 .payment-option.active { border-color: #198754; background-color: #f0fff4; box-shadow: 0 0 0 1px #198754; }
-
-.flash-sale-hero { background: linear-gradient(135deg, #d32f2f, #ff5252); color: white; padding: 30px 0; margin-bottom: 20px; border-bottom: 4px solid #b71c1c; }
-.flash-sale-title { font-weight: 800; font-size: 2rem; text-transform: uppercase; margin-bottom: 15px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
-.time-box { width: 50px; height: 50px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; border-radius: 8px; }
-.flash-popup-content { background: transparent !important; border: none !important; box-shadow: none !important; }
-.flash-popup-body { background: white; border-radius: 16px; overflow: hidden; text-align: center; position: relative; }
-.flash-header-bg { background: linear-gradient(135deg, #ff416c, #ff4b2b); padding: 20px; color: white; }
 
 .footer-section { background-color: #212529; color: #e9ecef; padding-top: 50px; margin-top: 50px; border-top: 5px solid #198754; }
 .footer-title { color: #fff; font-weight: 700; text-transform: uppercase; margin-bottom: 15px; font-size: 1rem; }
