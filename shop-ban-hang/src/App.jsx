@@ -22,7 +22,7 @@ import FlashSale from './FlashSale';
 import Checkout from './Checkout'; 
 import { toSlug } from './utils';
 
-// --- ĐÂY LÀ PHẦN QUAN TRỌNG NHẤT: CSS ÉP GIAO DIỆN ---
+// --- ĐÂY LÀ PHẦN QUAN TRỌNG NHẤT: CSS ÉP GIAO DIỆN (BẮT BUỘC PHẢI CÓ) ---
 const GLOBAL_STYLES = `
   /* 1. Ép Logo và Tên Shop To Đẹp */
   .brand-logo-img { height: 75px !important; width: auto !important; object-fit: contain; }
@@ -125,9 +125,9 @@ function App() {
   return (
     <div className="app-container d-flex flex-column min-vh-100">
       
-      {/* --- NHÚNG STYLE TRỰC TIẾP VÀO ĐÂY (BẮT BUỘC CÓ DÒNG NÀY) --- */}
+      {/* --- NHÚNG STYLE TRỰC TIẾP VÀO ĐÂY (BẮT BUỘC CÓ DÒNG NÀY ĐỂ ÉP GIAO DIỆN) --- */}
       <style>{GLOBAL_STYLES}</style>
-      {/* ----------------------------------------------------------- */}
+      {/* --------------------------------------------------------------------------- */}
 
       <ToastContainer autoClose={2000} />
       <div className={`back-to-top ${showTopBtn ? 'visible' : ''}`} onClick={() => window.scrollTo({top:0, behavior:'smooth'})}><i className="fa-solid fa-arrow-up"></i></div>
