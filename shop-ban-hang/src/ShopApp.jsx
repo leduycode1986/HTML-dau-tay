@@ -22,7 +22,8 @@ import FlashSale from './FlashSale';
 import Checkout from './Checkout'; 
 import { toSlug } from './utils';
 
-function App() {
+// Đổi tên component thành ShopApp cho khớp với file
+function ShopApp() {
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -106,7 +107,7 @@ function App() {
           <Navbar bg="white" expand="lg" className="sticky-top shadow-sm py-2" style={{zIndex: 100}}>
             <Container>
               <Navbar.Brand as={Link} to="/" className="me-4 text-decoration-none">
-                {/* --- SỬA TRỰC TIẾP STYLE TẠI ĐÂY (INLINE STYLE) --- */}
+                {/* --- HEADER ĐÃ ĐƯỢC CHỈNH SỬA (INLINE STYLE MẠNH) --- */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                   {shopConfig.logo ? 
                     <img src={shopConfig.logo} alt="Logo" style={{ height: '75px', width: 'auto', objectFit: 'contain' }} /> 
@@ -132,12 +133,10 @@ function App() {
                   </div>
                 </Form>
                 <Nav className="align-items-center gap-3">
-                  {/* --- SỬA TRỰC TIẾP STYLE HOTLINE --- */}
                   <div className="d-none d-lg-flex" style={{ textAlign: 'right', flexDirection: 'column', justifyContent: 'center', borderLeft: '2px solid #dee2e6', paddingLeft: '25px', marginLeft: '20px', height: '60px' }}>
                     <span style={{ fontSize: '12px', fontWeight: '700', color: '#666', textTransform: 'uppercase', marginBottom: '2px', display: 'block' }}>Tổng đài hỗ trợ</span>
                     <span style={{ fontSize: '1.8rem', fontWeight: '900', color: '#d32f2f', lineHeight: 1 }}>{shopConfig.sdt}</span>
                   </div>
-                  {/* ----------------------------------- */}
 
                   <Link to="/tra-cuu" className="btn btn-outline-secondary rounded-pill btn-sm fw-bold">Tra đơn</Link>
                   <Link to="/cart" className="btn btn-success rounded-pill position-relative fw-bold px-3">
@@ -189,7 +188,6 @@ function App() {
             <Col lg={!isAdminPage ? 9 : 12}>
               {!isAdminPage && (
                 <>
-                  {/* Banner Flash Sale (Style Inline) */}
                   {shopConfig?.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date() && (
                     <div className="text-center shadow-sm rounded-3 mb-4" style={{ background: 'linear-gradient(135deg, #d32f2f, #ff5252)', color: 'white', padding: '25px 0', borderBottom: '4px solid #b71c1c' }}>
                       <Container>
@@ -267,4 +265,4 @@ function App() {
     </div>
   );
 }
-export default App;
+export default ShopApp; // Xuất ShopApp
