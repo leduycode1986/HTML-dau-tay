@@ -22,7 +22,6 @@ import FlashSale from './FlashSale';
 import Checkout from './Checkout'; 
 import { toSlug } from './utils';
 
-// --- PHIÊN BẢN APP GỐC VỚI GIAO DIỆN INLINE STYLE ---
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -102,18 +101,19 @@ function App() {
 
       {!isAdminPage && (
         <>
-          <div className="top-bar-notification"><div className="marquee-text"><span className="me-5">{shopConfig.topBarText}</span>{shopConfig.openingHours && <span><i className="fa-regular fa-clock"></i> Mở cửa: {shopConfig.openingHours}</span>}</div></div>
+          <div className="top-bar-notification" style={{background: '#b71c1c', color: 'white', padding: '6px 0', fontSize: '12px', fontWeight: '600'}}><div className="marquee-text"><span className="me-5">{shopConfig.topBarText}</span>{shopConfig.openingHours && <span><i className="fa-regular fa-clock"></i> Mở cửa: {shopConfig.openingHours}</span>}</div></div>
           
           <Navbar bg="white" expand="lg" className="sticky-top shadow-sm py-2" style={{zIndex: 100}}>
             <Container>
               <Navbar.Brand as={Link} to="/" className="me-4 text-decoration-none">
-                {/* --- LOGO TO ĐẸP --- */}
+                
+                {/* --- 1. SỬA GIAO DIỆN LOGO TRỰC TIẾP TẠI ĐÂY (INLINE STYLE) --- */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                   {shopConfig.logo ? 
                     <img src={shopConfig.logo} alt="Logo" style={{ height: '75px', width: 'auto', objectFit: 'contain' }} /> 
                     : <span className="fs-1">🦁</span>}
                   <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', lineHeight: '1.1' }}>
-                    <h1 style={{ fontSize: '1.8rem', fontWeight: '900', color: '#198754', textTransform: 'uppercase', margin: 0 }}>
+                    <h1 style={{ fontSize: '1.8rem', fontWeight: '900', color: '#198754', textTransform: 'uppercase', margin: 0, letterSpacing: '-0.5px' }}>
                       {shopConfig.tenShop}
                     </h1>
                     <span style={{ fontSize: '0.9rem', color: '#d63384', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>
@@ -121,6 +121,8 @@ function App() {
                     </span>
                   </div>
                 </div>
+                {/* ----------------------------------------------------------- */}
+
               </Navbar.Brand>
 
               <Navbar.Toggle />
@@ -132,11 +134,13 @@ function App() {
                   </div>
                 </Form>
                 <Nav className="align-items-center gap-3">
-                  {/* --- HOTLINE ĐỎ RỰC --- */}
+                  
+                  {/* --- 2. SỬA GIAO DIỆN HOTLINE TRỰC TIẾP TẠI ĐÂY --- */}
                   <div className="d-none d-lg-flex" style={{ textAlign: 'right', flexDirection: 'column', justifyContent: 'center', borderLeft: '2px solid #dee2e6', paddingLeft: '25px', marginLeft: '20px', height: '60px' }}>
                     <span style={{ fontSize: '12px', fontWeight: '700', color: '#666', textTransform: 'uppercase', marginBottom: '2px', display: 'block' }}>Tổng đài hỗ trợ</span>
                     <span style={{ fontSize: '1.8rem', fontWeight: '900', color: '#d32f2f', lineHeight: 1 }}>{shopConfig.sdt}</span>
                   </div>
+                  {/* --------------------------------------------------- */}
 
                   <Link to="/tra-cuu" className="btn btn-outline-secondary rounded-pill btn-sm fw-bold">Tra đơn</Link>
                   <Link to="/cart" className="btn btn-success rounded-pill position-relative fw-bold px-3">
@@ -186,6 +190,7 @@ function App() {
             )}
 
             <Col lg={!isAdminPage ? 9 : 12}>
+              {/* --- 3. BANNER & FLASH SALE (HIỆN MỌI TRANG) VỚI STYLE TRỰC TIẾP --- */}
               {!isAdminPage && (
                 <>
                   {shopConfig?.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date() && (
