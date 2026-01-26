@@ -3,20 +3,20 @@ body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; font-size
 a { text-decoration: none; color: inherit; transition: 0.2s; }
 img { max-width: 100%; height: auto; }
 
-/* --- 2. HEADER: LOGO & HOTLINE (FIX TO - RÕ - ĐẸP) --- */
+/* --- 2. HEADER: LOGO & HOTLINE (FIX MẠNH TAY) --- */
 .top-bar-notification { background: #b71c1c; color: white; padding: 6px 0; font-size: 12px; font-weight: 600; overflow: hidden; }
 .marquee-text { display: inline-block; white-space: nowrap; padding-left: 100%; animation: marquee 35s linear infinite; }
 @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
 /* Logo Group */
 .brand-group { 
-  display: flex; 
-  align-items: center; 
-  gap: 15px; 
+  display: flex !important; 
+  align-items: center !important; 
+  gap: 15px !important; 
 }
 .brand-logo-img { 
-  height: 70px; /* Logo to 70px */
-  width: auto; 
+  height: 75px !important; /* Tăng lên 75px để to hẳn */
+  width: auto !important; 
   object-fit: contain; 
 }
 .brand-info { 
@@ -25,16 +25,16 @@ img { max-width: 100%; height: auto; }
   justify-content: center; 
 }
 .shop-name { 
-  font-weight: 900; 
-  color: #198754; 
+  font-weight: 900 !important; 
+  color: #198754 !important; 
   text-transform: uppercase; 
-  font-size: 1.8rem; /* Tên to 1.8rem */
-  margin: 0 !important;
+  font-size: 1.8rem !important; /* Bắt buộc to */
+  margin: 0 !important; 
   line-height: 1.1;
   letter-spacing: -0.5px; 
 }
 .shop-slogan { 
-  font-size: 0.9rem; 
+  font-size: 0.9rem !important; 
   color: #d63384; 
   font-weight: 700; 
   margin: 0; 
@@ -48,13 +48,13 @@ img { max-width: 100%; height: auto; }
   display: flex; 
   flex-direction: column; 
   justify-content: center; 
-  border-left: 2px solid #dee2e6; /* Đường gạch ngăn cách */
-  padding-left: 25px; 
-  margin-left: 20px;
+  border-left: 2px solid #dee2e6 !important; 
+  padding-left: 25px !important; 
+  margin-left: 20px !important;
   height: 60px; 
 }
 .hotline-label { 
-  font-size: 12px; 
+  font-size: 12px !important; 
   font-weight: 700; 
   color: #666; 
   text-transform: uppercase; 
@@ -62,30 +62,31 @@ img { max-width: 100%; height: auto; }
   display: block;
 }
 .hotline-number { 
-  font-size: 1.8rem; /* Số to 1.8rem */
-  font-weight: 900; 
-  color: #d32f2f; 
+  font-size: 1.8rem !important; /* Bắt buộc to */
+  font-weight: 900 !important; 
+  color: #d32f2f !important; 
   line-height: 1; 
 }
 
-/* --- 3. SẢN PHẨM VỪA XEM (FIX THẲNG HÀNG) --- */
+/* --- 3. SẢN PHẨM VỪA XEM (FIX KHÔNG BỊ MÉO) --- */
 .recent-view-bar { 
   background: white; 
   border-top: 4px solid #198754; 
-  padding: 25px 0; 
+  padding: 30px 0; 
   margin-top: 40px; 
-  box-shadow: 0 -5px 10px rgba(0,0,0,0.03); 
+  box-shadow: 0 -5px 15px rgba(0,0,0,0.05); 
 }
 .recent-scroll { 
   display: flex; 
   gap: 20px; 
   overflow-x: auto; 
-  padding: 10px 5px; 
+  padding: 15px 5px; /* Tăng padding để bóng đổ không bị cắt */
   scrollbar-width: thin; 
 }
 .recent-card { 
-  flex: 0 0 auto; 
-  width: 170px; /* Rộng 170px */
+  flex: 0 0 auto !important; /* QUAN TRỌNG: Không cho co lại */
+  min-width: 180px !important; /* Cố định chiều rộng tối thiểu */
+  width: 180px !important;
   border: 1px solid #eee; 
   border-radius: 8px; 
   overflow: hidden; 
@@ -93,21 +94,21 @@ img { max-width: 100%; height: auto; }
   transition: 0.2s; 
   text-decoration: none !important; 
   color: inherit; 
-  box-shadow: 0 3px 6px rgba(0,0,0,0.05); 
+  box-shadow: 0 3px 8px rgba(0,0,0,0.05); 
 }
 .recent-card:hover { 
-  box-shadow: 0 8px 15px rgba(0,0,0,0.1); 
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15); 
   border-color: #198754; 
-  transform: translateY(-3px); 
+  transform: translateY(-5px); 
 }
 .recent-card img { 
   width: 100%; 
-  height: 130px; 
+  height: 140px !important; /* Ảnh cao hơn */
   object-fit: cover; 
   border-bottom: 1px solid #f1f1f1; 
 }
 .recent-card-body { 
-  padding: 10px; 
+  padding: 12px; 
   text-align: center; 
 }
 .recent-name { 
@@ -120,7 +121,7 @@ img { max-width: 100%; height: auto; }
   color: #333; 
 }
 .recent-price { 
-  font-size: 14px; 
+  font-size: 15px !important; 
   font-weight: 800; 
   color: #d32f2f; 
 }
