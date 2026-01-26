@@ -164,7 +164,7 @@ function App() {
             )}
 
             <Col lg={!isAdminPage ? 9 : 12}>
-              {/* --- FIX: BANNER HIỆN Ở CẢ TRANG CHỦ VÀ TRANG DANH MỤC --- */}
+              {/* --- ĐIỀU KIỆN HIỂN THỊ BANNER: Trang chủ HOẶC Trang Danh mục --- */}
               {!isAdminPage && (location.pathname === '/' || location.pathname.includes('/danh-muc')) && banners.length > 0 && 
                 <div className="mb-4 rounded overflow-hidden shadow-sm">
                   <Slider {...sliderSettings}>

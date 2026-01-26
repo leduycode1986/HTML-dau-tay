@@ -3,7 +3,7 @@ body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; font-size
 a { text-decoration: none; color: inherit; transition: 0.2s; }
 img { max-width: 100%; height: auto; }
 
-/* --- 2. HEADER: LOGO & HOTLINE (FIX MẠNH TAY) --- */
+/* --- 2. HEADER: LOGO & HOTLINE (FIX TO - RÕ - ĐẸP) --- */
 .top-bar-notification { background: #b71c1c; color: white; padding: 6px 0; font-size: 12px; font-weight: 600; overflow: hidden; }
 .marquee-text { display: inline-block; white-space: nowrap; padding-left: 100%; animation: marquee 35s linear infinite; }
 @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
@@ -80,7 +80,7 @@ img { max-width: 100%; height: auto; }
   display: flex; 
   gap: 20px; 
   overflow-x: auto; 
-  padding: 15px 5px; /* Tăng padding để bóng đổ không bị cắt */
+  padding: 15px 5px; 
   scrollbar-width: thin; 
 }
 .recent-card { 
