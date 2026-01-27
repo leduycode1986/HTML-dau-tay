@@ -22,7 +22,6 @@ import FlashSale from './FlashSale';
 import Checkout from './Checkout'; 
 import { toSlug } from './utils';
 
-// --- COMPONENT CHÍNH (Đã gộp Header vào đây để tránh lỗi file) ---
 function Store() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,7 +30,19 @@ function Store() {
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [dsDonHang, setDsDonHang] = useState([]);
   const [banners, setBanners] = useState([]); 
-  const [gioHang, setGioHang] = useState(() => JSON.parse(localStorage.getItem('cart') || '[]'));
+  
+  // --- FIX LỖI TRẮNG TRANG: Xử lý giỏ hàng an toàn ---
+  const [gioHang, setGioHang] = useState(() => {
+    try {
+      const localData = localStorage.getItem('cart');
+      return localData ? JSON.parse(localData) : [];
+    } catch (error) {
+      console.error("Lỗi dữ liệu giỏ hàng, đã reset:", error);
+      return []; // Nếu lỗi, trả về giỏ hàng rỗng để web không bị sập
+    }
+  });
+  // ----------------------------------------------------
+
   const [tuKhoa, setTuKhoa] = useState('');
   const [shopConfig, setShopConfig] = useState({ 
     tenShop: 'MaiVang Shop', slogan: '', logo: '', diaChi: '', sdt: '', openingHours: '', topBarText: '', flashSaleEnd: '' 
@@ -71,9 +82,13 @@ function Store() {
 
   useEffect(() => {
     if(dsSanPham.length > 0) {
-      const recentIds = JSON.parse(localStorage.getItem('recent') || '[]');
-      const found = recentIds.map(id => dsSanPham.find(p => p.id === id)).filter(Boolean);
-      setRecentProducts(found);
+      try {
+        const recentIds = JSON.parse(localStorage.getItem('recent') || '[]');
+        const found = recentIds.map(id => dsSanPham.find(p => p.id === id)).filter(Boolean);
+        setRecentProducts(found);
+      } catch (e) {
+        localStorage.removeItem('recent'); // Xóa dữ liệu lỗi nếu có
+      }
     }
   }, [dsSanPham, location.pathname]);
 
@@ -101,7 +116,7 @@ function Store() {
 
       {!isAdminPage && (
         <>
-          {/* --- HEADER GIAO DIỆN MỚI (INLINE STYLE) --- */}
+          {/* HEADER GIAO DIỆN MỚI (Đã tích hợp sẵn) */}
           <div className="top-bar-notification" style={{background: '#b71c1c', color: 'white', padding: '8px 0', fontSize: '13px', fontWeight: 'bold', textAlign:'center'}}>
             <span>{shopConfig.topBarText}</span>
             {shopConfig.openingHours && <span className="ms-3"><i className="fa-regular fa-clock"></i> Mở cửa: {shopConfig.openingHours}</span>}
@@ -150,7 +165,6 @@ function Store() {
               </Navbar.Collapse>
             </Container>
           </Navbar>
-          {/* ------------------------------------------- */}
         </>
       )}
 
@@ -184,6 +198,7 @@ function Store() {
             <Col lg={!isAdminPage ? 9 : 12}>
               {!isAdminPage && (
                 <>
+                  {/* Banner Flash Sale */}
                   {shopConfig?.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date() && (
                     <div className="text-center shadow-sm rounded-3 mb-4" style={{ background: 'linear-gradient(135deg, #d32f2f, #ff5252)', color: 'white', padding: '25px 0', borderBottom: '4px solid #b71c1c' }}>
                       <Container>
@@ -201,6 +216,7 @@ function Store() {
                     </div>
                   )}
 
+                  {/* Banner Slider */}
                   {banners.length > 0 && (
                     <div className="mb-4 rounded overflow-hidden shadow-sm">
                       <Slider {...sliderSettings}>
@@ -228,30 +244,6 @@ function Store() {
         </Container>
       </div>
 
-      {!isAdminPage && recentProducts.length > 0 && (
-        <div style={{ background: 'white', borderTop: '4px solid #198754', padding: '30px 0', marginTop: '40px', boxShadow: '0 -5px 15px rgba(0,0,0,0.05)' }}>
-          <Container>
-            <h5 className="fw-bold text-secondary mb-3 small text-uppercase" style={{letterSpacing:1}}>
-              <i className="fa-solid fa-clock-rotate-left me-2"></i> Sản phẩm bạn vừa xem
-            </h5>
-            <div style={{ display: 'flex', gap: '20px', overflowX: 'auto', padding: '15px 5px', scrollbarWidth: 'thin' }}>
-              {recentProducts.map(sp => (
-                <Link key={sp.id} to={`/san-pham/${sp.slug || toSlug(sp.ten)}`} className="text-decoration-none" style={{ 
-                    flex: '0 0 auto', width: '180px', minWidth: '180px', border: '1px solid #eee', borderRadius: '8px', 
-                    overflow: 'hidden', background: 'white', boxShadow: '0 3px 8px rgba(0,0,0,0.05)', color: 'inherit' 
-                  }}>
-                  <img src={sp.anh} alt={sp.ten} style={{ width: '100%', height: '140px', objectFit: 'cover', borderBottom: '1px solid #f1f1f1' }} />
-                  <div style={{ padding: '12px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '13px', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '5px', color: '#333' }}>{sp.ten}</div>
-                    <div style={{ fontSize: '15px', fontWeight: '800', color: '#d32f2f' }}>{sp.giaBan?.toLocaleString()}₫</div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </Container>
-        </div>
-      )}
-
       {!isAdminPage && (
         <footer className="footer-section">
           <Container><Row><Col md={4}><h5 className="footer-title">{shopConfig.tenShop}</h5><p className="small text-secondary">{shopConfig.gioiThieu}</p><p>🏠 {shopConfig.diaChi}</p><p>☎️ {shopConfig.sdt}</p></Col><Col md={3}><h5 className="footer-title">VỀ CHÚNG TÔI</h5><Link to="/" className="footer-link">Trang chủ</Link><Link to="/flash-sale" className="footer-link">Khuyến mãi</Link><Link to="/tra-cuu" className="footer-link">Tra cứu đơn</Link></Col><Col md={3}><h5 className="footer-title">HỖ TRỢ</h5><Link to="#" className="footer-link">Chính sách đổi trả</Link><Link to="#" className="footer-link">Hướng dẫn mua hàng</Link></Col><Col md={2}><h5 className="footer-title">KẾT NỐI</h5>{shopConfig.linkFacebook && <a href={shopConfig.linkFacebook} target="_blank" className="d-block mb-2">Facebook</a>}{shopConfig.zalo && <a href={`https://zalo.me/${shopConfig.zalo}`} target="_blank">Zalo OA</a>}</Col></Row></Container>
@@ -261,4 +253,4 @@ function Store() {
     </div>
   );
 }
-export default Store; // Xuất Store
+export default Store;
