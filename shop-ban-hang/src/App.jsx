@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'; // Bỏ Link ở đây vì đã chuyển sang Header
 import { db, auth } from './firebase'; 
 import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col } from 'react-bootstrap';
+import { Container, Row, Col, Button } from 'react-bootstrap'; // Bỏ Navbar, Nav, Form
 import { ToastContainer, toast } from 'react-toastify'; 
 import Slider from "react-slick"; 
 import 'react-toastify/dist/ReactToastify.css'; 
@@ -11,6 +11,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import AOS from 'aos'; import 'aos/dist/aos.css';
 
+import Header from './Header'; // <--- IMPORT FILE HEADER MỚI
 import Home from './Home';
 import ProductDetail from './ProductDetail';
 import Cart from './Cart';
@@ -21,6 +22,7 @@ import OrderLookup from './OrderLookup';
 import FlashSale from './FlashSale'; 
 import Checkout from './Checkout'; 
 import { toSlug } from './utils';
+import { Link } from 'react-router-dom'; // Import lại Link để dùng cho Recent Product
 
 function App() {
   const navigate = useNavigate();
@@ -36,7 +38,6 @@ function App() {
     tenShop: 'MaiVang Shop', slogan: '', logo: '', diaChi: '', sdt: '', openingHours: '', topBarText: '', flashSaleEnd: '' 
   });
   const [currentUser, setCurrentUser] = useState(null);
-  const [userData, setUserData] = useState(null); 
   const [showTopBtn, setShowTopBtn] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [recentProducts, setRecentProducts] = useState([]);
@@ -51,7 +52,7 @@ function App() {
     const unsubDH = onSnapshot(collection(db, "donHang"), sn => setDsDonHang(sn.docs.map(d=>({id:d.id,...d.data()}))));
     const unsubBanner = onSnapshot(collection(db, "banners"), sn => setBanners(sn.docs.map(d=>({id:d.id,...d.data()}))));
     const unsubConfig = onSnapshot(doc(db, "cauHinh", "thongTinChung"), d => { if(d.exists()) setShopConfig(d.data()); });
-    const unsubAuth = onAuthStateChanged(auth, async u => { setCurrentUser(u); if(u) { const d = await getDoc(doc(db,"users",u.uid)); setUserData(d.exists()?d.data():{}); } else setUserData(null); });
+    const unsubAuth = onAuthStateChanged(auth, async u => { setCurrentUser(u); });
     
     const scrollH = () => setShowTopBtn(window.scrollY > 300); window.addEventListener('scroll', scrollH);
     return () => { unsubSP(); unsubDM(); unsubDH(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
@@ -99,67 +100,16 @@ function App() {
       <ToastContainer autoClose={2000} />
       <div className={`back-to-top ${showTopBtn ? 'visible' : ''}`} onClick={() => window.scrollTo({top:0, behavior:'smooth'})}><i className="fa-solid fa-arrow-up"></i></div>
 
+      {/* --- SỬ DỤNG COMPONENT HEADER MỚI --- */}
       {!isAdminPage && (
-        <>
-          <div className="top-bar-notification" style={{background: '#b71c1c', color: 'white', padding: '6px 0', fontSize: '12px', fontWeight: '600'}}><div className="marquee-text"><span className="me-5">{shopConfig.topBarText}</span>{shopConfig.openingHours && <span><i className="fa-regular fa-clock"></i> Mở cửa: {shopConfig.openingHours}</span>}</div></div>
-          
-          <Navbar bg="white" expand="lg" className="sticky-top shadow-sm py-2" style={{zIndex: 100}}>
-            <Container>
-              <Navbar.Brand as={Link} to="/" className="me-4 text-decoration-none">
-                
-                {/* --- 1. SỬA GIAO DIỆN LOGO TRỰC TIẾP TẠI ĐÂY (INLINE STYLE) --- */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                  {shopConfig.logo ? 
-                    <img src={shopConfig.logo} alt="Logo" style={{ height: '75px', width: 'auto', objectFit: 'contain' }} /> 
-                    : <span className="fs-1">🦁</span>}
-                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', lineHeight: '1.1' }}>
-                    <h1 style={{ fontSize: '1.8rem', fontWeight: '900', color: '#198754', textTransform: 'uppercase', margin: 0, letterSpacing: '-0.5px' }}>
-                      {shopConfig.tenShop}
-                    </h1>
-                    <span style={{ fontSize: '0.9rem', color: '#d63384', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                      {shopConfig.slogan}
-                    </span>
-                  </div>
-                </div>
-                {/* ----------------------------------------------------------- */}
-
-              </Navbar.Brand>
-
-              <Navbar.Toggle />
-              <Navbar.Collapse>
-                <Form className="d-flex flex-grow-1 mx-lg-4 my-2 my-lg-0" onSubmit={e=>e.preventDefault()}>
-                  <div className="input-group">
-                    <Form.Control type="search" placeholder="Bạn tìm gì...?" value={tuKhoa} onChange={e=>setTuKhoa(e.target.value)} className="border-end-0 bg-light" />
-                    <Button variant="light" className="border border-start-0 bg-light"><i className="fa-solid fa-magnifying-glass text-muted"></i></Button>
-                  </div>
-                </Form>
-                <Nav className="align-items-center gap-3">
-                  
-                  {/* --- 2. SỬA GIAO DIỆN HOTLINE TRỰC TIẾP TẠI ĐÂY --- */}
-                  <div className="d-none d-lg-flex" style={{ textAlign: 'right', flexDirection: 'column', justifyContent: 'center', borderLeft: '2px solid #dee2e6', paddingLeft: '25px', marginLeft: '20px', height: '60px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#666', textTransform: 'uppercase', marginBottom: '2px', display: 'block' }}>Tổng đài hỗ trợ</span>
-                    <span style={{ fontSize: '1.8rem', fontWeight: '900', color: '#d32f2f', lineHeight: 1 }}>{shopConfig.sdt}</span>
-                  </div>
-                  {/* --------------------------------------------------- */}
-
-                  <Link to="/tra-cuu" className="btn btn-outline-secondary rounded-pill btn-sm fw-bold">Tra đơn</Link>
-                  <Link to="/cart" className="btn btn-success rounded-pill position-relative fw-bold px-3">
-                    Giỏ <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{gioHang.reduce((a,b)=>a+b.soLuong,0)}</span>
-                  </Link>
-                  {currentUser ? (
-                    <Dropdown align="end">
-                      <Dropdown.Toggle variant="light" className="border-0 fw-bold"><i className="fa-solid fa-circle-user fs-4 text-secondary"></i></Dropdown.Toggle>
-                      <Dropdown.Menu>
-                        <Dropdown.Item as={Link} to="/member">Tài khoản</Dropdown.Item>
-                        <Dropdown.Item onClick={handleLogout} className="text-danger">Đăng xuất</Dropdown.Item>
-                      </Dropdown.Menu>
-                    </Dropdown>
-                  ) : <Link to="/auth" className="fw-bold text-dark ms-2">Đăng nhập</Link>}
-                </Nav>
-              </Navbar.Collapse>
-            </Container>
-          </Navbar>
-        </>
+        <Header 
+          shopConfig={shopConfig} 
+          tuKhoa={tuKhoa} 
+          setTuKhoa={setTuKhoa} 
+          gioHang={gioHang} 
+          currentUser={currentUser} 
+          handleLogout={handleLogout} 
+        />
       )}
 
       <div className="flex-grow-1 py-3" style={{background: '#f4f6f9'}}>
@@ -190,7 +140,6 @@ function App() {
             )}
 
             <Col lg={!isAdminPage ? 9 : 12}>
-              {/* --- 3. BANNER & FLASH SALE (HIỆN MỌI TRANG) VỚI STYLE TRỰC TIẾP --- */}
               {!isAdminPage && (
                 <>
                   {shopConfig?.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date() && (
