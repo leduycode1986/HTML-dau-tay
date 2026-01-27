@@ -31,23 +31,27 @@ function Store() {
   const [dsDonHang, setDsDonHang] = useState([]);
   const [banners, setBanners] = useState([]); 
   
-  // --- FIX LỖI TRẮNG TRANG: Xử lý giỏ hàng an toàn ---
+  // --- Xử lý giỏ hàng an toàn ---
   const [gioHang, setGioHang] = useState(() => {
     try {
       const localData = localStorage.getItem('cart');
       return localData ? JSON.parse(localData) : [];
     } catch (error) {
-      console.error("Lỗi dữ liệu giỏ hàng, đã reset:", error);
-      return []; // Nếu lỗi, trả về giỏ hàng rỗng để web không bị sập
+      return [];
     }
   });
-  // ----------------------------------------------------
 
   const [tuKhoa, setTuKhoa] = useState('');
   const [shopConfig, setShopConfig] = useState({ 
     tenShop: 'MaiVang Shop', slogan: '', logo: '', diaChi: '', sdt: '', openingHours: '', topBarText: '', flashSaleEnd: '' 
   });
+  
   const [currentUser, setCurrentUser] = useState(null);
+  
+  // --- ĐÂY LÀ DÒNG BỊ THIẾU GÂY LỖI TRẮNG TRANG (ĐÃ THÊM LẠI) ---
+  const [userData, setUserData] = useState(null); 
+  // -------------------------------------------------------------
+
   const [showTopBtn, setShowTopBtn] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [recentProducts, setRecentProducts] = useState([]);
@@ -62,7 +66,17 @@ function Store() {
     const unsubDH = onSnapshot(collection(db, "donHang"), sn => setDsDonHang(sn.docs.map(d=>({id:d.id,...d.data()}))));
     const unsubBanner = onSnapshot(collection(db, "banners"), sn => setBanners(sn.docs.map(d=>({id:d.id,...d.data()}))));
     const unsubConfig = onSnapshot(doc(db, "cauHinh", "thongTinChung"), d => { if(d.exists()) setShopConfig(d.data()); });
-    const unsubAuth = onAuthStateChanged(auth, async u => { setCurrentUser(u); });
+    
+    // --- Cập nhật logic lấy UserData ---
+    const unsubAuth = onAuthStateChanged(auth, async u => { 
+      setCurrentUser(u);
+      if (u) {
+        const docSnap = await getDoc(doc(db, "users", u.uid));
+        if (docSnap.exists()) setUserData(docSnap.data());
+      } else {
+        setUserData(null);
+      }
+    });
     
     const scrollH = () => setShowTopBtn(window.scrollY > 300); window.addEventListener('scroll', scrollH);
     return () => { unsubSP(); unsubDM(); unsubDH(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
@@ -86,9 +100,7 @@ function Store() {
         const recentIds = JSON.parse(localStorage.getItem('recent') || '[]');
         const found = recentIds.map(id => dsSanPham.find(p => p.id === id)).filter(Boolean);
         setRecentProducts(found);
-      } catch (e) {
-        localStorage.removeItem('recent'); // Xóa dữ liệu lỗi nếu có
-      }
+      } catch (e) { localStorage.removeItem('recent'); }
     }
   }, [dsSanPham, location.pathname]);
 
@@ -116,7 +128,6 @@ function Store() {
 
       {!isAdminPage && (
         <>
-          {/* HEADER GIAO DIỆN MỚI (Đã tích hợp sẵn) */}
           <div className="top-bar-notification" style={{background: '#b71c1c', color: 'white', padding: '8px 0', fontSize: '13px', fontWeight: 'bold', textAlign:'center'}}>
             <span>{shopConfig.topBarText}</span>
             {shopConfig.openingHours && <span className="ms-3"><i className="fa-regular fa-clock"></i> Mở cửa: {shopConfig.openingHours}</span>}
@@ -198,7 +209,6 @@ function Store() {
             <Col lg={!isAdminPage ? 9 : 12}>
               {!isAdminPage && (
                 <>
-                  {/* Banner Flash Sale */}
                   {shopConfig?.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date() && (
                     <div className="text-center shadow-sm rounded-3 mb-4" style={{ background: 'linear-gradient(135deg, #d32f2f, #ff5252)', color: 'white', padding: '25px 0', borderBottom: '4px solid #b71c1c' }}>
                       <Container>
@@ -216,7 +226,6 @@ function Store() {
                     </div>
                   )}
 
-                  {/* Banner Slider */}
                   {banners.length > 0 && (
                     <div className="mb-4 rounded overflow-hidden shadow-sm">
                       <Slider {...sliderSettings}>
@@ -243,6 +252,30 @@ function Store() {
           </Row>
         </Container>
       </div>
+
+      {!isAdminPage && recentProducts.length > 0 && (
+        <div style={{ background: 'white', borderTop: '4px solid #198754', padding: '30px 0', marginTop: '40px', boxShadow: '0 -5px 15px rgba(0,0,0,0.05)' }}>
+          <Container>
+            <h5 className="fw-bold text-secondary mb-3 small text-uppercase" style={{letterSpacing:1}}>
+              <i className="fa-solid fa-clock-rotate-left me-2"></i> Sản phẩm bạn vừa xem
+            </h5>
+            <div style={{ display: 'flex', gap: '20px', overflowX: 'auto', padding: '15px 5px', scrollbarWidth: 'thin' }}>
+              {recentProducts.map(sp => (
+                <Link key={sp.id} to={`/san-pham/${sp.slug || toSlug(sp.ten)}`} className="text-decoration-none" style={{ 
+                    flex: '0 0 auto', width: '180px', minWidth: '180px', border: '1px solid #eee', borderRadius: '8px', 
+                    overflow: 'hidden', background: 'white', boxShadow: '0 3px 8px rgba(0,0,0,0.05)', color: 'inherit' 
+                  }}>
+                  <img src={sp.anh} alt={sp.ten} style={{ width: '100%', height: '140px', objectFit: 'cover', borderBottom: '1px solid #f1f1f1' }} />
+                  <div style={{ padding: '12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '5px', color: '#333' }}>{sp.ten}</div>
+                    <div style={{ fontSize: '15px', fontWeight: '800', color: '#d32f2f' }}>{sp.giaBan?.toLocaleString()}₫</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </Container>
+        </div>
+      )}
 
       {!isAdminPage && (
         <footer className="footer-section">
