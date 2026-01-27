@@ -74,11 +74,11 @@ function OrderLookup() {
                   {order.gioHang?.map((sp, idx) => (
                     <div key={idx} className="d-flex justify-content-between small mb-1">
                       <span>{sp.ten} x {sp.soLuong}</span>
-                      <span className="fw-bold">{sp.giaBan?.toLocaleString()}₫</span>
+                      <span className="fw-bold">{sp.giaBan?.toLocaleString()}¥</span>
                     </div>
                   ))}
                 </div>
-                <div className="text-end border-top mt-2 pt-2 h5 text-danger fw-bold">Tổng: {order.tongTien?.toLocaleString()}₫</div>
+                <div className="text-end border-top mt-2 pt-2 h5 text-danger fw-bold">Tổng: {order.tongTien?.toLocaleString()}¥</div>
               </Card.Body>
             </Card>
           ))}

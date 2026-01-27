@@ -37,8 +37,8 @@ function Product({ sp, themVaoGio, openQuickView }) {
 
         <div className="mt-auto">
           <div className="d-flex align-items-center gap-2 mb-3">
-            <span className="text-danger fw-bold fs-5">{parseInt(sp.giaBan).toLocaleString()}đ</span>
-            {sp.giaGoc > sp.giaBan && <span className="text-muted text-decoration-line-through small">{parseInt(sp.giaGoc).toLocaleString()}đ</span>}
+            <span className="text-danger fw-bold fs-5">{parseInt(sp.giaBan).toLocaleString()}¥</span>
+            {sp.giaGoc > sp.giaBan && <span className="text-muted text-decoration-line-through small">{parseInt(sp.giaGoc).toLocaleString()}¥</span>}
           </div>
           <Button 
             variant="outline-success" 

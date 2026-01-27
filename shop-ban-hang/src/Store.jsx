@@ -127,50 +127,89 @@ function Store() {
       <div className={`back-to-top ${showTopBtn ? 'visible' : ''}`} onClick={() => window.scrollTo({top:0, behavior:'smooth'})}><i className="fa-solid fa-arrow-up"></i></div>
 
       {!isAdminPage && (
-        <>
-          <div className="top-bar-notification" style={{background: '#b71c1c', color: 'white', padding: '8px 0', fontSize: '13px', fontWeight: 'bold', textAlign:'center'}}>
-            <span>{shopConfig.topBarText}</span>
-            {shopConfig.openingHours && <span className="ms-3"><i className="fa-regular fa-clock"></i> Mở cửa: {shopConfig.openingHours}</span>}
-          </div>
+        <>          
+        {/* --- THANH THÔNG BÁO CHẠY (MARQUEE) --- */}
+            <div className="top-bar-notification">
+            <div className="marquee-text">
+                <span className="me-4">{shopConfig.topBarText || "Chào mừng bạn đến với Thực Phẩm Mai Vàng!"}</span>
+                
+                {/* Nếu có giờ mở cửa thì hiện thêm icon đồng hồ */}
+                {shopConfig.openingHours && (
+                <span className="mx-4">
+                    <i className="fa-regular fa-clock me-1"></i> Mở cửa: {shopConfig.openingHours}
+                </span>
+                )}                
+            </div>
+            </div>
           
           <Navbar bg="white" expand="lg" className="sticky-top shadow-sm py-3" style={{zIndex: 100, borderBottom:'3px solid #198754'}}>
             <Container>
-              <Navbar.Brand as={Link} to="/" className="me-4 text-decoration-none d-flex align-items-center gap-3">
-                {shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" style={{height:'80px', width:'auto', objectFit:'contain'}} /> : <span className="fs-1">🦁</span>}
-                <div className="d-flex flex-column justify-content-center" style={{lineHeight:1}}>
-                  <h1 style={{fontSize:'2rem', fontWeight:'900', color:'#198754', textTransform:'uppercase', margin:0}}>{shopConfig.tenShop}</h1>
-                  <span style={{fontSize:'0.9rem', color:'#d63384', fontWeight:'700', letterSpacing:'1px', textTransform:'uppercase'}}>{shopConfig.slogan}</span>
+            <Navbar.Brand as={Link} to="/" className="me-4 text-decoration-none brand-group">
+                {shopConfig.logo ? (<img src={shopConfig.logo} alt="Logo" className="brand-logo-img" />) : 
+                (<span className="fs-1">🦁</span>)}
+                <div className="brand-info">
+                <h1 className="shop-name">{shopConfig.tenShop}</h1>
+                <span className="shop-slogan">{shopConfig.slogan}</span>
                 </div>
-              </Navbar.Brand>
-
+            </Navbar.Brand>
               <Navbar.Toggle />
               <Navbar.Collapse>
-                <Form className="d-flex flex-grow-1 mx-lg-4 my-2 my-lg-0" onSubmit={e=>e.preventDefault()}>
-                  <div className="input-group">
-                    <Form.Control type="search" placeholder="Bạn tìm gì...?" value={tuKhoa} onChange={e=>setTuKhoa(e.target.value)} className="border-end-0 bg-light p-2" />
-                    <Button variant="light" className="border border-start-0 bg-light"><i className="fa-solid fa-magnifying-glass"></i></Button>
-                  </div>
+                <Form className="d-flex flex-grow-1 mx-lg-5 my-2 my-lg-0 search-form-custom" onSubmit={(e) => {
+                    e.preventDefault();
+                    navigate('/'); // QUAN TRỌNG: Bấm tìm là phải về Trang chủ mới thấy kết quả
+                }}>
+                <div className="input-group">
+                    <Form.Control 
+                    type="search" 
+                    placeholder="Tìm sản phẩm...?" 
+                    value={tuKhoa} 
+                    onChange={e => setTuKhoa(e.target.value)} 
+                    className="search-input" 
+                    />
+                    <Button variant="success" type="submit" className="search-btn">
+                    <i className="fa-solid fa-magnifying-glass"></i>
+                    </Button>
+                </div>
                 </Form>
-                
-                <Nav className="align-items-center gap-3">
-                  <div className="d-none d-lg-flex header-hotline-box">
-                    <span className="hotline-label">Hotline</span>
+                    <Nav className="align-items-center gap-3">
+                    <div className="d-none d-lg-flex header-hotline-box">
+                    <div className="hotline-icon"><i className="fa-solid fa-phone"></i></div>
                     <span className="hotline-number">{shopConfig.sdt}</span>
                   </div>
-                  <Link to="/tra-cuu" className="btn btn-outline-secondary rounded-pill fw-bold">Tra đơn</Link>
-                  <Link to="/cart" className="btn btn-success rounded-pill position-relative fw-bold px-3">
-                    Giỏ <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{gioHang.reduce((a,b)=>a+b.soLuong,0)}</span>
-                  </Link>
+                  {/* Nút Tra Đơn: Thêm icon xe tải, dùng style viền xanh */}
+                    <Link to="/tra-cuu" className="btn-header-action btn-lookup">
+                        <i className="fa-solid fa-truck-fast"></i> Tra đơn
+                    </Link>
+                    <Link to="/cart" className="btn-header-action btn-cart-header px-4">
+                        <i className="fa-solid fa-cart-shopping"></i> Giỏ
+                        {/* Số lượng món: Đã style lại hình tròn đỏ nổi bật */}
+                        <span className="cart-badge">
+                        {gioHang.reduce((a,b)=>a+b.soLuong,0)}
+                        </span>
+                    </Link>
                   
+                  {/* Nút Tài Khoản / Đăng Nhập */}
                   {currentUser ? (
                     <Dropdown align="end">
-                      <Dropdown.Toggle variant="light" className="border-0 fw-bold"><i className="fa-solid fa-circle-user fs-4 text-secondary"></i></Dropdown.Toggle>
-                      <Dropdown.Menu>
-                        <Dropdown.Item as={Link} to="/member">Tài khoản</Dropdown.Item>
-                        <Dropdown.Item onClick={handleLogout} className="text-danger">Đăng xuất</Dropdown.Item>
-                      </Dropdown.Menu>
+                    <Dropdown.Toggle variant="light" className="border-0 fw-bold d-flex align-items-center gap-2" style={{outline:'none', boxShadow:'none'}}>
+                        <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" width="35" alt="User" />
+                        <span className="d-none d-xl-block small text-start">
+                        <div style={{fontSize:'11px', color:'#999'}}>Xin chào,</div>
+                        <div className="text-success">{currentUser.displayName || 'Thành viên'}</div>
+                        </span>
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu>
+                        <Dropdown.Item as={Link} to="/member"><i className="fa-solid fa-user-gear me-2"></i> Tài khoản của tôi</Dropdown.Item>
+                        <Dropdown.Divider />
+                        <Dropdown.Item onClick={handleLogout} className="text-danger fw-bold"><i className="fa-solid fa-right-from-bracket me-2"></i> Đăng xuất</Dropdown.Item>
+                    </Dropdown.Menu>
                     </Dropdown>
-                  ) : <Link to="/auth" className="fw-bold text-dark ms-2">Đăng nhập</Link>}
+                ) : (
+                    // Nút Đăng Nhập: Thay vì chữ text đơn điệu, giờ là nút màu đỏ
+                    <Link to="/auth" className="btn-header-action btn-login-header">
+                    <i className="fa-regular fa-user"></i> Đăng nhập
+                    </Link>
+                )}
                 </Nav>
               </Navbar.Collapse>
             </Container>
@@ -206,35 +245,71 @@ function Store() {
             )}
 
             <Col lg={!isAdminPage ? 9 : 12}>
-              {!isAdminPage && (
-                <>
-                  {shopConfig?.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date() && (
-                    <div className="text-center shadow-sm rounded-3 mb-4" style={{ background: 'linear-gradient(135deg, #d32f2f, #ff5252)', color: 'white', padding: '25px 0', borderBottom: '4px solid #b71c1c' }}>
-                      <Container>
-                        <h2 style={{ fontWeight: '800', fontSize: '1.8rem', textTransform: 'uppercase', marginBottom: '15px', textShadow: '2px 2px 4px rgba(0,0,0,0.2)' }}>
-                          <i className="fa-solid fa-bolt fa-shake"></i> FLASH SALE
-                        </h2>
-                        <div className="d-flex justify-content-center gap-3 align-items-center">
-                          <div className="time-box" style={{ width: '45px', height: '45px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.4)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', borderRadius: '6px' }}>{String(timeLeft.d).padStart(2,'0')}</div>:
-                          <div className="time-box" style={{ width: '45px', height: '45px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.4)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', borderRadius: '6px' }}>{String(timeLeft.h).padStart(2,'0')}</div>:
-                          <div className="time-box" style={{ width: '45px', height: '45px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.4)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', borderRadius: '6px' }}>{String(timeLeft.m).padStart(2,'0')}</div>:
-                          <div className="time-box bg-white text-danger border-0" style={{ width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', borderRadius: '6px' }}>{String(timeLeft.s).padStart(2,'0')}</div>
+             {/* --- KHU VỰC BANNER & FLASH SALE (CLEAN CODE) --- */}
+            {!isAdminPage && (
+            <div className="mb-4">
+                {(() => {
+                const isFlashSaleActive = shopConfig?.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date();
+                
+                return (
+                    <Row className="g-3">
+                    
+                    {/* 1. SLIDER BANNER */}
+                    {banners.length > 0 && (
+                        <Col lg={isFlashSaleActive ? 8 : 12} md={12}>
+                        <div className="banner-slider-box">
+                            <Slider {...sliderSettings}>
+                            {banners.map(b => (
+                                <Link key={b.id} to={b.link || '#'}>
+                                <img src={b.img} className="banner-img-fixed" alt="Banner" />
+                                </Link>
+                            ))}
+                            </Slider>
                         </div>
-                        <Button variant="light" className="mt-4 rounded-pill fw-bold text-danger px-4" onClick={()=>navigate('/flash-sale')}>XEM TẤT CẢ</Button>
-                      </Container>
-                    </div>
-                  )}
+                        </Col>
+                    )}
 
-                  {banners.length > 0 && (
-                    <div className="mb-4 rounded overflow-hidden shadow-sm">
-                      <Slider {...sliderSettings}>
-                        {banners.map(b=><Link key={b.id} to={b.link||'#'}><img src={b.img} className="w-100" style={{height:320, objectFit:'cover'}}/></Link>)}
-                      </Slider>
-                    </div>
-                  )}
-                </>
-              )}
-              
+                    {/* 2. FLASH SALE BOX (Bên phải) */}
+                    {isFlashSaleActive && (
+                        <Col lg={banners.length > 0 ? 4 : 12} md={12}>
+                        <div className="flash-sale-side-box">
+                            {/* Icon nền trang trí */}
+                            <i className="fa-solid fa-bolt flash-bg-icon"></i>
+
+                            <h3 className="flash-side-title">
+                            <i className="fa-solid fa-bolt fa-shake me-2 text-warning"></i>FLASH SALE
+                            </h3>
+                            
+                            <p className="small text-white-50 mb-3">Kết thúc sau</p>
+
+                            {/* Bộ đếm giờ */}
+                            <div className="d-flex gap-2 mb-3">
+                            {[
+                                { val: timeLeft.d, label: 'Ngày' }, 
+                                { val: timeLeft.h, label: 'Giờ' }, 
+                                { val: timeLeft.m, label: 'Phút' }, 
+                                { val: timeLeft.s, label: 'Giây' }
+                            ].map((item, idx) => (
+                                <div key={idx} className="text-center">
+                                <div className="countdown-box-sm">
+                                    {String(item.val).padStart(2,'0')}
+                                </div>
+                                <div className="countdown-label-sm">{item.label}</div>
+                                </div>
+                            ))}
+                            </div>
+
+                            <Button variant="light" size="sm" className="rounded-pill fw-bold text-danger px-4 shadow-sm" onClick={() => navigate('/flash-sale')}>
+                            XEM TẤT CẢ <i className="fa-solid fa-arrow-right ms-1"></i>
+                            </Button>
+                        </div>
+                        </Col>
+                    )}
+                    </Row>
+                );
+                })()}
+            </div>
+            )}
               <Routes>
                 <Route path="/" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
                 <Route path="/danh-muc/:slug" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
@@ -251,31 +326,36 @@ function Store() {
           </Row>
         </Container>
       </div>
-
-      {!isAdminPage && recentProducts.length > 0 && (
-        <div style={{ background: 'white', borderTop: '4px solid #198754', padding: '30px 0', marginTop: '40px', boxShadow: '0 -5px 15px rgba(0,0,0,0.05)' }}>
-          <Container>
-            <h5 className="fw-bold text-secondary mb-3 small text-uppercase" style={{letterSpacing:1}}>
-              <i className="fa-solid fa-clock-rotate-left me-2"></i> Sản phẩm bạn vừa xem
+      {/* --- KHU VỰC SẢN PHẨM VỪA XEM (ĐÃ LÀM ĐẸP) --- */}
+        {!isAdminPage && recentProducts.length > 0 && (
+        <div className="recent-view-section">
+            <Container>
+            <h5 className="recent-title">
+                <i className="fa-solid fa-clock-rotate-left"></i> Sản phẩm bạn vừa xem
             </h5>
-            <div style={{ display: 'flex', gap: '20px', overflowX: 'auto', padding: '15px 5px', scrollbarWidth: 'thin' }}>
-              {recentProducts.map(sp => (
-                <Link key={sp.id} to={`/san-pham/${sp.slug || toSlug(sp.ten)}`} className="text-decoration-none" style={{ 
-                    flex: '0 0 auto', width: '180px', minWidth: '180px', border: '1px solid #eee', borderRadius: '8px', 
-                    overflow: 'hidden', background: 'white', boxShadow: '0 3px 8px rgba(0,0,0,0.05)', color: 'inherit' 
-                  }}>
-                  <img src={sp.anh} alt={sp.ten} style={{ width: '100%', height: '140px', objectFit: 'cover', borderBottom: '1px solid #f1f1f1' }} />
-                  <div style={{ padding: '12px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '13px', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '5px', color: '#333' }}>{sp.ten}</div>
-                    <div style={{ fontSize: '15px', fontWeight: '800', color: '#d32f2f' }}>{sp.giaBan?.toLocaleString()}₫</div>
-                  </div>
+            
+            <div className="recent-list-scroll">
+                {recentProducts.map(sp => (
+                <Link key={sp.id} to={`/san-pham/${sp.slug || toSlug(sp.ten)}`} className="recent-card">
+                    
+                    {/* Ảnh sản phẩm */}
+                    <img src={sp.anh} alt={sp.ten} className="recent-card-img" />
+                    
+                    {/* Tên và Giá */}
+                    <div className="recent-card-body">
+                    <div className="recent-card-name" title={sp.ten}>{sp.ten}</div>
+                    <div className="recent-card-price">
+                    {sp.giaBan?.toLocaleString()}
+                    {/* Đổi lại thành Yên Nhật theo đúng yêu cầu */}
+                    <span className="currency-symbol">¥</span>
+                    </div>
+                    </div>                    
                 </Link>
-              ))}
+                ))}
             </div>
-          </Container>
+            </Container>
         </div>
-      )}
-
+        )}
       {!isAdminPage && (
         <footer className="footer-section">
           <Container><Row><Col md={4}><h5 className="footer-title">{shopConfig.tenShop}</h5><p className="small text-secondary">{shopConfig.gioiThieu}</p><p>🏠 {shopConfig.diaChi}</p><p>☎️ {shopConfig.sdt}</p></Col><Col md={3}><h5 className="footer-title">VỀ CHÚNG TÔI</h5><Link to="/" className="footer-link">Trang chủ</Link><Link to="/flash-sale" className="footer-link">Khuyến mãi</Link><Link to="/tra-cuu" className="footer-link">Tra cứu đơn</Link></Col><Col md={3}><h5 className="footer-title">HỖ TRỢ</h5><Link to="#" className="footer-link">Chính sách đổi trả</Link><Link to="#" className="footer-link">Hướng dẫn mua hàng</Link></Col><Col md={2}><h5 className="footer-title">KẾT NỐI</h5>{shopConfig.linkFacebook && <a href={shopConfig.linkFacebook} target="_blank" className="d-block mb-2">Facebook</a>}{shopConfig.zalo && <a href={`https://zalo.me/${shopConfig.zalo}`} target="_blank">Zalo OA</a>}</Col></Row></Container>

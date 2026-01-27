@@ -64,22 +64,6 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
     <Container fluid className="p-0">
       <Row className="g-0"><Col xs={12} className="p-3">
         
-        {/* --- ĐÃ SỬA: ĐƯA BANNER FLASH SALE RA NGOÀI ĐỂ HIỆN MỌI TRANG --- */}
-        {shopConfig?.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date() && (
-          <div className="flash-sale-hero text-center shadow-sm rounded-3 mb-4">
-            <Container>
-              <h2 className="flash-sale-title"><i className="fa-solid fa-bolt fa-shake"></i> FLASH SALE</h2>
-              <div className="d-flex justify-content-center gap-3 align-items-center">
-                <div className="time-box">{String(timeLeft.d).padStart(2,'0')}</div>:
-                <div className="time-box">{String(timeLeft.h).padStart(2,'0')}</div>:
-                <div className="time-box">{String(timeLeft.m).padStart(2,'0')}</div>:
-                <div className="time-box bg-white text-danger border-0">{String(timeLeft.s).padStart(2,'0')}</div>
-              </div>
-              <Button variant="light" className="mt-4 rounded-pill fw-bold text-danger px-4" onClick={()=>navigate('/flash-sale')}>XEM TẤT CẢ</Button>
-            </Container>
-          </div>
-        )}
-
         {!slug && (
           <>
             <ProductSlider title="SẢN PHẨM BÁN CHẠY" icon="🔥" products={safeDS.filter(sp => sp.isBanChay)} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />

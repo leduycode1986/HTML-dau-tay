@@ -1,56 +1,346 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;900&display=swap');
+
 /* --- 1. BASE --- */
+/* (Các code cũ bên dưới giữ nguyên) */
 body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; font-size: 14px; overflow-x: hidden; }
 a { text-decoration: none; color: inherit; transition: 0.2s; }
 img { max-width: 100%; height: auto; }
 
-/* --- 2. HEADER: LOGO & HOTLINE (FIX MẠNH TAY) --- */
-.top-bar-notification { background: #b71c1c; color: white; padding: 6px 0; font-size: 12px; font-weight: 600; overflow: hidden; }
-.marquee-text { display: inline-block; white-space: nowrap; padding-left: 100%; animation: marquee 35s linear infinite; }
-@keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+/* --- 2. HEADER: THANH THÔNG BÁO CHẠY --- */
+.top-bar-notification {
+  background: #b71c1c;      /* Nền đỏ đậm */
+  color: white;             /* Chữ trắng */
+  padding: 9px 0;           /* Độ cao vừa phải */
+  font-size: 13px;          /* Cỡ chữ dễ đọc */
+  font-weight: 700;         /* Chữ đậm */
+  overflow: hidden;         /* Ẩn phần chữ chạy ra ngoài khung */
+  position: relative;
+  border-bottom: 1px solid rgba(255,255,255,0.1); /* Đường kẻ mờ nhẹ bên dưới cho sang */
+}
 
-/* Logo Group */
-.brand-group { display: flex !important; align-items: center !important; gap: 15px !important; }
-.brand-logo-img { height: 75px !important; width: auto !important; object-fit: contain; }
-.brand-info { display: flex; flex-direction: column; justify-content: center; line-height: 1.1; }
-.shop-name { font-weight: 900 !important; color: #198754 !important; text-transform: uppercase; font-size: 1.5rem !important; margin: 0 !important; letter-spacing: -0.5px; }
-.shop-slogan { font-size: 0.9rem !important; color: #d8ef08; font-weight: 700; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+/* Khung chứa nội dung chạy */
+.marquee-text {
+  display: inline-block;
+  white-space: nowrap;      /* Không cho xuống dòng */
+  padding-left: 100%;       /* Bắt đầu chạy từ tít bên phải màn hình */
+  animation: marquee 30s linear infinite; /* Chạy đều, lặp lại vô tận, tốc độ 30s (càng to càng chậm) */
+}
+
+/* Định nghĩa chuyển động */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); } /* Dịch chuyển sang trái 100% */
+}
+
+/* --- CẬP NHẬT LOGO & TÊN SHOP (PHIÊN BẢN PRO) --- */
+
+/* 1. Nhóm chứa Logo + Tên */
+.brand-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 15px !important;
+}
+
+/* 2. Ảnh Logo: Hình tròn (Circular) như con dấu */
+.brand-logo-img {
+  height: 90px !important;        /* Tăng kích thước lên xíu cho rõ */
+  width: 90px !important;         /* Bắt buộc Chiều rộng = Chiều cao để thành hình tròn */
+  object-fit: contain !important; /* Giúp logo nằm gọn trong hình tròn, không bị cắt */
+  
+  border-radius: 50% !important;  /* Bí quyết tạo hình tròn là đây */
+  background-color: #ffffff !important; /* Nền trắng sạch sẽ */
+  padding: 8px !important;        /* Khoảng cách để logo không bị dính sát mép */
+  
+  /* Tạo hiệu ứng "ẩn" và nổi nhẹ */
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08) !important; 
+  border: 0.5px solid #f1f1f1 !important; /* Viền siêu mỏng để định hình */
+  
+  /*transition: all 0.5s ease !important; Hiệu ứng chuyển động mượt mà */
+}
+
+/* Hiệu ứng khi di chuột vào Logo: Xoay nhẹ rất vui mắt */
+.brand-logo-img:hover {
+  transform: rotate(360deg); /* Xoay 1 vòng tròn */
+  box-shadow: 0 8px 20px rgba(25, 135, 84, 0.2) !important; /* Bóng chuyển màu xanh */
+  border-color: #198754 !important; /* Viền chuyển xanh */
+}
+
+/* 3. Khung chứa chữ: Căn giữa tuyệt đối */
+.brand-info {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important; /* Căn giữa theo ý bạn */
+  line-height: 1 !important;
+}
+
+/* 4. Tên Shop: Font Montserrat, Màu Gradient Xanh, Bóng mờ */
+.shop-name {
+  font-family: 'Montserrat', sans-serif !important; /* Dùng font mới */
+  font-weight: 900 !important;   /* Siêu đậm */
+  font-size: 1.4rem !important;  /* To hơn nữa cho oách */
+  text-transform: uppercase !important;
+  margin: 0 !important;
+  letter-spacing: -1px !important;
+  
+  /* Tạo màu chuyển sắc (Gradient) từ Xanh đậm sang Xanh tươi */
+  background: linear-gradient(to right, #198754, #20c997); 
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  
+  /* Bóng đổ nhẹ bên dưới giúp chữ nổi khối 3D */
+  filter: drop-shadow(0px 2px 0px rgba(0,0,0,0.1));
+}
+
+/* 5. Slogan: Nhỏ, Dãn chữ rộng (Tracking) -> Nhìn rất sang */
+.shop-slogan {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 0.6rem !important;
+  font-weight: 600 !important;
+  color: #d63384 !important;     /* Màu hồng giữ nguyên */
+  margin-top: 6px !important;
+  text-transform: uppercase !important;
+  
+  /* Kỹ thuật "Letter Spacing" giúp slogan nhìn sang trọng hơn */
+  letter-spacing: 3px !important; 
+  position: relative;
+  display: inline-block;
+}
+
+/* (Đã sửa) Thêm 2 bông hoa mai vàng 2 bên Slogan cho đúng chất "Mai Vàng" */
+.shop-slogan::before, .shop-slogan::after {
+  content: "🌼";        /* Hình hoa mai vàng (Emoji) */
+  display: inline-block;
+  font-size: 1.1rem;    /* Kích thước hoa (lớn hơn chữ xíu cho đẹp) */
+  vertical-align: sub;  /* Căn chỉnh cho hoa nằm giữa dòng chữ */
+  margin: 0 8px;        /* Khoảng cách giữa hoa và chữ */
+  opacity: 1;           /* Hiển thị rõ màu sắc */
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1)); /* Đổ bóng nhẹ cho hoa nổi lên */  
+}
 
 /* Khung chứa Hotline */
 .header-hotline-box {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-end !important; /* Căn lề phải */
+  /*display: flex !important;*/
+  display: none;
+  flex-direction: row !important;
+  align-items: center!important; /* Canh giữa */
   padding-right: 15px !important;
+  gap: 12px !important;
   border-right: 2px solid #eee !important; /* Vạch kẻ ngăn cách bên phải */
 }
-
-/* Chữ "Tổng đài hỗ trợ" */
-.hotline-label {
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  color: #666 !important;
-  text-transform: uppercase !important;
-  margin-bottom: 2px !important;
-  display: block !important;
+.hotline-icon {
+   width: 42px !important;        /* Độ rộng vòng tròn */
+    height: 42px !important;       /* Chiều cao vòng tròn */
+    background-color: #d32f2f !important; /* Nền màu đỏ */
+    color: white !important;       /* Icon màu trắng cho nổi */
+    border-radius: 50% !important; /* Bo tròn hoàn toàn */
+    
+    display: flex !important;      /* Để căn giữa icon trong vòng tròn */
+    align-items: center !important;
+    justify-content: center !important;
+    
+    font-size: 0.8rem !important;  /* Kích thước icon vừa phải */
+    box-shadow: 0 4px 10px rgba(211, 47, 47, 0.3) !important; /* Đổ bóng nhẹ cho sang */
+    animation: phone-ring 2s infinite; /* Vẫn giữ hiệu ứng rung */
+}
+/* (Tùy chọn) Hiệu ứng rung cho icon điện thoại */
+@keyframes phone-ring {
+  0% { transform: rotate(0deg); }
+  10% { transform: rotate(-10deg); }
+  20% { transform: rotate(10deg); }
+  30% { transform: rotate(-10deg); }
+  40% { transform: rotate(10deg); }
+  50% { transform: rotate(0deg); }
+  100% { transform: rotate(0deg); }
 }
 
 /* Số điện thoại (Đã chỉnh về 1.5rem cho đẹp) */
 .hotline-number {
-  font-size: 1.5rem !important;  /* Quan trọng: 1.5rem ~ 24px */
+  font-size: 1.2rem !important;    /* To hơn một xíu nữa */
   font-weight: 900 !important;
-  color: #d32f2f !important;     /* Màu đỏ */
+  color: #d32f2f !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+  letter-spacing: -0.5px !important; /* Dồn chữ lại một chút cho chặt chẽ */
+  text-shadow: 1px 1px 0px rgba(0,0,0,0.05); /* Bóng chữ mờ nhẹ */
+}
+/*THANH TÌM KIẾM (CUSTOM SEARCH BAR) --- */
+
+/* Khung bao ngoài */
+.search-form-custom {
+  max-width: 800px; /* Giới hạn chiều rộng cho đỡ bị dài ngoằng */
+  position: relative;
+}
+
+/* Ô nhập liệu (Input) */
+.search-input {
+  border: 2px solid #198754 !important; /* Viền xanh lá thương hiệu */
+  border-right: none !important;        /* Bỏ viền phải để nối liền với nút */
+  border-radius: 50px 0 0 50px !important; /* Bo tròn đầu trái */
+  padding: 10px 20px !important;        /* Tăng khoảng cách gõ chữ cho thoáng */
+  font-size: 13px !important;
+  box-shadow: none !important;          /* Bỏ bóng xanh mặc định của Bootstrap */
+  background-color: #f8f9fa !important;
+  transition: all 0.3s ease;
+}
+
+/* Hiệu ứng khi bấm vào ô nhập */
+.search-input:focus {
+  background-color: #fff !important;    /* Nền trắng sáng lên */
+  border-color: #157347 !important;     /* Viền đậm hơn chút */
+}
+
+/* Nút tìm kiếm (Button) */
+.search-btn {
+  background-color: #198754 !important; /* Nền xanh lá */
+  border: 2px solid #198754 !important; /* Viền xanh lá */
+  border-radius: 0 50px 50px 0 !important; /* Bo tròn đầu phải */
+  padding: 0 25px !important;           /* Nút to ra cho dễ bấm */
+  color: white !important;
+  transition: all 0.3s ease;
+}
+
+/* Hiệu ứng khi di chuột vào nút */
+.search-btn:hover {
+  background-color: #b71c1c !important; /* Đổi sang màu Đỏ khi hover (Tạo điểm nhấn) */
+  border-color: #b71c1c !important;
+  transform: scale(1.05);               /* Phóng to nhẹ */
+}
+
+/* --- 3. SẢN PHẨM VỪA XEM (FULL FIX: YÊN NHẬT & LAYOUT) --- */
+
+/* Khung nền */
+.recent-view-section {
+  background: #fff;
+  border-top: 4px solid #198754;
+  padding: 50px 0;
+  margin-top: 60px;
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.03);
+}
+
+/* --- SẢN PHẨM VỪA XEM (TITLE FIX) --- */
+.recent-title {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;          /* Đậm hơn nữa */
+  font-size: 1.1rem;         /* To hơn */
+  text-transform: uppercase; /* Viết hoa toàn bộ */
+  color: #212529;
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  position: relative;
+  padding-bottom: 15px;
+  letter-spacing: -0.5px;    /* Chữ sát lại chút cho hiện đại */
+}
+
+/* Icon đồng hồ */
+.recent-title i { 
+  color: #fff; 
+  font-size: 0.8rem;
+  background: linear-gradient(135deg, #198754, #20c997); /* Nền icon gradient xanh */
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;       /* Bo góc vuông mềm */
+  box-shadow: 0 4px 10px rgba(25, 135, 84, 0.3);
+}
+
+/* Gạch chân trang trí */
+.recent-title::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 80px;               /* Gạch dài hơn xíu */
+  height: 4px;
+  background: linear-gradient(to right, #198754, #20c997);
+  border-radius: 10px;
+}
+
+/* Khung cuộn ngang (Scroll Container) */
+.recent-list-scroll {
+  display: flex !important; /* Bắt buộc xếp ngang */
+  gap: 20px !important;
+  overflow-x: auto !important;
+  padding: 10px 5px 25px 5px;
+  scrollbar-width: thin;
+}
+
+/* --- QUAN TRỌNG: STYLE THẺ SẢN PHẨM (FIX LỖI ẢNH TO) --- */
+.recent-card {
+  flex: 0 0 auto !important;   /* Không được co giãn linh tinh */
+  width: 220px !important;     /* Kích thước cố định (Để không bị bung to) */
+  border: 1px solid #eee !important;
+  border-radius: 16px !important;
+  background: white !important;
+  text-decoration: none !important;
+  color: inherit !important;
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+  display: block !important;
+}
+
+/* Hiệu ứng di chuột */
+.recent-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(25, 135, 84, 0.15) !important;
+  border-color: #198754 !important;
+}
+
+/* Ảnh sản phẩm */
+.recent-card-img {
+  width: 100% !important;
+  height: 180px !important;
+  object-fit: cover !important;
+  transition: transform 0.5s;
+}
+.recent-card:hover .recent-card-img {
+  transform: scale(1.05);
+}
+
+.recent-card-body {
+  padding: 15px !important;
+  text-align: left !important;
+}
+
+/* Tên sản phẩm */
+.recent-card-name {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #333;
+  margin-bottom: 10px;
+  line-height: 1.4;
+  height: 40px; /* Giới hạn 2 dòng */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.recent-card:hover .recent-card-name { color: #198754 !important; }
+
+/* --- STYLE GIÁ TIỀN (YÊN NHẬT ¥) --- */
+.recent-card-price {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  color: #d32f2f !important;
+  display: flex !important;
+  align-items: flex-start !important; /* Treo ký hiệu lên trên */
   line-height: 1 !important;
 }
 
-/* --- 3. SẢN PHẨM VỪA XEM --- */
-.recent-view-bar { background: white; border-top: 4px solid #198754; padding: 30px 0; margin-top: 40px; box-shadow: 0 -5px 15px rgba(0,0,0,0.05); }
-.recent-scroll { display: flex; gap: 20px; overflow-x: auto; padding: 15px 5px; scrollbar-width: thin; }
-.recent-card { flex: 0 0 auto !important; width: 180px !important; border: 1px solid #eee; border-radius: 8px; overflow: hidden; background: white; transition: 0.2s; box-shadow: 0 3px 8px rgba(0,0,0,0.05); }
-.recent-card:hover { box-shadow: 0 8px 20px rgba(0,0,0,0.15); border-color: #198754; transform: translateY(-5px); }
-.recent-card img { width: 100%; height: 140px !important; object-fit: cover; border-bottom: 1px solid #f1f1f1; }
-.recent-card-body { padding: 12px; text-align: center; }
-.recent-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; color: #333; }
-.recent-price { font-size: 15px !important; font-weight: 800; color: #d32f2f; }
+.currency-symbol {
+  font-size: 13px !important; /* Nhỏ hơn số một chút */
+  margin-top: 0px !important;
+  margin-left: 2px !important;
+  font-weight: 700 !important;
+  text-decoration: none !important; /* Không gạch chân */
+}
 
 /* --- 4. CÁC PHẦN KHÁC --- */
 .product-card { background: white; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; transition: 0.3s; height: 100%; display: flex; flex-direction: column; position: relative; }
@@ -80,3 +370,342 @@ img { max-width: 100%; height: auto; }
 .submenu { background: #f8f9fa; border-left: 4px solid #198754; }
 .submenu a { display: block; padding: 8px 15px 8px 25px; font-size: 13px; color: #666; border-bottom: 1px dashed #eee; }
 .submenu a:hover { color: #198754; background: white; }
+/* --- 5. CÁC NÚT CHỨC NĂNG HEADER (ACTION BUTTONS) --- */
+
+/* Class chung cho các nút trên Header */
+.btn-header-action {
+  border-radius: 50px !important;   /* Bo tròn hình viên thuốc */
+  font-weight: 700 !important;      /* Chữ đậm */
+  padding: 8px 20px !important;     /* Kích thước vừa vặn */
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;              /* Khoảng cách giữa icon và chữ */
+  transition: all 0.3s ease !important;
+  text-decoration: none !important;
+  font-size: 14px !important;
+  border-width: 2px !important;     /* Viền dày dặn */
+  white-space: nowrap !important; /* QUAN TRỌNG: Cấm chữ xuống dòng */
+  min-width: fit-content !important; /* Đảm bảo nút co giãn theo nội dung */
+}
+
+/* 1. Nút Tra Đơn (Viền Xanh Lá - Tinh tế) */
+.btn-lookup {
+  background-color: transparent !important;
+  border: 2px solid #198754 !important;
+  color: #198754 !important;
+}
+.btn-lookup:hover {
+  background-color: #198754 !important;
+  color: white !important;
+  transform: translateY(-2px); /* Nảy lên nhẹ khi di chuột */
+}
+
+/* 2. Nút Giỏ Hàng (Nền Xanh Lá - Nổi bật) */
+.btn-cart-header {
+  background-color: #198754 !important;
+  border: 2px solid #198754 !important;
+  color: white !important;
+  position: relative; /* Để định vị số lượng */
+}
+.btn-cart-header:hover {
+  background-color: #146c43 !important; /* Xanh đậm hơn khi hover */
+  border-color: #146c43 !important;
+  box-shadow: 0 4px 10px rgba(25, 135, 84, 0.3) !important;
+}
+
+/* 3. Nút Đăng Nhập (Nền Đỏ - Kêu gọi hành động) */
+.btn-login-header {
+  background-color: #d32f2f !important;
+  border: 2px solid #d32f2f !important;
+  color: white !important;
+}
+.btn-login-header:hover {
+  background-color: #b71c1c !important;
+  border-color: #b71c1c !important;
+  box-shadow: 0 4px 10px rgba(211, 47, 47, 0.3) !important;
+  transform: translateY(-2px);
+}
+
+/* Chỉnh lại Badge số lượng trên giỏ hàng cho đẹp */
+.cart-badge {
+  position: absolute;
+  top: -8px !important;
+  right: -8px !important;
+  background-color: #d32f2f !important; /* Nền đỏ */
+  color: white !important;
+  border: 2px solid white !important; /* Viền trắng tách biệt */
+  border-radius: 50% !important;
+  width: 24px;
+  height: 24px;
+  font-size: 11px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: none !important; /* Bỏ transform cũ của Bootstrap */
+}
+/* --- GIAO DIỆN ĐĂNG NHẬP / ĐĂNG KÝ (AUTH PAGE) --- */
+.auth-wrapper {
+  min-height: 85vh; /* Chiều cao bao phủ màn hình */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f0f2f5 0%, #e9ecef 100%); /* Nền xám nhẹ sang trọng */
+  padding: 20px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 480px; /* Giới hạn chiều rộng cho gọn */
+  background: white;
+  border-radius: 16px; /* Bo góc mềm mại */
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08); /* Đổ bóng 3D */
+  overflow: hidden;
+  border: 1px solid #fff;
+}
+
+.auth-header-bg {
+  background-color: #fff;
+  padding: 30px 20px 10px 20px;
+  text-align: center;
+}
+
+.auth-logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-bottom: 10px;
+  animation: float 3s ease-in-out infinite;
+}
+
+.auth-title {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  color: #198754;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+  letter-spacing: -0.5px;
+}
+
+.auth-subtitle {
+  font-size: 13px;
+  color: #6c757d;
+}
+
+.auth-form-body {
+  padding: 20px 35px 35px 35px;
+}
+
+.auth-input {
+  background-color: #f8f9fa !important;
+  border: 1px solid #e9ecef !important;
+  padding: 12px 15px !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  transition: 0.3s;
+}
+
+.auth-input:focus {
+  background-color: #fff !important;
+  border-color: #198754 !important;
+  box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.1) !important;
+}
+
+.btn-auth-submit {
+  padding: 12px !important;
+  border-radius: 8px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  background: linear-gradient(90deg, #198754, #20c997) !important;
+  border: none !important;
+  transition: 0.3s;
+}
+
+.btn-auth-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(25, 135, 84, 0.3);
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+  100% { transform: translateY(0px); }
+}
+
+/* --- GIAO DIỆN TRANG THÀNH VIÊN (MEMBER PAGE) --- */
+
+/* 1. Sidebar: Thẻ thông tin cá nhân */
+.member-sidebar-card {
+  border: none !important;
+  border-radius: 16px !important;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05) !important;
+  overflow: hidden;
+  background: white;
+  transition: transform 0.3s;
+}
+.member-sidebar-card:hover {
+  transform: translateY(-5px); /* Bay lên nhẹ khi di chuột */
+}
+
+/* Avatar hình tròn lớn */
+.member-avatar-box {
+  width: 100px;
+  height: 100px;
+  font-size: 40px;
+  font-weight: 900;
+  color: white;
+  background: linear-gradient(135deg, #198754, #20c997); /* Gradient xanh ngọc */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 15px auto;
+  box-shadow: 0 5px 15px rgba(25, 135, 84, 0.3);
+  border: 4px solid #fff;
+  outline: 2px solid #e9ecef;
+}
+
+/* Huy hiệu hạng thành viên (Vàng) */
+.member-rank-badge {
+  background: linear-gradient(45deg, #FFD700, #FFA500); /* Màu vàng kim loại */
+  color: white;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 13px;
+  display: inline-block;
+  box-shadow: 0 3px 8px rgba(255, 165, 0, 0.3);
+  margin-top: 5px;
+}
+
+/* 2. Main Content: Khu vực Tab và Bảng */
+.member-content-card {
+  border: none !important;
+  border-radius: 16px !important;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05) !important;
+  overflow: hidden;
+}
+
+/* Tùy chỉnh Tabs (Chuyển từ gạch chân sang dạng nút bấm) */
+.custom-tabs .nav-link {
+  border: none !important;
+  color: #666 !important;
+  font-weight: 600 !important;
+  padding: 10px 25px !important;
+  border-radius: 50px !important; /* Bo tròn */
+  transition: all 0.3s;
+}
+
+.custom-tabs .nav-link.active {
+  background-color: #198754 !important; /* Nền xanh khi chọn */
+  color: white !important;
+  box-shadow: 0 4px 10px rgba(25, 135, 84, 0.3);
+}
+
+.custom-tabs .nav-link:hover:not(.active) {
+  background-color: #f1f3f5;
+  color: #198754 !important;
+}
+
+/* 3. Bảng Đơn Hàng */
+.order-table thead th {
+  background-color: #f8f9fa !important;
+  color: #198754 !important;
+  font-weight: 700 !important;
+  border-bottom: 2px solid #e9ecef !important;
+  padding: 15px !important;
+}
+.order-table tbody td {
+  padding: 15px !important;
+  vertical-align: middle !important;
+  font-size: 14px;
+}
+
+/* Nút mua lại */
+.btn-reorder {
+  border-radius: 20px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  border: 1px solid #198754 !important;
+  color: #198754 !important;
+  background: transparent;
+}
+.btn-reorder:hover {
+  background: #198754 !important;
+  color: white !important;
+}
+/* --- BANNER & FLASH SALE (SIDE-BY-SIDE LAYOUT) --- */
+
+/* 1. Khung Slider bên trái */
+.banner-slider-box {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  height: 280px; /* Chiều cao cố định chuẩn */
+  background: #fff;
+}
+.banner-img-fixed {
+  width: 100%;
+  height: 280px !important; /* Bắt buộc ảnh phải cao bằng khung */
+  object-fit: cover;        /* Cắt ảnh cho vừa khung chứ không bị méo */
+}
+
+/* 2. Khung Flash Sale bên phải */
+.flash-sale-side-box {
+  background: linear-gradient(135deg, #d32f2f, #b71c1c); /* Màu đỏ gradient */
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  height: 280px;            /* Đồng bộ chiều cao với Slider */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;       /* Để icon nền định vị theo khung này */
+  overflow: hidden;         /* Cắt phần icon nền bị thừa ra */
+  border: 1px solid rgba(0,0,0,0.05);
+  color: white;
+}
+
+/* Icon tia sét nền trang trí (mờ mờ) */
+.flash-bg-icon {
+  font-size: 150px;
+  opacity: 0.1;
+  position: absolute;
+  right: -20px;
+  bottom: -20px;
+  transform: rotate(-20deg);
+  pointer-events: none; /* Không chặn click chuột */
+}
+
+/* Tiêu đề Flash Sale */
+.flash-side-title {
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  font-size: 1.5rem;
+}
+
+/* Ô đếm ngược nhỏ */
+.countdown-box-sm {
+  width: 40px;
+  height: 40px;
+  background: white;
+  color: #d32f2f;
+  font-weight: 800;
+  font-size: 18px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Chữ Ngày/Giờ/Phút bên dưới ô đếm */
+.countdown-label-sm {
+  font-size: 10px;
+  margin-top: 4px;
+  color: #ffcdd2; /* Màu đỏ nhạt */
+  text-align: center;
+}

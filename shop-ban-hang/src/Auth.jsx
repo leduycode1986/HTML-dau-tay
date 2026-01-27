@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Form, Button, Container, Modal, InputGroup } from 'react-bootstrap'; // Import InputGroup
+import React, { useState, useEffect } from 'react';
+import { Form, Button, Modal, InputGroup } from 'react-bootstrap';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, sendPasswordResetEmail } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore'; // Thêm getDoc
 import { auth, db } from './firebase';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -11,12 +11,30 @@ function Auth() {
   const [formData, setFormData] = useState({ email: '', password: '', confirmPassword: '', name: '' });
   const [showForgot, setShowForgot] = useState(false);
   const [emailForgot, setEmailForgot] = useState('');
+  const [shopLogo, setShopLogo] = useState(''); // Biến chứa Logo thật
   
-  // State ẩn hiện mật khẩu
   const [showPass, setShowPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
 
   const navigate = useNavigate();
+
+  // --- LẤY LOGO TỪ CẤU HÌNH ---
+  useEffect(() => {
+    const fetchLogo = async () => {
+      try {
+        const docRef = doc(db, "cauHinh", "thongTinChung");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setShopLogo(docSnap.data().logo);
+        }
+      } catch (error) {
+        console.log("Không tải được logo:", error);
+      }
+    };
+    fetchLogo();
+  }, []);
+  // -----------------------------
+
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleAuth = async (e) => {
@@ -49,38 +67,87 @@ function Auth() {
   };
 
   return (
-    <Container className="auth-container">
-      <h3 className="text-center fw-bold text-success mb-4">{isRegister ? 'ĐĂNG KÝ THÀNH VIÊN' : 'ĐĂNG NHẬP'}</h3>
-      <div className="alert alert-info small text-center mb-4">{isRegister ? 'Tạo tài khoản để tích điểm & nhận ưu đãi.' : 'Đăng nhập để xem lịch sử đơn hàng.'}</div>
-      <Form onSubmit={handleAuth}>
-        {isRegister && <Form.Group className="mb-3"><Form.Label>Họ tên (*)</Form.Label><Form.Control type="text" name="name" required onChange={handleChange} placeholder="VD: Nguyễn Văn A" /></Form.Group>}
-        <Form.Group className="mb-3"><Form.Label>Email (*)</Form.Label><Form.Control type="email" name="email" placeholder="VD: khachhang@gmail.com" required onChange={handleChange} /></Form.Group>
-        
-        <Form.Group className="mb-3">
-          <Form.Label>Mật khẩu (*)</Form.Label>
-          <InputGroup>
-            <Form.Control type={showPass ? "text" : "password"} name="password" required onChange={handleChange} placeholder="Ít nhất 6 ký tự" />
-            <Button variant="outline-secondary" onClick={()=>setShowPass(!showPass)}><i className={showPass ? "fa-solid fa-eye-slash" : "fa-solid fa-eye"}></i></Button>
-          </InputGroup>
-        </Form.Group>
-        
-        {isRegister && (
-          <Form.Group className="mb-3">
-            <Form.Label>Nhập lại mật khẩu (*)</Form.Label>
-            <InputGroup>
-              <Form.Control type={showConfirmPass ? "text" : "password"} name="confirmPassword" required onChange={handleChange} placeholder="Xác nhận mật khẩu" />
-              <Button variant="outline-secondary" onClick={()=>setShowConfirmPass(!showConfirmPass)}><i className={showConfirmPass ? "fa-solid fa-eye-slash" : "fa-solid fa-eye"}></i></Button>
-            </InputGroup>
-          </Form.Group>
-        )}
+    <div className="auth-wrapper">
+      <div className="auth-card">
+        {/* Header: Đã sửa để hiện Logo thật */}
+        <div className="auth-header-bg">
+          {shopLogo ? (
+            <img src={shopLogo} alt="Logo Shop" className="auth-logo" />
+          ) : (
+            <div className="fs-1 mb-2">🦁</div> // Chỉ hiện sư tử khi chưa có logo
+          )}
+          
+          <h3 className="auth-title">{isRegister ? 'ĐĂNG KÝ TÀI KHOẢN' : 'CHÀO MỪNG TRỞ LẠI'}</h3>
+          <p className="auth-subtitle">
+            {isRegister ? 'Tích điểm, nhận quà và theo dõi đơn hàng dễ dàng.' : 'Vui lòng đăng nhập để tiếp tục mua sắm.'}
+          </p>
+        </div>
 
-        {!isRegister && <div className="text-end mb-3"><span className="text-primary small" style={{cursor:'pointer', textDecoration:'underline'}} onClick={()=>setShowForgot(true)}>Quên mật khẩu?</span></div>}
-        <Button variant="success" type="submit" className="w-100 fw-bold py-2 mt-2">{isRegister ? 'ĐĂNG KÝ NGAY' : 'ĐĂNG NHẬP'}</Button>
-      </Form>
-      <div className="text-center mt-3 mb-4"><span className="text-muted">{isRegister ? 'Đã có tài khoản? ' : 'Chưa có tài khoản? '}</span><span className="text-primary fw-bold" style={{cursor:'pointer'}} onClick={() => setIsRegister(!isRegister)}>{isRegister ? 'Đăng nhập' : 'Đăng ký'}</span></div>
-      <div className="border-top pt-3 text-center"><p className="small text-muted mb-2">Bạn là chủ cửa hàng?</p><Link to="/admin"><Button variant="outline-dark" size="sm" className="fw-bold"><i className="fa-solid fa-user-shield me-2"></i> Vào trang Admin</Button></Link></div>
-      <Modal show={showForgot} onHide={()=>setShowForgot(false)} centered><Modal.Header closeButton><Modal.Title>LẤY LẠI MẬT KHẨU</Modal.Title></Modal.Header><Modal.Body><p>Nhập email bạn đã đăng ký:</p><Form.Control type="email" placeholder="Email..." value={emailForgot} onChange={e=>setEmailForgot(e.target.value)} /></Modal.Body><Modal.Footer><Button variant="secondary" onClick={()=>setShowForgot(false)}>Hủy</Button><Button variant="primary" onClick={handleForgotPassword}>Gửi yêu cầu</Button></Modal.Footer></Modal>
-    </Container>
+        <div className="auth-form-body">
+          <Form onSubmit={handleAuth}>
+            {isRegister && (
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-bold small text-secondary">Họ và tên</Form.Label>
+                <Form.Control type="text" name="name" className="auth-input" required onChange={handleChange} placeholder="Ví dụ: Nguyễn Văn A" />
+              </Form.Group>
+            )}
+            
+            <Form.Group className="mb-3">
+              <Form.Label className="fw-bold small text-secondary">Email đăng nhập</Form.Label>
+              <Form.Control type="email" name="email" className="auth-input" placeholder="name@example.com" required onChange={handleChange} />
+            </Form.Group>
+            
+            <Form.Group className="mb-3">
+              <div className="d-flex justify-content-between">
+                <Form.Label className="fw-bold small text-secondary">Mật khẩu</Form.Label>
+                {!isRegister && <span className="small text-danger" style={{cursor:'pointer', fontWeight:600}} onClick={()=>setShowForgot(true)}>Quên mật khẩu?</span>}
+              </div>
+              <InputGroup>
+                <Form.Control type={showPass ? "text" : "password"} name="password" className="auth-input border-end-0" required onChange={handleChange} placeholder="******" />
+                <Button variant="light" className="border border-start-0 bg-light" onClick={()=>setShowPass(!showPass)}><i className={showPass ? "fa-solid fa-eye-slash text-muted" : "fa-solid fa-eye text-muted"}></i></Button>
+              </InputGroup>
+            </Form.Group>
+            
+            {isRegister && (
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-bold small text-secondary">Nhập lại mật khẩu</Form.Label>
+                <InputGroup>
+                  <Form.Control type={showConfirmPass ? "text" : "password"} name="confirmPassword" className="auth-input border-end-0" required onChange={handleChange} placeholder="******" />
+                  <Button variant="light" className="border border-start-0 bg-light" onClick={()=>setShowConfirmPass(!showConfirmPass)}><i className={showConfirmPass ? "fa-solid fa-eye-slash text-muted" : "fa-solid fa-eye text-muted"}></i></Button>
+                </InputGroup>
+              </Form.Group>
+            )}
+
+            <Button variant="success" type="submit" className="w-100 btn-auth-submit mt-3 shadow-sm">
+              {isRegister ? 'ĐĂNG KÝ NGAY' : 'ĐĂNG NHẬP'}
+            </Button>
+          </Form>
+
+          <div className="text-center mt-4 pt-3 border-top">
+            <span className="text-muted small">{isRegister ? 'Bạn đã có tài khoản? ' : 'Bạn chưa có tài khoản? '}</span>
+            <span className="text-success fw-bold ms-1" style={{cursor:'pointer', textDecoration:'underline'}} onClick={() => setIsRegister(!isRegister)}>
+              {isRegister ? 'Đăng nhập ngay' : 'Đăng ký miễn phí'}
+            </span>
+          </div>
+          
+          <div className="text-center mt-3">
+             <Link to="/admin" className="text-decoration-none small text-muted"><i className="fa-solid fa-user-shield me-1"></i> Trang quản trị</Link>
+          </div>
+        </div>
+      </div>
+
+      <Modal show={showForgot} onHide={()=>setShowForgot(false)} centered>
+        <Modal.Header closeButton><Modal.Title className="fs-5 fw-bold">Khôi phục mật khẩu</Modal.Title></Modal.Header>
+        <Modal.Body>
+          <p className="small text-muted">Nhập email của bạn, hệ thống sẽ gửi link đặt lại mật khẩu.</p>
+          <Form.Control type="email" placeholder="Nhập email..." value={emailForgot} onChange={e=>setEmailForgot(e.target.value)} className="auth-input" />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={()=>setShowForgot(false)}>Hủy</Button>
+          <Button variant="success" onClick={handleForgotPassword}>Gửi yêu cầu</Button>
+        </Modal.Footer>
+      </Modal>
+    </div>
   );
 }
 export default Auth;
