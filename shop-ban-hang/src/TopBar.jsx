@@ -2,8 +2,9 @@ import React from 'react';
 import { Container, Navbar, Nav, Form, Button, Dropdown } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
-function Header({ shopConfig, tuKhoa, setTuKhoa, gioHang, currentUser, handleLogout }) {
-  // Style ép cứng cho Logo và Hotline
+// Đổi tên function thành TopBar
+function TopBar({ shopConfig, tuKhoa, setTuKhoa, gioHang, currentUser, handleLogout }) {
+  // Style ép cứng
   const logoStyle = { height: '80px', width: 'auto', objectFit: 'contain' };
   const shopNameStyle = { fontSize: '2rem', fontWeight: '900', color: '#198754', textTransform: 'uppercase', margin: 0, lineHeight: 1 };
   const hotlineStyle = { fontSize: '2rem', fontWeight: '900', color: '#d32f2f', lineHeight: 1 };
@@ -17,7 +18,6 @@ function Header({ shopConfig, tuKhoa, setTuKhoa, gioHang, currentUser, handleLog
       
       <Navbar bg="white" expand="lg" className="sticky-top shadow-sm py-3" style={{zIndex: 100, borderBottom:'3px solid #198754'}}>
         <Container>
-          {/* LOGO SHOP */}
           <Navbar.Brand as={Link} to="/" className="me-4 text-decoration-none d-flex align-items-center gap-3">
             {shopConfig.logo ? <img src={shopConfig.logo} alt="Logo" style={logoStyle} /> : <span className="fs-1">🦁</span>}
             <div className="d-flex flex-column justify-content-center">
@@ -35,7 +35,6 @@ function Header({ shopConfig, tuKhoa, setTuKhoa, gioHang, currentUser, handleLog
               </div>
             </Form>
             
-            {/* HOTLINE & GIỎ HÀNG */}
             <Nav className="align-items-center gap-3">
               <div className="d-none d-lg-flex flex-column align-items-end pe-3" style={{borderRight:'2px solid #eee'}}>
                 <span className="text-muted small fw-bold text-uppercase">Tổng đài hỗ trợ</span>
@@ -63,4 +62,4 @@ function Header({ shopConfig, tuKhoa, setTuKhoa, gioHang, currentUser, handleLog
     </>
   );
 }
-export default Header;
+export default TopBar; // Xuất tên mới

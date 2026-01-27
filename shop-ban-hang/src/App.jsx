@@ -11,7 +11,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import AOS from 'aos'; import 'aos/dist/aos.css';
 
-import Header from './Header'; // <--- IMPORT FILE HEADER MỚI
+import TopBar from './TopBar'; // <--- IMPORT FILE HEADER MỚI
 import Home from './Home';
 import ProductDetail from './ProductDetail';
 import Cart from './Cart';
