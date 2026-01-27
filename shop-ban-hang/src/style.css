@@ -12,13 +12,13 @@ img { max-width: 100%; height: auto; }
 .brand-group { display: flex !important; align-items: center !important; gap: 15px !important; }
 .brand-logo-img { height: 75px !important; width: auto !important; object-fit: contain; }
 .brand-info { display: flex; flex-direction: column; justify-content: center; line-height: 1.1; }
-.shop-name { font-weight: 900 !important; color: #198754 !important; text-transform: uppercase; font-size: 1.8rem !important; margin: 0 !important; letter-spacing: -0.5px; }
-.shop-slogan { font-size: 0.9rem !important; color: #d63384; font-weight: 700; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+.shop-name { font-weight: 900 !important; color: #198754 !important; text-transform: uppercase; font-size: 1.5rem !important; margin: 0 !important; letter-spacing: -0.5px; }
+.shop-slogan { font-size: 0.9rem !important; color: #d8ef08; font-weight: 700; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
 
 /* Hotline Box */
 .header-hotline-box { text-align: right; display: flex; flex-direction: column; justify-content: center; border-left: 2px solid #dee2e6 !important; padding-left: 25px !important; margin-left: 20px !important; height: 60px; }
 .hotline-label { font-size: 12px !important; font-weight: 700; color: #666; text-transform: uppercase; margin-bottom: 2px; display: block; }
-.hotline-number { font-size: 1.8rem !important; font-weight: 900 !important; color: #d32f2f !important; line-height: 1; }
+.hotline-number { font-size: 1.5rem !important; font-weight: 900 !important; color: #d32f2f !important; line-height: 1; }
 
 /* --- 3. SẢN PHẨM VỪA XEM --- */
 .recent-view-bar { background: white; border-top: 4px solid #198754; padding: 30px 0; margin-top: 40px; box-shadow: 0 -5px 15px rgba(0,0,0,0.05); }

@@ -154,8 +154,8 @@ function Store() {
                 
                 <Nav className="align-items-center gap-3">
                   <div className="d-none d-lg-flex flex-column align-items-end pe-3" style={{borderRight:'2px solid #eee'}}>
-                    <span className="text-muted small fw-bold text-uppercase">Tổng đài hỗ trợ</span>
-                    <span style={{fontSize:'2rem', fontWeight:'900', color:'#d32f2f', lineHeight:1}}>{shopConfig.sdt}</span>
+                    <span className="text-muted small fw-bold text-uppercase">Hotline</span>
+                    <span style={{fontSize:'1.5rem', fontWeight:'900', color:'#d32f2f', lineHeight:1}}>{shopConfig.sdt}</span>
                   </div>
 
                   <Link to="/tra-cuu" className="btn btn-outline-secondary rounded-pill fw-bold">Tra đơn</Link>
