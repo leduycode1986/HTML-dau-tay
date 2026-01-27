@@ -1,14 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App'; // Quay lại gọi file App
+import Store from './Store'; // <--- Gọi file Store mới
 import { BrowserRouter } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import './style.css'; // Vẫn giữ file css nếu có
+import './style.css'; 
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <Store />
     </BrowserRouter>
   </React.StrictMode>
 );
