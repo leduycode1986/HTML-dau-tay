@@ -104,6 +104,26 @@ function Store() {
     }
   }, [dsSanPham, location.pathname]);
 
+useEffect(() => {
+  if (dsSanPham.length > 0) {
+    setGioHang(currentCart => {
+      let isChanged = false;
+      const newCart = currentCart.map(item => {
+        const liveItem = dsSanPham.find(db => db.id === item.id);
+        if (liveItem) {
+          // Nếu tồn kho thực tế khác tồn kho đang lưu -> Cập nhật lại
+          if (liveItem.soLuong !== item.tonKho) {
+            isChanged = true;
+            return { ...item, tonKho: liveItem.soLuong }; 
+          }
+        }
+        return item;
+      });
+      return isChanged ? newCart : currentCart;
+    });
+  }
+}, [dsSanPham]);
+
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
 
 const themVaoGio = (sp) => { 

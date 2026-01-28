@@ -1,20 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Form, Button, Modal, InputGroup } from 'react-bootstrap';
-import { useNavigate, Link, useLocation } from 'react-router-dom'; // Thêm useLocation
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 
-// --- SỬA LỖI QUAN TRỌNG: CHỈ GIỮ 1 DÒNG IMPORT DUY NHẤT NÀY ---
-import { collection, addDoc, serverTimestamp, updateDoc, doc, onSnapshot, getDocs, query, where, increment } from 'firebase/firestore'; 
-// --------------------------------------------------------------
-
+// 1. THÊM getDoc VÀO IMPORT ĐỂ KIỂM TRA KHO LẦN CUỐI
+import { collection, addDoc, serverTimestamp, updateDoc, doc, onSnapshot, getDocs, getDoc, query, where, increment } from 'firebase/firestore'; 
 import { db, auth } from './firebase';
 import { toast } from 'react-toastify';
 
 function Checkout({ gioHang, setGioHang, userData }) {
   const navigate = useNavigate();
-  // Khởi tạo state
   const [khach, setKhach] = useState({ ten: '', sdt: '', diachi: '', ghiChu: '', quanHuyen: '' });
   
-  // Effect điền thông tin user
   useEffect(() => {
     if (userData) {
       setKhach(prev => ({
@@ -33,15 +29,12 @@ function Checkout({ gioHang, setGioHang, userData }) {
   const [orderInfo, setOrderInfo] = useState(null); 
   const [shopConfig, setShopConfig] = useState(null);
   
-  // Logic Coupon
   const [couponCode, setCouponCode] = useState('');
   const [discount, setDiscount] = useState(0);
   const [couponMsg, setCouponMsg] = useState('');
 
   const tamTinh = gioHang.reduce((t, s) => t + (s.giaBan || s.giaGoc) * s.soLuong, 0);
   const tongCong = Math.max(0, tamTinh + shippingFee - discount);
-
-  // Tính điểm
   const tyLeDiem = shopConfig?.tyLeDiem || 1000; 
   const potentialPoints = Math.floor(tongCong / tyLeDiem);
 
@@ -81,6 +74,26 @@ function Checkout({ gioHang, setGioHang, userData }) {
     const maDonHang = 'MV-' + Math.floor(100000 + Math.random() * 900000);
     
     try {
+      // --- BƯỚC KIỂM TRA QUAN TRỌNG NHẤT (FINAL CHECK) ---
+      // Trước khi tạo đơn, chạy lên server kiểm tra kho lần cuối
+      for (const item of gioHang) {
+        const productRef = doc(db, "sanPham", item.id);
+        const productSnap = await getDoc(productRef);
+        
+        if (productSnap.exists()) {
+          const currentStock = productSnap.data().soLuong;
+          // Nếu tồn kho thực tế < số lượng muốn mua
+          if (currentStock < item.soLuong) {
+            toast.error(`Rất tiếc! Món "${item.ten}" hiện chỉ còn ${currentStock} sản phẩm.`);
+            return; // DỪNG NGAY LẬP TỨC, KHÔNG CHO MUA
+          }
+        } else {
+          toast.error(`Sản phẩm "${item.ten}" không còn tồn tại!`);
+          return;
+        }
+      }
+      // ----------------------------------------------------
+
       // 1. TẠO ĐƠN HÀNG
       await addDoc(collection(db, "donHang"), { 
         maDonHang, 
@@ -96,14 +109,12 @@ function Checkout({ gioHang, setGioHang, userData }) {
         ship: shippingFee 
       });
 
-      // 2. TRỪ TỒN KHO (QUAN TRỌNG: Dùng increment và ép kiểu số)
+      // 2. TRỪ TỒN KHO
       const updatePromises = gioHang.map(item => {
         const productRef = doc(db, "sanPham", item.id);
-        // Ép kiểu số nguyên để chắc chắn không bị lỗi chuỗi
         const soLuongMua = parseInt(item.soLuong) || 0;
-        
         return updateDoc(productRef, {
-          soLuong: increment(-soLuongMua) // Trừ đi số lượng mua
+          soLuong: increment(-soLuongMua)
         });
       });
       await Promise.all(updatePromises);
@@ -116,7 +127,7 @@ function Checkout({ gioHang, setGioHang, userData }) {
       }
 
       setOrderInfo({ ma: maDonHang, tien: tongCong });
-      setGioHang([]);
+      setGioHang([]); 
       setShowSuccess(true);
     } catch (error) {
       console.error(error);
