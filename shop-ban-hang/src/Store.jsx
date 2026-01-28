@@ -229,13 +229,59 @@ const themVaoGio = (sp) => {
                     <Link to="/tra-cuu" className="btn-header-action btn-lookup">
                         <i className="fa-solid fa-truck-fast"></i> Tra đơn
                     </Link>
-                    <Link to="/cart" className="btn-header-action btn-cart-header px-4">
+
+                    {/* --- GIỎ HÀNG--- */}
+                    <div className="header-cart-wrapper">
+                      <Link to="/cart" className="btn-header-action btn-cart-header px-4">
                         <i className="fa-solid fa-cart-shopping"></i> Giỏ
-                        {/* Số lượng món: Đã style lại hình tròn đỏ nổi bật */}
                         <span className="cart-badge">
-                        {gioHang.reduce((a,b)=>a+b.soLuong,0)}
+                          {gioHang.reduce((a,b)=>a+b.soLuong,0)}
                         </span>
-                    </Link>
+                      </Link>
+
+                      {/* --- PHẦN MINI CART MỚI THÊM --- */}
+                      <div className="mini-cart-box">
+                        {gioHang.length === 0 ? (
+                          <div className="mini-cart-empty">
+                            <div style={{fontSize:'30px', marginBottom:'10px'}}>🛒</div>
+                            Chưa có sản phẩm nào
+                          </div>
+                        ) : (
+                          <>
+                            <div className="small text-muted mb-2 border-bottom pb-1">Sản phẩm mới thêm</div>
+                            <div className="mini-cart-list">
+                              {gioHang.slice(0, 5).map((sp) => ( // Chỉ hiện tối đa 5 món gần nhất
+                                <div key={sp.id} className="mini-cart-item">
+                                  <img src={sp.anh} alt={sp.ten} className="mini-cart-img" />
+                                  <div className="mini-cart-info">
+                                    <div className="mini-cart-name">{sp.ten}</div>
+                                    <div className="d-flex justify-content-between">
+                                      <span className="mini-cart-price">{sp.giaBan?.toLocaleString()} ¥</span>
+                                      <span className="small text-muted">x{sp.soLuong}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="d-flex justify-content-between align-items-center mb-2">
+                              <span className="small text-secondary">Tổng cộng:</span>
+                              <span className="fw-bold text-danger fs-6">
+                                {gioHang.reduce((t, s) => t + (s.giaBan || s.giaGoc) * s.soLuong, 0).toLocaleString()} ¥
+                              </span>
+                            </div>
+                            <Button 
+                              variant="success" 
+                              size="sm" 
+                              className="w-100 fw-bold" 
+                              onClick={() => navigate('/cart')}
+                            >
+                              XEM GIỎ HÀNG
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    {/* ----------------------------------------------------- */}
                   
                   {/* Nút Tài Khoản / Đăng Nhập */}
                   {currentUser ? (

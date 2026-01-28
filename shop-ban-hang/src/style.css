@@ -1010,3 +1010,99 @@ img { max-width: 100%; height: auto; }
   transform: translateX(-5px); /* Hiệu ứng trượt nhẹ sang trái */
   box-shadow: 0 4px 10px rgba(25, 135, 84, 0.2);
 }
+/* --- MINI CART (GIỎ HÀNG THU NHỎ KHI HOVER) --- */
+
+/* 1. Vùng bao quanh nút giỏ hàng (Để bắt sự kiện Hover) */
+.header-cart-wrapper {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 10px; /* Tạo cầu nối để chuột không bị ngắt quãng khi di chuyển xuống */
+  margin-bottom: -10px;
+}
+
+/* 2. Khung Mini Cart (Mặc định ẩn) */
+.mini-cart-box {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 320px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+  border-top: 3px solid #198754;
+  display: none; /* Ẩn đi */
+  z-index: 1000;
+  padding: 15px;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Mũi tên nhỏ chỉ lên trên */
+.mini-cart-box::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  right: 20px;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid #198754;
+}
+
+/* 3. Hiển thị khi Hover */
+.header-cart-wrapper:hover .mini-cart-box {
+  display: block;
+}
+
+/* Danh sách sản phẩm trong Mini Cart */
+.mini-cart-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 15px;
+}
+
+.mini-cart-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px dashed #eee;
+}
+
+.mini-cart-img {
+  width: 50px;
+  height: 50px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 1px solid #f1f1f1;
+}
+
+.mini-cart-info {
+  flex: 1;
+}
+
+.mini-cart-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 2px;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mini-cart-price {
+  font-size: 12px;
+  color: #d32f2f;
+  font-weight: 600;
+}
+
+.mini-cart-empty {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+}
+
+/* Hiệu ứng hiện ra nhẹ nhàng */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
