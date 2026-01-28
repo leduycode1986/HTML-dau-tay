@@ -3,8 +3,8 @@ import { Form, Button, Modal, InputGroup } from 'react-bootstrap';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore'; // Thêm getDoc
 import { auth, db } from './firebase';
-import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 
 function Auth() {
   const [isRegister, setIsRegister] = useState(false);
@@ -17,6 +17,9 @@ function Auth() {
   const [showConfirmPass, setShowConfirmPass] = useState(false);
 
   const navigate = useNavigate();
+  // 1. Lấy thông tin vị trí cũ (nếu có)
+  const location = useLocation(); 
+  const from = location.state?.from || '/'; // Mặc định về '/' nếu không có trang trước
 
   // --- LẤY LOGO TỪ CẤU HÌNH ---
   useEffect(() => {
@@ -52,7 +55,7 @@ function Auth() {
         await signInWithEmailAndPassword(auth, email, password);
         toast.success("Đăng nhập thành công!");
       }
-      navigate('/');
+      navigate(from, { replace: true });
     } catch (error) {
       if(error.code === 'auth/wrong-password') toast.error("Sai mật khẩu!");
       else if(error.code === 'auth/user-not-found') toast.error("Email này chưa đăng ký!");

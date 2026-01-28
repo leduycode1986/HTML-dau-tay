@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Container, Row, Col, Button, Badge } from 'react-bootstrap';
-import { toSlug } from './utils'; // IMPORT TỪ UTILS
+import { toSlug } from './utils';
 
 function ProductDetail({ dsSanPham, themVaoGio }) {
   const { slug } = useParams();
@@ -9,12 +9,10 @@ function ProductDetail({ dsSanPham, themVaoGio }) {
 
   useEffect(() => {
     if (dsSanPham.length > 0) {
-      // TÌM KIẾM CẢ SLUG VÀ ID
       const found = dsSanPham.find(sp => 
         (sp.slug === slug) || (toSlug(sp.ten) === slug) || (sp.id === slug)
       );
       setSanPham(found);
-
       if (found) {
         const recent = JSON.parse(localStorage.getItem('recent') || '[]');
         const newRecent = [found.id, ...recent.filter(id => id !== found.id)].slice(0, 10);
@@ -23,18 +21,77 @@ function ProductDetail({ dsSanPham, themVaoGio }) {
     }
   }, [slug, dsSanPham]);
 
-  if (!sanPham) return <div className="text-center py-5"><h3>Đang tìm sản phẩm...</h3></div>;
+  if (!sanPham) return (
+    <Container className="py-5 text-center">
+      <div className="spinner-border text-success" role="status"></div>
+      <p className="mt-3 text-muted">Đang tìm sản phẩm...</p>
+    </Container>
+  );
 
   return (
     <Container className="py-5">
-      <Row className="g-4">
-        <Col md={6}><div className="border rounded p-2 bg-white shadow-sm"><img src={sanPham.anh} alt={sanPham.ten} className="w-100 rounded" /></div></Col>
-        <Col md={6}>
-          <h2 className="fw-bold text-success text-uppercase mb-3">{sanPham.ten}</h2>
-          <div className="mb-3"><span className="h3 text-danger fw-bold me-3">{sanPham.giaBan?.toLocaleString()} ¥</span>{sanPham.phanTramGiam > 0 && <span className="text-muted text-decoration-line-through">{sanPham.giaGoc?.toLocaleString()} ¥</span>}</div>
-          <div className="mb-4"><Badge bg={sanPham.soLuong > 0 ? "success" : "secondary"} className="me-2 p-2">{sanPham.soLuong > 0 ? "Còn hàng" : "Hết hàng"}</Badge><span className="text-muted">Đơn vị: <strong>{sanPham.donVi}</strong></span></div>
-          <div className="p-3 bg-light rounded border mb-4"><div dangerouslySetInnerHTML={{__html: sanPham.moTa || 'Chưa có mô tả chi tiết.'}}></div></div>
-          <Button variant={sanPham.soLuong > 0 ? "success" : "secondary"} size="lg" className="w-100 fw-bold rounded-pill shadow-sm" onClick={() => sanPham.soLuong > 0 && themVaoGio(sanPham)} disabled={sanPham.soLuong <= 0}><i className="fa-solid fa-cart-plus me-2"></i> {sanPham.soLuong > 0 ? "THÊM VÀO GIỎ NGAY" : "TẠM HẾT HÀNG"}</Button>
+      {/* 1. NÚT QUAY LẠI (LÀM ĐẸP HƠN) */}
+      <Link to="/" className="btn-back-home mb-4">
+        <i className="fa-solid fa-chevron-left"></i> Quay lại trang chủ
+      </Link>
+
+      <Row className="g-5 align-items-start">
+        <Col lg={5} md={6}>
+          <div className="detail-img-box">
+            <img src={sanPham.anh} alt={sanPham.ten} />
+          </div>
+        </Col>
+
+        <Col lg={7} md={6}>
+          <h1 className="detail-title">{sanPham.ten}</h1>
+
+          {/* 2. GIÁ TIỀN (Chỉ hiện giá, bỏ đơn vị ở đây) */}
+          <div className="mb-3 pb-2 border-bottom">
+             <div className="detail-price">
+               {sanPham.giaBan?.toLocaleString()} ¥
+               {sanPham.phanTramGiam > 0 && (
+                 <span className="text-muted fs-5 text-decoration-line-through fw-normal ms-2">
+                   {sanPham.giaGoc?.toLocaleString()} ¥
+                 </span>
+               )}
+             </div>
+          </div>
+
+          {/* 3. HIỂN THỊ SỐ LƯỢNG + ĐƠN VỊ (Theo ý bạn: "Số lượng: 10 Ly") */}
+          <div className="d-flex flex-column gap-2 mb-4">
+             {/* Dòng trạng thái */}
+             <div className="d-flex align-items-center gap-2">
+                <span className="fw-bold text-dark" style={{minWidth:'80px'}}>Tình trạng:</span>
+                <Badge bg={sanPham.soLuong > 0 ? "success" : "secondary"} className="px-3 py-1">
+                  {sanPham.soLuong > 0 ? "Còn hàng" : "Tạm hết hàng"}
+                </Badge>
+             </div>
+
+             {/* Dòng Số lượng + Đơn vị */}
+             <div className="d-flex align-items-center gap-2">
+                <span className="fw-bold text-dark" style={{minWidth:'80px'}}>Số lượng:</span>
+                <span className="text-danger fw-bold fs-5">{sanPham.soLuong}</span>
+                {/* Đơn vị hiển thị ngay sau số lượng */}
+                <span className="tag-donvi" style={{margin:0}}>{sanPham.donVi}</span>
+             </div>
+          </div>
+
+          <div className="mb-3 fw-bold text-success"><i className="fa-solid fa-circle-info me-2"></i>Mô tả chi tiết:</div>
+          <div className="detail-desc-box">
+             <div dangerouslySetInnerHTML={{__html: sanPham.moTa || 'Đang cập nhật nội dung...'}}></div>
+          </div>
+
+          <div className="d-grid gap-2">
+            <Button 
+              className="btn-add-cart-lg"
+              onClick={() => sanPham.soLuong > 0 && themVaoGio(sanPham)} 
+              disabled={sanPham.soLuong <= 0}
+            >
+              <i className="fa-solid fa-cart-plus me-2"></i> 
+              {sanPham.soLuong > 0 ? "THÊM VÀO GIỎ NGAY" : "HẾT HÀNG"}
+            </Button>            
+            
+          </div>
         </Col>
       </Row>
     </Container>

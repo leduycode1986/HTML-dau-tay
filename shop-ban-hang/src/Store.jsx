@@ -106,17 +106,46 @@ function Store() {
 
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
 
-  const themVaoGio = (sp) => { 
-    if(sp.soLuong <= 0) return toast.error("Hết hàng!");
-    const check = gioHang.find(i => i.id === sp.id); 
-    if (check) setGioHang(gioHang.map(i => i.id === sp.id ? {...i, soLuong: i.soLuong + 1} : i)); 
-    else setGioHang([...gioHang, {...sp, soLuong: 1}]); 
-    toast.success(`Đã thêm "${sp.ten}"!`); 
-  };
-  const chinhSuaSoLuong = (id, type) => setGioHang(gioHang.map(i => i.id===id ? {...i, soLuong: type==='tang'?i.soLuong+1:Math.max(1,i.soLuong-1)} : i));
+const themVaoGio = (sp) => { 
+  if(sp.soLuong <= 0) return toast.error("Sản phẩm đã hết hàng!");
+  
+  const check = gioHang.find(i => i.id === sp.id); 
+  
+  if (check) {
+    // Kiểm tra: Nếu số lượng trong giỏ + 1 mà lớn hơn tồn kho (tonKho) thì chặn
+    if (check.soLuong + 1 > check.tonKho) {
+      return toast.warning(`Kho chỉ còn ${check.tonKho} sản phẩm!`);
+    }
+    setGioHang(gioHang.map(i => i.id === sp.id ? {...i, soLuong: i.soLuong + 1} : i)); 
+  } else {
+    // QUAN TRỌNG: Lưu thêm thuộc tính 'tonKho' để sau này so sánh
+    // sp.soLuong lúc này là tồn kho gốc từ DB
+    setGioHang([...gioHang, {...sp, soLuong: 1, tonKho: sp.soLuong}]); 
+  }
+  toast.success(`Đã thêm "${sp.ten}"!`); 
+};
+  const chinhSuaSoLuong = (id, type) => {
+    setGioHang(gioHang.map(i => {
+        if (i.id === id) {
+        if (type === 'tang') {
+            // --- ĐOẠN KHÁC BIỆT QUAN TRỌNG NHẤT ---
+            // Nó dừng lại kiểm tra xem trong kho còn hàng không?
+            if (i.soLuong + 1 > i.tonKho) { 
+            // Nếu hết hàng -> Báo lỗi và Dừng lại (return i cũ, không tăng nữa)
+            toast.warning(`Kho chỉ còn ${i.tonKho} sản phẩm!`);
+            return i; 
+            }
+            // ---------------------------------------
+            return { ...i, soLuong: i.soLuong + 1 }; // Chỉ tăng nếu còn hàng
+        } else {
+            return { ...i, soLuong: Math.max(1, i.soLuong - 1) };
+        }
+        }
+        return i;
+    }));
+    };
   const xoaSanPham = (id) => setGioHang(gioHang.filter(i=>i.id!==id));
-  const handleLogout = async () => { await signOut(auth); navigate('/'); };
-
+  const handleLogout = async () => { await signOut(auth); if (location.pathname.includes('/member')) {navigate('/');}toast.info("Đã đăng xuất");};
   const sanPhamHienThi = dsSanPham.filter(sp => sp.ten?.toLowerCase().includes(tuKhoa.toLowerCase()));
   const isAdminPage = location.pathname.startsWith('/admin');
   const sliderSettings = { dots: true, infinite: true, speed: 500, slidesToShow: 1, slidesToScroll: 1, autoplay: true };
@@ -206,8 +235,12 @@ function Store() {
                     </Dropdown>
                 ) : (
                     // Nút Đăng Nhập: Thay vì chữ text đơn điệu, giờ là nút màu đỏ
-                    <Link to="/auth" className="btn-header-action btn-login-header">
-                    <i className="fa-regular fa-user"></i> Đăng nhập
+                    <Link 
+                        to="/auth" 
+                        state={{ from: location.pathname }} // <--- THÊM DÒNG NÀY (Lưu vị trí hiện tại)
+                        className="btn-header-action btn-login-header"
+                        >
+                        <i className="fa-regular fa-user"></i> Đăng nhập
                     </Link>
                 )}
                 </Nav>
@@ -337,20 +370,25 @@ function Store() {
             <div className="recent-list-scroll">
                 {recentProducts.map(sp => (
                 <Link key={sp.id} to={`/san-pham/${sp.slug || toSlug(sp.ten)}`} className="recent-card">
-                    
-                    {/* Ảnh sản phẩm */}
-                    <img src={sp.anh} alt={sp.ten} className="recent-card-img" />
-                    
-                    {/* Tên và Giá */}
-                    <div className="recent-card-body">
-                    <div className="recent-card-name" title={sp.ten}>{sp.ten}</div>
-                    <div className="recent-card-price">
-                    {sp.giaBan?.toLocaleString()}
-                    {/* Đổi lại thành Yên Nhật theo đúng yêu cầu */}
-                    <span className="currency-symbol">¥</span>
-                    </div>
-                    </div>                    
-                </Link>
+                <img src={sp.anh} alt={sp.ten} className="recent-card-img" />
+                <div className="recent-card-body">
+                <div className="recent-card-name" title={sp.ten}>{sp.ten}</div>
+                
+                {/* 1. GIÁ TIỀN (Chỉ hiện giá) */}
+                <div className="recent-card-price mb-1">
+                    {sp.giaBan?.toLocaleString()} <span className="currency-symbol">¥</span>
+                </div>
+
+                {/* 2. SỐ LƯỢNG + ĐƠN VỊ (Hiện bên dưới giá) */}
+                <div className="small text-muted d-flex align-items-center gap-1">
+                    <span>Số lượng:</span>
+                    <span className="fw-bold text-danger">{sp.soLuong}</span>
+                    <span className="tag-donvi" style={{fontSize:'10px', padding:'1px 5px', margin:0}}>
+                        {sp.donVi}
+                    </span>
+                </div>
+                </div>                    
+            </Link>
                 ))}
             </div>
             </Container>

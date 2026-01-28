@@ -40,7 +40,7 @@ function FlashSale({ dsSanPham, themVaoGio, shopConfig }) {
      <Container className="py-5">
         {/* Tiêu đề trang */}
         <div className="mb-4 pb-2 border-bottom d-flex align-items-center justify-content-between">
-           <h2 className="fw-bold text-danger m-0"><i className="fa-solid fa-bolt me-2"></i> KHUYẾN MÃI FLASH SALE</h2>
+           <h2 className="fw-bold text-danger m-0"><i className="fa-solid fa-bolt me-2"></i> KHUYẾN MÃI SỐC</h2>
            <Link to="/"><Button variant="outline-secondary" size="sm">Quay lại</Button></Link>
         </div>
 

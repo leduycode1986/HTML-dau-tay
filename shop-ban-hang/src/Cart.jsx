@@ -61,7 +61,7 @@ function Cart({ gioHang, chinhSuaSoLuong, xoaSanPham, currentUser }) {
             <div className="d-flex justify-content-between mb-4"><span className="text-secondary">Phí ship:</span><span className="text-muted small">(Tính ở bước sau)</span></div>
             <div className="d-flex justify-content-between border-top pt-3 mb-4"><span className="h5 fw-bold">TỔNG CỘNG:</span><span className="h4 text-danger fw-bold">{tamTinh.toLocaleString()} ¥</span></div>
             <Link to="/checkout"><Button variant="success" size="lg" className="w-100 fw-bold rounded shadow-sm">TIẾN HÀNH THANH TOÁN <i className="fa-solid fa-arrow-right ms-2"></i></Button></Link>
-            {!currentUser && <Alert variant="warning" className="mt-3 small mb-0"><i className="fa-solid fa-triangle-exclamation me-1"></i> Bạn chưa đăng nhập. Hãy <Link to="/auth" className="fw-bold text-dark">đăng nhập</Link> để tích điểm nhé!</Alert>}
+            {!currentUser && <Alert variant="warning" className="mt-3 small mb-0"><i className="fa-solid fa-triangle-exclamation me-1"></i> Bạn chưa đăng nhập. Hãy <Link to="/auth" state={{ from: '/cart' }} className="fw-bold text-dark mx-1">đăng nhập</Link>để tích điểm nhé!</Alert>}
           </div>
         </Col>
       </Row>

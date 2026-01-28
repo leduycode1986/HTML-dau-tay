@@ -43,28 +43,27 @@ img { max-width: 100%; height: auto; }
 
 /* 2. Ảnh Logo: Hình tròn (Circular) như con dấu */
 .brand-logo-img {
-  height: 90px !important;        /* Tăng kích thước lên xíu cho rõ */
-  width: 90px !important;         /* Bắt buộc Chiều rộng = Chiều cao để thành hình tròn */
-  object-fit: contain !important; /* Giúp logo nằm gọn trong hình tròn, không bị cắt */
+  /* Kích thước CỐ ĐỊNH - Thêm min/max để chống bị trình duyệt tự chỉnh */
+  width: 90px !important;
+  height: 90px !important;
+  min-width: 90px !important;  /* Quan trọng: Chống bị bóp méo chiều ngang */
+  min-height: 90px !important; /* Quan trọng: Chống bị bóp méo chiều dọc */
+  max-width: none !important;  /* Gỡ bỏ giới hạn max-width 100% của Bootstrap */
   
-  border-radius: 50% !important;  /* Bí quyết tạo hình tròn là đây */
-  background-color: #ffffff !important; /* Nền trắng sạch sẽ */
-  padding: 8px !important;        /* Khoảng cách để logo không bị dính sát mép */
+  /* Bắt buộc tỷ lệ khung hình là 1:1 (Hình vuông) */
+  aspect-ratio: 1 / 1 !important; 
+  flex-shrink: 0 !important;   /* Không cho phép bị co lại trong Flexbox */
+
+  object-fit: contain !important; /* Logo nằm gọn trong hình tròn */
   
-  /* Tạo hiệu ứng "ẩn" và nổi nhẹ */
+  border-radius: 50% !important;  /* Bo tròn 50% của hình vuông -> Hình tròn */
+  background-color: #ffffff !important;
+  padding: 8px !important;        
+  
   box-shadow: 0 5px 15px rgba(0,0,0,0.08) !important; 
-  border: 0.5px solid #f1f1f1 !important; /* Viền siêu mỏng để định hình */
+  border: 0.5px solid #f1f1f1 !important; 
   
-  /*transition: all 0.5s ease !important; Hiệu ứng chuyển động mượt mà */
 }
-
-/* Hiệu ứng khi di chuột vào Logo: Xoay nhẹ rất vui mắt */
-.brand-logo-img:hover {
-  transform: rotate(360deg); /* Xoay 1 vòng tròn */
-  box-shadow: 0 8px 20px rgba(25, 135, 84, 0.2) !important; /* Bóng chuyển màu xanh */
-  border-color: #198754 !important; /* Viền chuyển xanh */
-}
-
 /* 3. Khung chứa chữ: Căn giữa tuyệt đối */
 .brand-info {
   display: flex !important;
@@ -708,4 +707,306 @@ img { max-width: 100%; height: auto; }
   margin-top: 4px;
   color: #ffcdd2; /* Màu đỏ nhạt */
   text-align: center;
+}
+/* --- TRANG CHECKOUT (REDESIGN) --- */
+
+/* Khung bao ngoài */
+.checkout-card {
+  background: white;
+  border-radius: 16px;
+  border: none;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05); /* Bóng đổ mờ sang trọng */
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.checkout-card-header {
+  background: #f8f9fa;
+  padding: 20px 25px;
+  border-bottom: 1px solid #eee;
+}
+
+.checkout-title {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  color: #198754;
+  text-transform: uppercase;
+  font-size: 1.1rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.checkout-body {
+  padding: 30px;
+}
+
+/* Tùy chỉnh Input Form */
+.form-label-custom {
+  font-weight: 700;
+  color: #495057;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+.form-label-custom span.required {
+  color: #dc3545;
+  margin-left: 3px;
+}
+
+.input-custom-group .input-group-text {
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
+  color: #198754; /* Icon màu xanh */
+}
+
+.form-control-lg-custom {
+  padding: 12px 15px;
+  font-size: 14px;
+  border-radius: 8px !important;
+  border: 1px solid #dee2e6;
+  transition: all 0.3s;
+}
+.form-control-lg-custom:focus {
+  border-color: #198754;
+  box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.1);
+}
+
+/* Phương thức thanh toán */
+.payment-method-item {
+  border: 2px solid #f1f1f1;
+  border-radius: 12px;
+  padding: 15px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
+  background: white;
+}
+.payment-method-item:hover {
+  background: #f9f9f9;
+}
+.payment-method-item.active {
+  border-color: #198754;
+  background-color: #f0fff4;
+  box-shadow: 0 4px 15px rgba(25, 135, 84, 0.1);
+}
+.payment-icon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+/* Danh sách sản phẩm nhỏ bên phải */
+.mini-product-item {
+  display: flex;
+  gap: 15px;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+  border-bottom: 1px dashed #eee;
+}
+.mini-product-img {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #eee;
+}
+
+/* Phần tổng tiền */
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #666;
+}
+.summary-row.total {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid #eee;
+  align-items: center;
+}
+.summary-label { font-weight: 600; }
+.summary-value { font-weight: 700; color: #333; }
+.total-price {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #d32f2f;
+}
+/* --- BANNER KHUYẾN KHÍCH ĐĂNG KÝ (CHECKOUT) --- */
+.register-incentive-card {
+  background: linear-gradient(to right, #fff3cd, #fff8e1);
+  border: 1px solid #ffeeba;
+  border-left: 5px solid #ffc107;
+  border-radius: 8px;
+  padding: 15px 20px;
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 10px rgba(255, 193, 7, 0.15);
+  animation: slideInDown 0.5s ease;
+}
+
+.incentive-text {
+  color: #856404;
+  font-size: 15px;
+}
+
+.incentive-points {
+  font-weight: 800;
+  color: #d32f2f;
+  font-size: 1.1rem;
+}
+
+.btn-register-now {
+  background-color: #ffc107;
+  color: #333;
+  font-weight: 700;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 20px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: all 0.3s;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn-register-now:hover {
+  background-color: #ffca2c;
+  transform: translateY(-2px);
+  color: #000;
+}
+
+/* Hiệu ứng trượt xuống nhẹ nhàng */
+@keyframes slideInDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* --- NHÃN ĐƠN VỊ TÍNH (DÙNG CHUNG) --- */
+.tag-donvi {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 900;          /* Siêu đậm */
+  font-size: 13px;           /* Kích thước vừa phải */
+  color: #212529;            /* Chữ màu tối */
+  background-color: #ffc107; /* Nền vàng thương hiệu */
+  padding: 3px 8px;          /* Khoảng cách đệm */
+  border-radius: 4px;        /* Bo góc nhẹ */
+  letter-spacing: 1px;       /* Giãn chữ sang trọng */
+  text-transform: uppercase; /* Viết hoa toàn bộ */
+  display: inline-block;
+  vertical-align: middle;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Bóng nhẹ cho nổi */
+  margin-left: 8px;          /* Cách thành phần đứng trước nó 1 chút */
+}
+/* --- TRANG CHI TIẾT SẢN PHẨM (REDESIGN) --- */
+
+/* 1. Khung ảnh sản phẩm */
+.detail-img-box {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.08); /* Bóng đổ mềm */
+  border: 1px solid #f0f0f0;
+  background: white;
+  padding: 10px;
+  /* Giới hạn chiều cao để ảnh không bị quá khổ */
+  max-height: 500px; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detail-img-box img {
+  max-height: 480px; /* Ảnh nằm gọn trong khung */
+  width: auto !important; /* Tự động theo chiều cao, không ép giãn ngang */
+  max-width: 100%;
+  object-fit: contain;
+  transition: transform 0.3s;
+}
+.detail-img-box:hover img {
+  transform: scale(1.02); /* Phóng to nhẹ khi di chuột */
+}
+
+/* 2. Tên sản phẩm */
+.detail-title {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  font-size: 2rem;
+  color: #198754;
+  text-transform: uppercase;
+  margin-bottom: 15px;
+  line-height: 1.2;
+}
+
+/* 3. Giá tiền */
+.detail-price {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 900;
+  font-size: 2.2rem;
+  color: #d32f2f;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* 4. Khung mô tả */
+.detail-desc-box {
+  background-color: #fff;
+  border-left: 4px solid #198754; /* Viền xanh bên trái tạo điểm nhấn */
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+  margin-bottom: 25px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #555;
+}
+
+/* 5. Nút thêm vào giỏ (Nổi bật hẳn) */
+.btn-add-cart-lg {
+  background: linear-gradient(90deg, #198754, #20c997);
+  border: none;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 15px 30px;
+  font-size: 1.1rem;
+  border-radius: 50px;
+  box-shadow: 0 10px 20px rgba(25, 135, 84, 0.3);
+  transition: all 0.3s;
+}
+.btn-add-cart-lg:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 25px rgba(25, 135, 84, 0.4);
+}
+.btn-add-cart-lg:disabled {
+  background: #ccc;
+  box-shadow: none;
+  transform: none;
+}
+/* --- NÚT QUAY LẠI TRANG CHỦ (STYLE MỚI) --- */
+.btn-back-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background-color: white;
+  color: #198754;           /* Màu xanh thương hiệu */
+  border: 1px solid #198754;
+  border-radius: 50px;      /* Bo tròn viên thuốc */
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  text-decoration: none !important;
+}
+
+.btn-back-home:hover {
+  background-color: #198754;
+  color: white;
+  transform: translateX(-5px); /* Hiệu ứng trượt nhẹ sang trái */
+  box-shadow: 0 4px 10px rgba(25, 135, 84, 0.2);
 }

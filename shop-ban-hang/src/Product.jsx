@@ -28,11 +28,12 @@ function Product({ sp, themVaoGio, openQuickView }) {
           <Card.Title className="fs-6 fw-bold text-truncate mb-1">{sp.ten}</Card.Title>
         </Link>
         
-        <div className="d-flex justify-content-between align-items-center mb-2 small text-muted">
-          <span>Đơn vị: {sp.donVi}</span>
-          <span className={sp.soLuong > 0 ? "text-success fw-bold" : "text-danger fw-bold"}>
-            Kho: {sp.soLuong}
+        <div className="mb-2 d-flex align-items-center">
+          <span className={`small fw-bold ${sp.soLuong > 0 ? "text-success" : "text-danger"}`}>
+            Số lượng: {sp.soLuong}
           </span>
+          {/* Gọi class từ CSS vào đây */}
+          <span className="tag-donvi">{sp.donVi}</span>
         </div>
 
         <div className="mt-auto">
