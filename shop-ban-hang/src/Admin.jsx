@@ -16,13 +16,15 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
   const [showPass, setShowPass] = useState(false);
   const [adminConfig] = useState(() => { try { const s = JSON.parse(localStorage.getItem('adminConfig') || '{}'); return { user: s.user||'admin', pass: s.pass||'123' }; } catch { return { user: 'admin', pass: '123' }; } });
   
-  // --- CẬP NHẬT STATE CẤU HÌNH (THÊM FAX, COPYRIGHT, LINKS...) ---
+  // --- STATE CẤU HÌNH (Đã bao gồm các trường mới cho bài viết) ---
   const [shopConfig, setShopConfig] = useState({ 
     tenShop:'', slogan:'', logo:'', topBarText:'', copyright:'', // Nhóm nhận diện
     diaChi:'', sdt:'', fax:'', email:'', openingHours:'',       // Nhóm liên hệ
-    linkFacebook:'', zalo:'', linkPolicy:'', linkGuide:'',      // Nhóm MXH & Hỗ trợ
-    flashSaleEnd:'', tyLeDiem: 1000,                            // Nhóm vận hành
-    bankInfo: { bankName: '', accountNum: '', accountName: '', bankBranch: '', qrImage: '' } // Nhóm thanh toán
+    linkFacebook:'', zalo:'', 
+    linkPolicy:'/chinh-sach', policyContent:'', // Link & Nội dung Chính sách
+    linkGuide:'/huong-dan', guideContent:'',    // Link & Nội dung Hướng dẫn
+    flashSaleEnd:'', tyLeDiem: 1000,                            
+    bankInfo: { bankName: '', accountNum: '', accountName: '', bankBranch: '', qrImage: '' } 
   });
   
   const [dsBanner, setDsBanner] = useState([]);
@@ -31,7 +33,10 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
   const [dsUser, setDsUser] = useState([]); 
   const [dsReview, setDsReview] = useState([]); 
 
-  const [modal, setModal] = useState({ sp: false, dm: false, order: false, user: false });
+  // Modal: Thêm 'post' để mở trình soạn thảo
+  const [modal, setModal] = useState({ sp: false, dm: false, order: false, user: false, post: false });
+  const [postEditor, setPostEditor] = useState({ type: '', title: '', content: '' }); // State quản lý nội dung đang soạn
+
   const [editData, setEditData] = useState({ sp: null, dm: null, user: null, order: null });
   const [formDataSP, setFormDataSP] = useState({ ten:'', giaGoc:'', phanTramGiam:0, giaBan:'', donVi:'Cái', soLuong:100, moTa:'', anh:'', phanLoai:'', isMoi:false, isKhuyenMai:false, isBanChay:false, isFlashSale:false });
   const [formDM, setFormDM] = useState({ ten:'', icon:'', parent:'', order:'' });
@@ -41,6 +46,7 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
   const [userPoint, setUserPoint] = useState(0);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
+  // Bộ lọc sản phẩm
   const [filterCategory, setFilterCategory] = useState('');
   const [sortPrice, setSortPrice] = useState('');
 
@@ -71,6 +77,26 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
   
   const onSaveSP = () => { handleUpdateDS_SP(editData.sp?'UPDATE':'ADD', {...formDataSP, slug: toSlug(formDataSP.ten)}); setModal({...modal,sp:false}); };
   const onSaveDM = () => { handleUpdateDS_DM(editData.dm?'UPDATE':'ADD', {...formDM, slug: toSlug(formDM.ten)}); setModal({...modal,dm:false}); };
+
+  // --- HÀM MỞ/LƯU BÀI VIẾT ---
+  const openPostEditor = (type) => {
+    if (type === 'policy') {
+      setPostEditor({ type: 'policy', title: 'Chính Sách Đổi Trả', content: shopConfig.policyContent || '' });
+    } else {
+      setPostEditor({ type: 'guide', title: 'Hướng Dẫn Mua Hàng', content: shopConfig.guideContent || '' });
+    }
+    setModal({...modal, post: true});
+  };
+
+  const savePostContent = () => {
+    if (postEditor.type === 'policy') {
+      setShopConfig(prev => ({ ...prev, policyContent: postEditor.content }));
+    } else {
+      setShopConfig(prev => ({ ...prev, guideContent: postEditor.content }));
+    }
+    setModal({...modal, post: false});
+  };
+  // ---------------------------
 
   const filteredProducts = dsSanPham
     .filter(sp => filterCategory ? sp.phanLoai === filterCategory : true)
@@ -103,11 +129,9 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
       <Container fluid className="p-3">
         <Tabs defaultActiveKey="config" className="bg-white p-2 rounded border shadow-sm mb-3">
           
-          {/* --- TAB CẤU HÌNH ĐÃ ĐƯỢC SẮP XẾP LẠI --- */}
           <Tab eventKey="config" title="⚙️ CẤU HÌNH">
             <div className="bg-white p-4 border rounded shadow-sm">
               <Row>
-                {/* CỘT TRÁI: NHẬN DIỆN THƯƠNG HIỆU */}
                 <Col md={4} className="border-end">
                   <h6 className="text-success fw-bold border-bottom pb-2 mb-3">🏷️ NHẬN DIỆN THƯƠNG HIỆU</h6>
                   <Form.Group className="mb-3 text-center">
@@ -123,9 +147,7 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
                   <Form.Group className="mb-3"><Form.Label className="fw-bold text-secondary">Copyright Footer</Form.Label><Form.Control value={shopConfig.copyright} placeholder="@2026 Thực phẩm Mai Vàng" onChange={e=>setShopConfig({...shopConfig, copyright:e.target.value})}/></Form.Group>
                 </Col>
 
-                {/* CỘT PHẢI: CHI TIẾT LIÊN HỆ & CÀI ĐẶT */}
                 <Col md={8}>
-                  {/* 1. LIÊN HỆ */}
                   <h6 className="text-primary fw-bold border-bottom pb-2 mb-3">📞 THÔNG TIN LIÊN HỆ</h6>
                   <Row className="g-3 mb-4">
                     <Col md={12}><Form.Group><Form.Label className="fw-bold">Địa chỉ</Form.Label><Form.Control value={shopConfig.diaChi} onChange={e=>setShopConfig({...shopConfig, diaChi:e.target.value})}/></Form.Group></Col>
@@ -135,16 +157,28 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
                     <Col md={6}><Form.Group><Form.Label className="fw-bold">Giờ mở cửa</Form.Label><Form.Control value={shopConfig.openingHours} onChange={e=>setShopConfig({...shopConfig, openingHours:e.target.value})}/></Form.Group></Col>
                   </Row>
 
-                  {/* 2. MẠNG XÃ HỘI & LIÊN KẾT */}
-                  <h6 className="text-info fw-bold border-bottom pb-2 mb-3">🌐 MẠNG XÃ HỘI & LIÊN KẾT HỖ TRỢ</h6>
+                  <h6 className="text-info fw-bold border-bottom pb-2 mb-3">🌐 BÀI VIẾT & LIÊN KẾT HỖ TRỢ</h6>
                   <Row className="g-3 mb-4">
                     <Col md={6}><Form.Group><Form.Label className="fw-bold">Link Facebook</Form.Label><Form.Control value={shopConfig.linkFacebook} onChange={e=>setShopConfig({...shopConfig, linkFacebook:e.target.value})}/></Form.Group></Col>
                     <Col md={6}><Form.Group><Form.Label className="fw-bold">Số Zalo OA</Form.Label><Form.Control value={shopConfig.zalo} onChange={e=>setShopConfig({...shopConfig, zalo:e.target.value})}/></Form.Group></Col>
-                    <Col md={6}><Form.Group><Form.Label className="fw-bold">Link Chính Sách Đổi Trả</Form.Label><Form.Control value={shopConfig.linkPolicy} placeholder="/chinh-sach" onChange={e=>setShopConfig({...shopConfig, linkPolicy:e.target.value})}/></Form.Group></Col>
-                    <Col md={6}><Form.Group><Form.Label className="fw-bold">Link Hướng Dẫn Mua Hàng</Form.Label><Form.Control value={shopConfig.linkGuide} placeholder="/huong-dan" onChange={e=>setShopConfig({...shopConfig, linkGuide:e.target.value})}/></Form.Group></Col>
+                    
+                    {/* --- NÚT SOẠN BÀI VIẾT --- */}
+                    <Col md={6}>
+                      <Form.Label className="fw-bold">Chính Sách Đổi Trả</Form.Label>
+                      <InputGroup>
+                        <Form.Control value={shopConfig.linkPolicy} placeholder="/chinh-sach" onChange={e=>setShopConfig({...shopConfig, linkPolicy:e.target.value})}/>
+                        <Button variant="outline-primary" onClick={() => openPostEditor('policy')}><i className="fa-solid fa-pen"></i> Soạn bài</Button>
+                      </InputGroup>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Label className="fw-bold">Hướng Dẫn Mua Hàng</Form.Label>
+                      <InputGroup>
+                        <Form.Control value={shopConfig.linkGuide} placeholder="/huong-dan" onChange={e=>setShopConfig({...shopConfig, linkGuide:e.target.value})}/>
+                        <Button variant="outline-primary" onClick={() => openPostEditor('guide')}><i className="fa-solid fa-pen"></i> Soạn bài</Button>
+                      </InputGroup>
+                    </Col>
                   </Row>
 
-                  {/* 3. THANH TOÁN & VẬN HÀNH */}
                   <h6 className="text-warning fw-bold border-bottom pb-2 mb-3">💳 THANH TOÁN & VẬN HÀNH</h6>
                   <Row className="g-3">
                     <Col md={4}><Form.Group><Form.Label className="fw-bold">Tên Ngân Hàng</Form.Label><Form.Control value={shopConfig.bankInfo?.bankName} onChange={e=>setShopConfig({...shopConfig, bankInfo:{...shopConfig.bankInfo, bankName:e.target.value}})}/></Form.Group></Col>
@@ -163,6 +197,7 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
             </div>
           </Tab>
 
+          {/* --- CÁC TAB KHÁC ĐẦY ĐỦ CHỨC NĂNG --- */}
           <Tab eventKey="banner" title="🖼️ BANNER">
             <div className="bg-white p-3 shadow-sm rounded">
               <div className="d-flex gap-2 mb-3 align-items-center">
@@ -180,6 +215,8 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
             <div className="bg-white p-3 rounded shadow-sm">
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <Button variant="success" className="fw-bold" onClick={()=>{setEditData({...editData, sp:null}); setFormDataSP({ ten:'', giaGoc:'', phanTramGiam:0, giaBan:'', donVi:'Cái', soLuong:100, moTa:'', anh:'', phanLoai:'', isMoi:false, isKhuyenMai:false, isBanChay:false, isFlashSale:false }); setModal({...modal, sp:true})}}>+ THÊM MỚI</Button>
+                
+                {/* --- BỘ LỌC SẢN PHẨM --- */}
                 <div className="d-flex gap-2">
                   <Form.Select size="sm" style={{width:180}} value={filterCategory} onChange={e=>setFilterCategory(e.target.value)}>
                     <option value="">-- Tất cả danh mục --</option>
@@ -192,6 +229,7 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
                   </Form.Select>
                 </div>
               </div>
+
               <div className="table-responsive">
                 <Table hover bordered className="align-middle">
                   <thead className="bg-light">
@@ -277,9 +315,8 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
         </Tabs>
       </Container>
 
-      {/* --- CÁC MODAL GIỮ NGUYÊN NHƯ CŨ (Đã rút gọn để hiển thị tập trung vào Tab Cấu Hình) --- */}
+      {/* --- CÁC MODAL --- */}
       <Modal show={modal.order} onHide={()=>setModal({...modal,order:false})} size="lg" centered>
-        {/* ... (Code Modal Order cũ) ... */}
         <Modal.Header closeButton className="bg-success text-white"><Modal.Title>Chi tiết đơn hàng #{selectedOrder?.maDonHang}</Modal.Title></Modal.Header>
         <Modal.Body>
           {selectedOrder && (
@@ -291,9 +328,13 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
               </Row>
               <Table bordered hover>
                 <thead className="bg-light"><tr><th>Sản phẩm</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead>
-                <tbody>{selectedOrder.gioHang?.map((i,x)=><tr key={x}><td>{i.ten} ({i.donVi})</td><td className="text-center">{i.soLuong}</td><td className="text-end">{i.giaBan?.toLocaleString()}</td><td className="text-end fw-bold text-danger">{(i.giaBan*i.soLuong).toLocaleString()}</td></tr>)}</tbody>
+                <tbody>
+                  {selectedOrder.gioHang?.map((i,x)=><tr key={x}><td>{i.ten} ({i.donVi})</td><td className="text-center">{i.soLuong}</td><td className="text-end">{i.giaBan?.toLocaleString()}</td><td className="text-end fw-bold text-danger">{(i.giaBan*i.soLuong).toLocaleString()}</td></tr>)}
+                </tbody>
               </Table>
-              <div className="text-end"><h5>Tổng tiền: <span className="text-danger fw-bold">{selectedOrder.tongTien?.toLocaleString()} ¥</span></h5></div>
+              <div className="text-end">
+                <h5>Tổng tiền: <span className="text-danger fw-bold">{selectedOrder.tongTien?.toLocaleString()} ¥</span></h5>
+              </div>
             </div>
           )}
         </Modal.Body>
@@ -301,28 +342,146 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
       </Modal>
 
       <Modal show={modal.sp} onHide={()=>setModal({...modal,sp:false})} size="xl" centered>
-        {/* ... (Code Modal Sản phẩm cũ) ... */}
-        <Modal.Header closeButton className="bg-success text-white"><Modal.Title className="fw-bold">{editData.sp?'CẬP NHẬT SẢN PHẨM':'THÊM SẢN PHẨM MỚI'}</Modal.Title></Modal.Header>
+        <Modal.Header closeButton className="bg-success text-white">
+          <Modal.Title className="fw-bold">{editData.sp?'CẬP NHẬT SẢN PHẨM':'THÊM SẢN PHẨM MỚI'}</Modal.Title>
+        </Modal.Header>
         <Modal.Body className="bg-light">
           <Form>
             <Row>
               <Col md={8}>
-                <Card className="shadow-sm border-0 mb-3"><Card.Body><h6 className="fw-bold text-success border-bottom pb-2 mb-3">📦 THÔNG TIN CHUNG</h6><Row><Col md={12}><Form.Group className="mb-3"><Form.Label className="fw-bold">Tên sản phẩm <span className="text-danger">*</span></Form.Label><Form.Control size="lg" value={formDataSP.ten} onChange={e=>setFormDataSP({...formDataSP,ten:e.target.value})} placeholder="Nhập tên sản phẩm..."/></Form.Group></Col><Col md={6}><Form.Group className="mb-3"><Form.Label className="fw-bold">Danh mục</Form.Label><Form.Select value={formDataSP.phanLoai} onChange={e=>setFormDataSP({...formDataSP,phanLoai:e.target.value})}><option value="">-- Chọn danh mục --</option>{dsDanhMuc.map(d=><option key={d.id} value={d.id}>{d.parent?'-- ':''}{d.ten}</option>)}</Form.Select></Form.Group></Col><Col md={6}><Form.Group className="mb-3"><Form.Label className="fw-bold">Đơn vị tính</Form.Label><Form.Control value={formDataSP.donVi} onChange={e=>setFormDataSP({...formDataSP,donVi:e.target.value})} placeholder="Ví dụ: Cái, Hộp, Kg..."/></Form.Group></Col></Row></Card.Body></Card>
-                <Card className="shadow-sm border-0 mb-3"><Card.Body><h6 className="fw-bold text-primary border-bottom pb-2 mb-3">💰 GIÁ CẢ & KHO HÀNG</h6><Row><Col md={4}><Form.Group className="mb-3"><Form.Label className="fw-bold">Giá Gốc (¥)</Form.Label><Form.Control type="number" value={formDataSP.giaGoc} onChange={e => setFormDataSP({ ...formDataSP, giaGoc: parseInt(e.target.value) || 0 })} /></Form.Group></Col><Col md={4}><Form.Group className="mb-3"><Form.Label className="fw-bold">% Giảm</Form.Label><Form.Control type="number" value={formDataSP.phanTramGiam} onChange={e => setFormDataSP({ ...formDataSP, phanTramGiam: parseInt(e.target.value) || 0 })} /></Form.Group></Col><Col md={4}><Form.Group className="mb-3"><Form.Label className="fw-bold text-danger">Giá Bán (Sau giảm)</Form.Label><Form.Control className="bg-light fw-bold text-danger" readOnly value={formDataSP.giaBan?.toLocaleString()} /></Form.Group></Col><Col md={12}><Form.Group><Form.Label className="fw-bold">Số lượng trong kho</Form.Label><Form.Control type="number" value={formDataSP.soLuong} onChange={e => setFormDataSP({ ...formDataSP, soLuong: parseInt(e.target.value) || 0 })}/></Form.Group></Col></Row></Card.Body></Card>
-                <Card className="shadow-sm border-0"><Card.Body><Form.Group><Form.Label className="fw-bold">Mô tả sản phẩm</Form.Label><ReactQuill theme="snow" value={formDataSP.moTa} onChange={v=>setFormDataSP({...formDataSP,moTa:v})} style={{height:'200px', marginBottom:'50px'}}/></Form.Group></Card.Body></Card>
+                <Card className="shadow-sm border-0 mb-3">
+                  <Card.Body>
+                    <h6 className="fw-bold text-success border-bottom pb-2 mb-3">📦 THÔNG TIN CHUNG</h6>
+                    <Row>
+                      <Col md={12}>
+                        <Form.Group className="mb-3">
+                          <Form.Label className="fw-bold">Tên sản phẩm <span className="text-danger">*</span></Form.Label>
+                          <Form.Control size="lg" value={formDataSP.ten} onChange={e=>setFormDataSP({...formDataSP,ten:e.target.value})} placeholder="Nhập tên sản phẩm..."/>
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label className="fw-bold">Danh mục</Form.Label>
+                          <Form.Select value={formDataSP.phanLoai} onChange={e=>setFormDataSP({...formDataSP,phanLoai:e.target.value})}>
+                            <option value="">-- Chọn danh mục --</option>
+                            {dsDanhMuc.map(d=><option key={d.id} value={d.id}>{d.parent?'-- ':''}{d.ten}</option>)}
+                          </Form.Select>
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label className="fw-bold">Đơn vị tính</Form.Label>
+                          <Form.Control value={formDataSP.donVi} onChange={e=>setFormDataSP({...formDataSP,donVi:e.target.value})} placeholder="Ví dụ: Cái, Hộp, Kg..."/>
+                        </Form.Group>
+                      </Col>
+                    </Row>
+                  </Card.Body>
+                </Card>
+
+                <Card className="shadow-sm border-0 mb-3">
+                  <Card.Body>
+                    <h6 className="fw-bold text-primary border-bottom pb-2 mb-3">💰 GIÁ CẢ & KHO HÀNG</h6>
+                    <Row>
+                      <Col md={4}>
+                        <Form.Group className="mb-3">
+                          <Form.Label className="fw-bold">Giá Gốc (¥)</Form.Label>
+                          <Form.Control type="number" value={formDataSP.giaGoc} onChange={e => setFormDataSP({ ...formDataSP, giaGoc: parseInt(e.target.value) || 0 })} />
+                        </Form.Group>
+                      </Col>
+                      <Col md={4}>
+                        <Form.Group className="mb-3">
+                          <Form.Label className="fw-bold">% Giảm</Form.Label>
+                          <Form.Control type="number" value={formDataSP.phanTramGiam} onChange={e => setFormDataSP({ ...formDataSP, phanTramGiam: parseInt(e.target.value) || 0 })} />
+                        </Form.Group>
+                      </Col>
+                      <Col md={4}>
+                        <Form.Group className="mb-3">
+                          <Form.Label className="fw-bold text-danger">Giá Bán (Sau giảm)</Form.Label>
+                          <Form.Control className="bg-light fw-bold text-danger" readOnly value={formDataSP.giaBan?.toLocaleString()} />
+                        </Form.Group>
+                      </Col>
+                      <Col md={12}>
+                        <Form.Group>
+                          <Form.Label className="fw-bold">Số lượng trong kho</Form.Label>
+                          <Form.Control type="number" value={formDataSP.soLuong} onChange={e => setFormDataSP({ ...formDataSP, soLuong: parseInt(e.target.value) || 0 })}/>
+                        </Form.Group>
+                      </Col>
+                    </Row>
+                  </Card.Body>
+                </Card>
+
+                <Card className="shadow-sm border-0">
+                  <Card.Body>
+                    <Form.Group>
+                      <Form.Label className="fw-bold">Mô tả sản phẩm</Form.Label>
+                      <ReactQuill theme="snow" value={formDataSP.moTa} onChange={v=>setFormDataSP({...formDataSP,moTa:v})} style={{height:'200px', marginBottom:'50px'}}/>
+                    </Form.Group>
+                  </Card.Body>
+                </Card>
               </Col>
+
               <Col md={4}>
-                <Card className="shadow-sm border-0 mb-3"><Card.Body className="text-center"><h6 className="fw-bold text-secondary border-bottom pb-2 mb-3">📷 HÌNH ẢNH</h6><div className="border rounded p-2 mb-3 bg-white" style={{minHeight:'200px', display:'flex', alignItems:'center', justifyContent:'center'}}><img src={formDataSP.anh||NO_IMAGE} className="img-fluid" style={{maxHeight:'250px'}}/></div><Form.Control type="file" onChange={e=>handleUpload(e,'PRODUCT')} /></Card.Body></Card>
-                <Card className="shadow-sm border-0"><Card.Body><h6 className="fw-bold text-warning border-bottom pb-2 mb-3">⚙️ TÙY CHỌN KHÁC</h6><Form.Check type="switch" id="isMoi" label="Sản phẩm Mới (New)" className="mb-2 fw-bold text-success" checked={formDataSP.isMoi} onChange={e=>setFormDataSP({...formDataSP, isMoi:e.target.checked})}/><Form.Check type="switch" id="isBanChay" label="Sản phẩm Bán Chạy" className="mb-2 fw-bold text-primary" checked={formDataSP.isBanChay} onChange={e=>setFormDataSP({...formDataSP, isBanChay:e.target.checked})}/><Form.Check type="switch" id="isFlashSale" label="⚡ Bật Flash Sale" className="mb-2 fw-bold text-warning" checked={formDataSP.isFlashSale} onChange={e=>setFormDataSP({...formDataSP, isFlashSale:e.target.checked})}/></Card.Body></Card>
+                <Card className="shadow-sm border-0 mb-3">
+                  <Card.Body className="text-center">
+                    <h6 className="fw-bold text-secondary border-bottom pb-2 mb-3">📷 HÌNH ẢNH</h6>
+                    <div className="border rounded p-2 mb-3 bg-white" style={{minHeight:'200px', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                      <img src={formDataSP.anh||NO_IMAGE} className="img-fluid" style={{maxHeight:'250px'}}/>
+                    </div>
+                    <Form.Control type="file" onChange={e=>handleUpload(e,'PRODUCT')} />
+                  </Card.Body>
+                </Card>
+
+                <Card className="shadow-sm border-0">
+                  <Card.Body>
+                    <h6 className="fw-bold text-warning border-bottom pb-2 mb-3">⚙️ TÙY CHỌN KHÁC</h6>
+                    <Form.Check 
+                      type="switch" id="isMoi" label="Sản phẩm Mới (New)" className="mb-2 fw-bold text-success"
+                      checked={formDataSP.isMoi} onChange={e=>setFormDataSP({...formDataSP, isMoi:e.target.checked})}
+                    />
+                    <Form.Check 
+                      type="switch" id="isBanChay" label="Sản phẩm Bán Chạy" className="mb-2 fw-bold text-primary"
+                      checked={formDataSP.isBanChay} onChange={e=>setFormDataSP({...formDataSP, isBanChay:e.target.checked})}
+                    />
+                    <Form.Check 
+                      type="switch" id="isFlashSale" label="⚡ Bật Flash Sale" className="mb-2 fw-bold text-warning"
+                      checked={formDataSP.isFlashSale} onChange={e=>setFormDataSP({...formDataSP, isFlashSale:e.target.checked})}
+                    />
+                  </Card.Body>
+                </Card>
               </Col>
             </Row>
           </Form>
         </Modal.Body>
-        <Modal.Footer><Button variant="secondary" onClick={()=>setModal({...modal,sp:false})}>Hủy bỏ</Button><Button variant="success" size="lg" className="px-5 fw-bold" onClick={onSaveSP}>LƯU SẢN PHẨM</Button></Modal.Footer>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={()=>setModal({...modal,sp:false})}>Hủy bỏ</Button>
+          <Button variant="success" size="lg" className="px-5 fw-bold" onClick={onSaveSP}>LƯU SẢN PHẨM</Button>
+        </Modal.Footer>
       </Modal>
 
       <Modal show={modal.dm} onHide={()=>setModal({...modal,dm:false})} centered><Modal.Header closeButton><Modal.Title>Danh mục</Modal.Title></Modal.Header><Modal.Body><Form.Group className="mb-2"><Form.Label>Tên</Form.Label><Form.Control value={formDM.ten} onChange={e=>setFormDM({...formDM,ten:e.target.value})}/></Form.Group><Form.Group className="mb-2"><Form.Label>Thứ tự</Form.Label><Form.Control type="number" value={formDM.order} onChange={e=>setFormDM({...formDM,order:e.target.value})}/></Form.Group><Form.Group className="mb-2"><Form.Label>Icon</Form.Label><Form.Select value={formDM.icon} onChange={e=>setFormDM({...formDM,icon:e.target.value})}><option>-- Chọn --</option>{ICON_LIST.map(i=><option key={i} value={i}>{i}</option>)}</Form.Select></Form.Group><Form.Group><Form.Label>Cha</Form.Label><Form.Select value={formDM.parent} onChange={e=>setFormDM({...formDM,parent:e.target.value})}><option value="">Gốc</option>{dsDanhMuc.filter(d=>!d.parent).map(d=><option key={d.id} value={d.customId||d.id}>{d.ten}</option>)}</Form.Select></Form.Group></Modal.Body><Modal.Footer><Button variant="secondary" onClick={()=>setModal({...modal,dm:false})}>Hủy</Button><Button onClick={onSaveDM}>Lưu</Button></Modal.Footer></Modal>
       <Modal show={modal.user} onHide={()=>setModal({...modal,user:false})} centered><Modal.Header closeButton><Modal.Title>Sửa điểm</Modal.Title></Modal.Header><Modal.Body><Form.Group><Form.Label>Điểm tích lũy</Form.Label><Form.Control type="number" value={userPoint} onChange={e=>setUserPoint(e.target.value)}/></Form.Group></Modal.Body><Modal.Footer><Button variant="secondary" onClick={()=>setModal({...modal,user:false})}>Hủy</Button><Button onClick={async()=>{await updateDoc(doc(db,"users",editData.user.id),{diemTichLuy:parseInt(userPoint)}); setModal({...modal,user:false})}}>Lưu</Button></Modal.Footer></Modal>
+
+      {/* --- MODAL SOẠN THẢO BÀI VIẾT (MỚI THÊM) --- */}
+      <Modal show={modal.post} onHide={()=>setModal({...modal,post:false})} size="xl" centered>
+        <Modal.Header closeButton className="bg-primary text-white">
+          <Modal.Title className="fw-bold"><i className="fa-solid fa-pen-to-square me-2"></i> SOẠN THẢO: {postEditor.title}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p className="text-muted fst-italic mb-3">
+            Nội dung bạn soạn thảo dưới đây sẽ hiển thị tại trang <strong>{postEditor.type==='policy'?'Chính sách đổi trả':'Hướng dẫn mua hàng'}</strong>.
+          </p>
+          <ReactQuill 
+            theme="snow" 
+            value={postEditor.content} 
+            onChange={(val) => setPostEditor(prev => ({ ...prev, content: val }))} 
+            style={{height: '400px', marginBottom: '50px'}}
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={()=>setModal({...modal,post:false})}>Hủy</Button>
+          <Button variant="primary" className="fw-bold px-4" onClick={savePostContent}>XÁC NHẬN (Lưu tạm)</Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

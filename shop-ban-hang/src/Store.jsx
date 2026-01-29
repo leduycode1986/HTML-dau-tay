@@ -22,6 +22,7 @@ import OrderLookup from './OrderLookup';
 import FlashSale from './FlashSale'; 
 import Checkout from './Checkout'; 
 import { toSlug } from './utils';
+import PostPage from './PostPage';
 
 function Store() {
   // ... (Phần Logic State giữ nguyên) ...
@@ -315,6 +316,8 @@ function Store() {
                 <Route path="/tra-cuu" element={<OrderLookup />} />
                 <Route path="/flash-sale" element={<FlashSale dsSanPham={dsSanPham} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/chinh-sach" element={<PostPage title="Chính sách đổi trả" content={shopConfig.policyContent} />} />
+                <Route path="/huong-dan" element={<PostPage title="Hướng dẫn mua hàng" content={shopConfig.guideContent} />} />
                 <Route path="/admin" element={<Admin dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} dsDonHang={dsDonHang} handleUpdateDS_SP={async (t,d)=>t==='ADD'?addDoc(collection(db,"sanPham"),d):t==='DELETE'?deleteDoc(doc(db,"sanPham",d)):updateDoc(doc(db,"sanPham",d.id),d)} handleUpdateDS_DM={async (t,d)=>t==='ADD'?addDoc(collection(db,"danhMuc"),d):t==='DELETE'?deleteDoc(doc(db,"danhMuc",d)):updateDoc(doc(db,"danhMuc",d.id),d)} handleUpdateStatusOrder={(id,s)=>updateDoc(doc(db,"donHang",id),{trangThai:s})} handleDeleteOrder={(id)=>deleteDoc(doc(db,"donHang",id))} />} />
               </Routes>
             </Col>
