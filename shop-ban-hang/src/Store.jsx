@@ -23,6 +23,8 @@ import FlashSale from './FlashSale';
 import Checkout from './Checkout'; 
 import { toSlug } from './utils';
 import PostPage from './PostPage';
+import News from './News';
+import NewsDetail from './NewsDetail';
 
 function Store() {
   // ... (Phần Logic State giữ nguyên) ...
@@ -46,7 +48,7 @@ function Store() {
   const [tuKhoa, setTuKhoa] = useState('');
   // Cập nhật State shopConfig để nhận thêm các trường mới
   const [shopConfig, setShopConfig] = useState({ 
-    tenShop: 'MaiVang Shop', slogan: '', logo: '', diaChi: '', sdt: '', fax:'', email:'',
+    tenShop: 'Thực Phẩm Mai Vàng', slogan: '', logo: '', diaChi: '', sdt: '', fax:'', email:'',
     openingHours: '', topBarText: '', flashSaleEnd: '', copyright:'', linkPolicy:'', linkGuide:'', 
     linkFacebook:'', zalo:''
   });
@@ -255,6 +257,10 @@ function Store() {
                     {dsSanPham.some(s => s.phanTramGiam > 0) && (
                       <div className={`category-item fw-bold text-danger ${location.pathname.includes('khuyen-mai-soc') ? 'active' : ''}`} onClick={() => navigate('/danh-muc/khuyen-mai-soc')}><span>🔥 KHUYẾN MÃI SỐC</span><i className="fa-solid fa-chevron-right small"></i></div>
                     )}
+                    <div className={`category-item fw-bold text-success ${location.pathname.includes('/tin-tuc') ? 'active' : ''}`} onClick={() => navigate('/tin-tuc')}>
+                      <span><i className="fa-solid fa-utensils me-2"></i> GÓC ẨM THỰC</span>
+                      <i className="fa-solid fa-chevron-right small"></i>
+                    </div>
                     {dsDanhMuc.filter(d => !d.parent).map(parent => {
                       const hasChild = dsDanhMuc.some(c => c.parent === parent.id);
                       const isOpen = openMenuId === parent.id;
@@ -318,6 +324,8 @@ function Store() {
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/chinh-sach" element={<PostPage title="Chính sách đổi trả" content={shopConfig.policyContent} />} />
                 <Route path="/huong-dan" element={<PostPage title="Hướng dẫn mua hàng" content={shopConfig.guideContent} />} />
+                <Route path="/tin-tuc" element={<News />} />
+                <Route path="/tin-tuc/:slug" element={<NewsDetail />} />
                 <Route path="/admin" element={<Admin dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} dsDonHang={dsDonHang} handleUpdateDS_SP={async (t,d)=>t==='ADD'?addDoc(collection(db,"sanPham"),d):t==='DELETE'?deleteDoc(doc(db,"sanPham",d)):updateDoc(doc(db,"sanPham",d.id),d)} handleUpdateDS_DM={async (t,d)=>t==='ADD'?addDoc(collection(db,"danhMuc"),d):t==='DELETE'?deleteDoc(doc(db,"danhMuc",d)):updateDoc(doc(db,"danhMuc",d.id),d)} handleUpdateStatusOrder={(id,s)=>updateDoc(doc(db,"donHang",id),{trangThai:s})} handleDeleteOrder={(id)=>deleteDoc(doc(db,"donHang",id))} />} />
               </Routes>
             </Col>
@@ -362,7 +370,7 @@ function Store() {
               <Col md={3} className="mb-4">
                 <h5 className="footer-title">VỀ CHÚNG TÔI</h5>
                 <Link to="/" className="footer-link">Trang chủ</Link>
-                <Link to="/flash-sale" className="footer-link">Khuyến mãi</Link>
+                <Link to="/danh-muc/khuyen-mai-soc" className="footer-link">Khuyến mãi</Link>
                 <Link to="/tra-cuu" className="footer-link">Tra cứu đơn</Link>
               </Col>
               
