@@ -41,9 +41,9 @@ function Checkout({ gioHang, setGioHang, userData }) {
   useEffect(() => {
     const unsubConfig = onSnapshot(doc(db, "cauHinh", "thongTinChung"), d => d.exists() && setShopConfig(d.data()));
     const unsubShip = onSnapshot(collection(db, "shipping"), sn => setDsShip(sn.docs.map(d=>d.data())));
-    if (gioHang.length === 0) navigate('/cart');
+    if (gioHang.length === 0 && !showSuccess) {navigate('/cart');}
     return () => { unsubConfig(); unsubShip(); }
-  }, [gioHang, navigate]);
+  }, [gioHang, navigate, showSuccess]);
 
   const handleSelectShip = (e) => { 
     const kv = e.target.value; 

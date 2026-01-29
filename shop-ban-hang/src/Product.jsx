@@ -7,10 +7,18 @@ function Product({ sp, themVaoGio, openQuickView }) {
   return (
     <Card className="product-card h-100 border-0 shadow-sm">
       <div className="position-relative overflow-hidden group-hover-zoom">
-        <div className="badge-overlay">
-          {sp.isFlashSale && <span className="badge-item badge-flash">⚡ SALE SỐC</span>}
-          {sp.isMoi && <span className="badge-item badge-new">✨ MỚI</span>}
-          {sp.phanTramGiam > 0 && <span className="badge-item badge-hot">-{sp.phanTramGiam}%</span>}
+        {/* --- KHU VỰC HIỂN THỊ BADGE (ĐÃ SỬA) --- */}
+        <div className="position-absolute top-0 start-0 p-2" style={{zIndex: 5}}>
+          {/* 1. Flash Sale */}
+          {sp.isFlashSale && <Badge bg="warning" text="dark" className="me-1 shadow-sm">⚡ Sale</Badge>}
+          
+          {/* 2. Giảm giá (Chỉ hiện khi > 0) */}
+          {sp.phanTramGiam > 0 && (
+            <Badge bg="danger" className="shadow-sm me-1">-{sp.phanTramGiam}%</Badge>
+          )}
+          
+          {/* 3. Sản phẩm mới */}
+          {sp.isMoi && <Badge bg="success" className="shadow-sm">New</Badge>}
         </div>
         
         <Link to={`/san-pham/${sp.slug || toSlug(sp.ten)}`}>

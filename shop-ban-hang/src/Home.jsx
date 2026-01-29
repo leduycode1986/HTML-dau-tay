@@ -46,7 +46,15 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
 
   let finalProducts = safeDS; 
 
-  if (slug) {
+// --- TÌM ĐOẠN LOGIC LỌC SẢN PHẨM TRONG Home.jsx ---
+
+if (slug) {
+  // [MỚI] Thêm logic cho trang Khuyến mãi sốc
+  if (slug === 'khuyen-mai-soc') {
+    finalProducts = safeDS.filter(sp => sp.phanTramGiam > 0);
+  } 
+  // Logic cũ cho danh mục thường
+  else {
     const danhMucHienTai = safeDM.find(d => (d.slug === slug) || (toSlug(d.ten) === slug) || (d.id === slug));
     if (danhMucHienTai) {
       const idDM = danhMucHienTai.id;
@@ -55,6 +63,7 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
       finalProducts = []; 
     }
   }
+}
 
   if (minPrice || maxPrice) finalProducts = finalProducts.filter(sp => { const g = sp.giaBan||0; return g>=(minPrice||0) && g<=(maxPrice||Infinity); });
   if (sortType === 'price-asc') finalProducts.sort((a, b) => (a.giaBan||0) - (b.giaBan||0));

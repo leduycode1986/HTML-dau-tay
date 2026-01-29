@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Form, Modal, Badge, Tab, Tabs, Row, Col, Container, InputGroup } from 'react-bootstrap';
+import { Table, Button, Form, Modal, Badge, Tab, Tabs, Row, Col, Container, InputGroup, Card } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -33,6 +33,10 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
   const [userPoint, setUserPoint] = useState(0);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
+  // --- STATE BỘ LỌC SẢN PHẨM ---
+  const [filterCategory, setFilterCategory] = useState('');
+  const [sortPrice, setSortPrice] = useState(''); // 'asc' | 'desc'
+
   useEffect(() => {
     if (isLoggedIn) {
       const unsubs = [
@@ -51,27 +55,33 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
   const luuCauHinh = async () => { await setDoc(doc(db, "cauHinh", "thongTinChung"), shopConfig); alert("Đã lưu cấu hình!"); };
   const handleUpload = (e, type) => { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onloadend=()=>{ if(type==='LOGO') setShopConfig({...shopConfig,logo:r.result}); if(type==='PRODUCT') setFormDataSP({...formDataSP,anh:r.result}); if(type==='BANNER') setFormBanner({...formBanner,img:r.result}); if(type==='QR') setShopConfig(p => ({...p, bankInfo: {...p.bankInfo, qrImage: r.result}})); }; r.readAsDataURL(f); };
   const add = async (col, d) => await addDoc(collection(db, col), d); const del = async (col, id) => confirm('Xóa?') && await deleteDoc(doc(db, col, id));
-  useEffect(() => { const g = parseInt(formDataSP.giaGoc)||0, p = parseInt(formDataSP.phanTramGiam)||0; setFormDataSP(prev => ({...prev, giaBan: g > 0 ? Math.floor(g*(1-p/100)) : ''})); }, [formDataSP.giaGoc, formDataSP.phanTramGiam]);
+  
+  // Logic tính giá bán tự động
+  useEffect(() => { 
+    const g = parseInt(formDataSP.giaGoc)||0;
+    const p = parseInt(formDataSP.phanTramGiam)||0; 
+    setFormDataSP(prev => ({...prev, giaBan: g > 0 ? Math.floor(g*(1-p/100)) : 0})); 
+  }, [formDataSP.giaGoc, formDataSP.phanTramGiam]);
   
   const onSaveSP = () => { handleUpdateDS_SP(editData.sp?'UPDATE':'ADD', {...formDataSP, slug: toSlug(formDataSP.ten)}); setModal({...modal,sp:false}); };
   const onSaveDM = () => { handleUpdateDS_DM(editData.dm?'UPDATE':'ADD', {...formDM, slug: toSlug(formDM.ten)}); setModal({...modal,dm:false}); };
+
+  // --- LOGIC LỌC SẢN PHẨM ---
+  const filteredProducts = dsSanPham
+    .filter(sp => filterCategory ? sp.phanLoai === filterCategory : true)
+    .sort((a, b) => {
+      if (sortPrice === 'asc') return (a.giaBan - b.giaBan);
+      if (sortPrice === 'desc') return (b.giaBan - a.giaBan);
+      return 0;
+    });
 
   if (!isLoggedIn) return (
     <div className="admin-login-wrapper">
       <div className="admin-login-card">
         <h3 className="text-center text-success fw-bold mb-4">QUẢN TRỊ SHOP</h3>
         <Form onSubmit={handleLogin}>
-          <Form.Group className="mb-3">
-            <Form.Label className="fw-bold">Tài khoản</Form.Label>
-            <Form.Control className="p-3" value={loginInput.user} onChange={e=>setLoginInput({...loginInput, user:e.target.value})}/>
-          </Form.Group>
-          <Form.Group className="mb-4">
-            <Form.Label className="fw-bold">Mật khẩu</Form.Label>
-            <InputGroup>
-              <Form.Control className="p-3" type={showPass?"text":"password"} value={loginInput.pass} onChange={e=>setLoginInput({...loginInput, pass:e.target.value})}/>
-              <Button variant="outline-secondary" onClick={()=>setShowPass(!showPass)}><i className={showPass?"fa-solid fa-eye-slash":"fa-solid fa-eye"}></i></Button>
-            </InputGroup>
-          </Form.Group>
+          <Form.Group className="mb-3"><Form.Label className="fw-bold">Tài khoản</Form.Label><Form.Control className="p-3" value={loginInput.user} onChange={e=>setLoginInput({...loginInput, user:e.target.value})}/></Form.Group>
+          <Form.Group className="mb-4"><Form.Label className="fw-bold">Mật khẩu</Form.Label><InputGroup><Form.Control className="p-3" type={showPass?"text":"password"} value={loginInput.pass} onChange={e=>setLoginInput({...loginInput, pass:e.target.value})}/><Button variant="outline-secondary" onClick={()=>setShowPass(!showPass)}><i className={showPass?"fa-solid fa-eye-slash":"fa-solid fa-eye"}></i></Button></InputGroup></Form.Group>
           <Button type="submit" variant="success" className="w-100 py-3 fw-bold rounded-pill">ĐĂNG NHẬP</Button>
         </Form>
       </div>
@@ -86,32 +96,9 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
       </div>
 
       <Container fluid className="p-3">
-        <Tabs defaultActiveKey="orders" className="bg-white p-2 rounded border shadow-sm mb-3">
+        {/* --- SẮP XẾP LẠI THỨ TỰ TAB THEO YÊU CẦU --- */}
+        <Tabs defaultActiveKey="config" className="bg-white p-2 rounded border shadow-sm mb-3">
           
-          <Tab eventKey="orders" title={`📋 ĐƠN HÀNG (${dsDonHang.length})`}>
-            <div className="table-responsive bg-white rounded shadow-sm p-3">
-              <Table hover bordered className="align-middle">
-                <thead className="bg-light text-uppercase small"><tr><th>Mã</th><th>Ngày</th><th>Khách</th><th>Thanh toán</th><th>Tổng</th><th>Trạng thái</th><th>Xử lý</th></tr></thead>
-                <tbody>{dsDonHang.sort((a,b)=>b.ngayDat-a.ngayDat).map(dh=><tr key={dh.id}>
-                  <td className="fw-bold text-primary">{dh.maDonHang||`#${dh.id.slice(0,5)}`}</td>
-                  <td>{dh.ngayDat?.toDate?dh.ngayDat.toDate().toLocaleDateString('vi-VN'):''}</td>
-                  <td><div>{dh.khachHang?.ten}</div><small className="text-muted">{dh.khachHang?.sdt}</small></td>
-                  <td><Badge bg="info">{dh.hinhThucThanhToan==='cod'?'COD':(dh.hinhThucThanhToan==='bank'?'Chuyển khoản':'QR Code')}</Badge></td>
-                  <td className="text-danger fw-bold">{dh.tongTien?.toLocaleString()}¥</td>
-                  <td><select className="form-select form-select-sm" value={dh.trangThai} onChange={(e)=>handleUpdateStatusOrder(dh.id,e.target.value)} style={{width:130, fontWeight:'bold', color: dh.trangThai==='Hoàn thành'?'green':'orange'}}><option>Mới đặt</option><option>Đang giao</option><option>Hoàn thành</option><option>Đã hủy</option></select></td>
-                  <td><Button size="sm" variant="info" className="me-1 text-white" onClick={()=>{setSelectedOrder(dh);setModal({...modal, order:true})}}>Xem</Button><Button size="sm" variant="danger" onClick={()=>handleDeleteOrder(dh.id)}>Xóa</Button></td>
-                </tr>)}</tbody>
-              </Table>
-            </div>
-          </Tab>
-
-          <Tab eventKey="products" title="📦 SẢN PHẨM">
-            <div className="bg-white p-3 rounded shadow-sm">
-              <Button variant="success" className="mb-3 fw-bold" onClick={()=>{setEditData({...editData, sp:null}); setFormDataSP({ ten:'', giaGoc:'', phanTramGiam:0, giaBan:'', donVi:'Cái', soLuong:100, moTa:'', anh:'', phanLoai:'', isMoi:false, isKhuyenMai:false, isBanChay:false, isFlashSale:false }); setModal({...modal, sp:true})}}>+ THÊM MỚI</Button>
-              <div className="table-responsive"><Table hover bordered className="align-middle"><thead className="bg-light"><tr><th>Ảnh</th><th>Tên</th><th>Đơn vị</th><th>Kho</th><th>Giá bán</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>{dsSanPham.map(sp=><tr key={sp.id}><td><img src={sp.anh||NO_IMAGE} width="50" height="50" style={{objectFit:'cover', borderRadius:4}}/></td><td className="fw-bold">{sp.ten}</td><td>{sp.donVi}</td><td className={sp.soLuong<10?'text-danger fw-bold':''}>{sp.soLuong}</td><td className="text-danger fw-bold">{sp.giaBan?.toLocaleString()}¥</td><td>{sp.isFlashSale && <Badge bg="warning" text="dark" className="me-1">⚡</Badge>}{sp.isMoi && <Badge bg="success" className="me-1">New</Badge>}</td><td><Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditData({...editData, sp}); setFormDataSP(sp); setModal({...modal, sp:true})}}>Sửa</Button><Button size="sm" variant="danger" onClick={()=>{if(confirm('Xóa?')) handleUpdateDS_SP('DELETE',sp.id)}}>Xóa</Button></td></tr>)}</tbody></Table></div>
-            </div>
-          </Tab>
-
           <Tab eventKey="config" title="⚙️ CẤU HÌNH">
             <div className="bg-white p-4 border rounded shadow-sm">
               <Row>
@@ -129,13 +116,11 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
                     <Col md={6}><Form.Group><Form.Label className="fw-bold">Zalo</Form.Label><Form.Control value={shopConfig.zalo} onChange={e=>setShopConfig({...shopConfig, zalo:e.target.value})}/></Form.Group></Col>
                     <Col md={6}><Form.Group><Form.Label className="fw-bold">Giờ mở cửa</Form.Label><Form.Control value={shopConfig.openingHours} onChange={e=>setShopConfig({...shopConfig, openingHours:e.target.value})}/></Form.Group></Col>
                     <Col md={12}><Form.Group><Form.Label className="fw-bold">Giới thiệu Footer</Form.Label><Form.Control as="textarea" rows={2} value={shopConfig.gioiThieu} onChange={e=>setShopConfig({...shopConfig, gioiThieu:e.target.value})}/></Form.Group></Col>
-                    
                     <Col md={12} className="mt-3"><h6 className="text-primary fw-bold border-bottom pb-2">THANH TOÁN (VIETQR)</h6></Col>
                     <Col md={6}><Form.Group><Form.Label className="fw-bold">Tên Ngân Hàng</Form.Label><Form.Control value={shopConfig.bankInfo?.bankName} onChange={e=>setShopConfig({...shopConfig, bankInfo:{...shopConfig.bankInfo, bankName:e.target.value}})}/></Form.Group></Col>
                     <Col md={6}><Form.Group><Form.Label className="fw-bold">Số Tài Khoản</Form.Label><Form.Control value={shopConfig.bankInfo?.accountNum} onChange={e=>setShopConfig({...shopConfig, bankInfo:{...shopConfig.bankInfo, accountNum:e.target.value}})}/></Form.Group></Col>
                     <Col md={6}><Form.Group><Form.Label className="fw-bold">Chủ Tài Khoản</Form.Label><Form.Control value={shopConfig.bankInfo?.accountName} onChange={e=>setShopConfig({...shopConfig, bankInfo:{...shopConfig.bankInfo, accountName:e.target.value}})}/></Form.Group></Col>
                     <Col md={12}><Form.Group><Form.Label className="fw-bold">Ảnh QR</Form.Label><div className="d-flex gap-2"><img src={shopConfig.bankInfo?.qrImage} style={{height:50}}/><Form.Control type="file" onChange={e=>handleUpload(e,'QR')}/></div></Form.Group></Col>
-
                     <Col md={6} className="mt-3"><Form.Group><Form.Label className="fw-bold text-danger">Kết thúc Flash Sale</Form.Label><Form.Control type="datetime-local" value={shopConfig.flashSaleEnd} onChange={e=>setShopConfig({...shopConfig, flashSaleEnd:e.target.value})}/></Form.Group></Col>
                     <Col md={6} className="mt-3"><Form.Group><Form.Label className="fw-bold">Tỷ lệ điểm (¥/1 điểm)</Form.Label><Form.Control type="number" value={shopConfig.tyLeDiem} onChange={e=>setShopConfig({...shopConfig, tyLeDiem:e.target.value})}/></Form.Group></Col>
                     <Col md={12} className="mt-3"><Button variant="success" className="w-100 fw-bold py-2" onClick={luuCauHinh}>LƯU CẤU HÌNH</Button></Col>
@@ -144,9 +129,7 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
               </Row>
             </div>
           </Tab>
-          
-          <Tab eventKey="menu" title="📂 DANH MỤC"><Button size="sm" className="mb-2 fw-bold" onClick={()=>{setEditData({...editData, dm:null}); setFormDM({ten:'', icon:'', parent:'', order:''}); setModal({...modal, dm:true})}}>+ DANH MỤC</Button><Table bordered size="sm"><tbody>{dsDanhMuc.sort((a,b)=>a.order-b.order).map(d=><tr key={d.id}><td>{d.order}</td><td>{d.parent?'↳ ':''}{d.ten}</td><td>{d.icon}</td><td><Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditData({...editData, dm:d}); setFormDM(d); setModal({...modal, dm:true})}}>✏️</Button><Button size="sm" variant="danger" onClick={()=>handleUpdateDS_DM('DELETE',d.id)}>🗑️</Button></td></tr>)}</tbody></Table></Tab>
-          
+
           <Tab eventKey="banner" title="🖼️ BANNER">
             <div className="bg-white p-3 shadow-sm rounded">
               <div className="d-flex gap-2 mb-3 align-items-center">
@@ -157,7 +140,76 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
               <div className="d-flex flex-wrap gap-3">{dsBanner.map(b=><div key={b.id} className="position-relative border rounded p-1" style={{width:200}}><img src={b.img} className="w-100 rounded"/><Button size="sm" variant="danger" className="position-absolute top-0 end-0 rounded-circle" style={{transform:'translate(50%,-50%)'}} onClick={()=>del('banners', b.id)}>X</Button></div>)}</div>
             </div>
           </Tab>
-          
+
+          <Tab eventKey="menu" title="📂 DANH MỤC"><Button size="sm" className="mb-2 fw-bold" onClick={()=>{setEditData({...editData, dm:null}); setFormDM({ten:'', icon:'', parent:'', order:''}); setModal({...modal, dm:true})}}>+ DANH MỤC</Button><Table bordered size="sm"><tbody>{dsDanhMuc.sort((a,b)=>a.order-b.order).map(d=><tr key={d.id}><td>{d.order}</td><td>{d.parent?'↳ ':''}{d.ten}</td><td>{d.icon}</td><td><Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditData({...editData, dm:d}); setFormDM(d); setModal({...modal, dm:true})}}>✏️</Button><Button size="sm" variant="danger" onClick={()=>handleUpdateDS_DM('DELETE',d.id)}>🗑️</Button></td></tr>)}</tbody></Table></Tab>
+
+          <Tab eventKey="products" title="📦 SẢN PHẨM">
+            <div className="bg-white p-3 rounded shadow-sm">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <Button variant="success" className="fw-bold" onClick={()=>{setEditData({...editData, sp:null}); setFormDataSP({ ten:'', giaGoc:'', phanTramGiam:0, giaBan:'', donVi:'Cái', soLuong:100, moTa:'', anh:'', phanLoai:'', isMoi:false, isKhuyenMai:false, isBanChay:false, isFlashSale:false }); setModal({...modal, sp:true})}}>+ THÊM MỚI</Button>
+                
+                {/* --- BỘ LỌC SẢN PHẨM --- */}
+                <div className="d-flex gap-2">
+                  <Form.Select size="sm" style={{width:180}} value={filterCategory} onChange={e=>setFilterCategory(e.target.value)}>
+                    <option value="">-- Tất cả danh mục --</option>
+                    {dsDanhMuc.map(d => <option key={d.id} value={d.id}>{d.ten}</option>)}
+                  </Form.Select>
+                  <Form.Select size="sm" style={{width:150}} value={sortPrice} onChange={e=>setSortPrice(e.target.value)}>
+                    <option value="">-- Sắp xếp giá --</option>
+                    <option value="asc">Giá thấp đến cao</option>
+                    <option value="desc">Giá cao đến thấp</option>
+                  </Form.Select>
+                </div>
+              </div>
+
+              <div className="table-responsive">
+                <Table hover bordered className="align-middle">
+                  <thead className="bg-light">
+                    <tr><th>Ảnh</th><th>Tên</th><th>Đơn vị</th><th>Kho</th><th>Giá bán</th><th>Trạng thái</th><th>Thao tác</th></tr>
+                  </thead>
+                  <tbody>
+                    {filteredProducts.map(sp=>(
+                      <tr key={sp.id}>
+                        <td><img src={sp.anh||NO_IMAGE} width="50" height="50" style={{objectFit:'cover', borderRadius:4}}/></td>
+                        <td className="fw-bold">{sp.ten}</td>
+                        <td>{sp.donVi}</td>
+                        <td className={sp.soLuong<10?'text-danger fw-bold':''}>{sp.soLuong}</td>
+                        <td className="text-danger fw-bold">{sp.giaBan?.toLocaleString()}¥</td>
+                        <td>
+                          {sp.isFlashSale && <Badge bg="warning" text="dark" className="me-1">⚡ Sale</Badge>}
+                          {sp.phanTramGiam > 0 && <Badge bg="danger" className="me-1">-{sp.phanTramGiam}%</Badge>}
+                          {sp.isMoi && <Badge bg="success" className="me-1">New</Badge>}
+                        </td>
+                        <td>
+                          {/* Đã bỏ nút Con Mắt (Xem) */}
+                          <Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditData({...editData, sp}); setFormDataSP(sp); setModal({...modal, sp:true})}}>Sửa</Button>
+                          <Button size="sm" variant="danger" onClick={()=>{if(confirm('Xóa?')) handleUpdateDS_SP('DELETE',sp.id)}}>Xóa</Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
+            </div>
+          </Tab>
+
+          <Tab eventKey="orders" title={`📋 ĐƠN HÀNG (${dsDonHang.length})`}>
+            <div className="table-responsive bg-white rounded shadow-sm p-3">
+              <Table hover bordered className="align-middle">
+                <thead className="bg-light text-uppercase small"><tr><th>Mã</th><th>Ngày</th><th>Khách</th><th>Thanh toán</th><th>Tổng</th><th>Trạng thái</th><th>Xử lý</th></tr></thead>
+                <tbody>{dsDonHang.sort((a,b)=>b.ngayDat-a.ngayDat).map(dh=><tr key={dh.id}>
+                  <td className="fw-bold text-primary">{dh.maDonHang||`#${dh.id.slice(0,5)}`}</td>
+                  <td>{dh.ngayDat?.toDate?dh.ngayDat.toDate().toLocaleDateString('vi-VN'):''}</td>
+                  <td><div>{dh.khachHang?.ten}</div><small className="text-muted">{dh.khachHang?.sdt}</small></td>
+                  <td><Badge bg="info">{dh.hinhThucThanhToan==='cod'?'COD':(dh.hinhThucThanhToan==='bank'?'Chuyển khoản':'QR Code')}</Badge></td>
+                  <td className="text-danger fw-bold">{dh.tongTien?.toLocaleString()}¥</td>
+                  <td><select className="form-select form-select-sm" value={dh.trangThai} onChange={(e)=>handleUpdateStatusOrder(dh.id,e.target.value)} style={{width:130, fontWeight:'bold', color: dh.trangThai==='Hoàn thành'?'green':'orange'}}><option>Mới đặt</option><option>Đang giao</option><option>Hoàn thành</option><option>Đã hủy</option></select></td>
+                  <td><Button size="sm" variant="info" className="me-1 text-white" onClick={()=>{setSelectedOrder(dh);setModal({...modal, order:true})}}>Xem</Button><Button size="sm" variant="danger" onClick={()=>handleDeleteOrder(dh.id)}>Xóa</Button></td>
+                </tr>)}</tbody>
+              </Table>
+            </div>
+          </Tab>
+
           <Tab eventKey="marketing" title="🎟️ SHIP & COUPON">
             <Row>
               <Col md={6}>
@@ -221,8 +273,127 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
         <Modal.Footer><Button variant="secondary" onClick={()=>setModal({...modal,order:false})}>Đóng</Button></Modal.Footer>
       </Modal>
 
-      <Modal show={modal.sp} onHide={()=>setModal({...modal,sp:false})} size="lg" centered><Modal.Header closeButton><Modal.Title>{editData.sp?'Cập nhật':'Thêm mới'}</Modal.Title></Modal.Header><Modal.Body><Form><Row><Col md={8}><Form.Group className="mb-2"><Form.Label className="fw-bold">Tên sản phẩm</Form.Label><Form.Control value={formDataSP.ten} onChange={e=>setFormDataSP({...formDataSP,ten:e.target.value})}/></Form.Group><Form.Group className="mb-2"><Form.Label className="fw-bold">Danh mục</Form.Label><Form.Select value={formDataSP.phanLoai} onChange={e=>setFormDataSP({...formDataSP,phanLoai:e.target.value})}><option value="">-- Chọn --</option>{dsDanhMuc.map(d=><option key={d.id} value={d.id}>{d.parent?'-- ':''}{d.ten}</option>)}</Form.Select></Form.Group><Row><Col><Form.Group className="mb-2"><Form.Label className="fw-bold">Đơn vị</Form.Label><Form.Control value={formDataSP.donVi} onChange={e=>setFormDataSP({...formDataSP,donVi:e.target.value})}/></Form.Group></Col><Col><Form.Group className="mb-2"><Form.Label className="fw-bold">Kho</Form.Label><Form.Control type="number" value={formDataSP.soLuong} 
-  onChange={e => setFormDataSP({ ...formDataSP, soLuong: parseInt(e.target.value) || 0 })}/></Form.Group></Col></Row><Row><Col><Form.Group className="mb-2"><Form.Label className="fw-bold">Giá Gốc</Form.Label><Form.Control type="number" value={formDataSP.giaGoc} onChange={e => setFormDataSP({ ...formDataSP, giaGoc: parseInt(e.target.value) || 0 })} /></Form.Group></Col><Col><Form.Group className="mb-2"><Form.Label className="fw-bold">% Giảm</Form.Label><Form.Control type="number" value={formDataSP.phanTramGiam} onChange={e => setFormDataSP({ ...formDataSP, phanTramGiam: parseInt(e.target.value) || 0 })} /></Form.Group></Col></Row><Form.Group className="mb-2"><Form.Label className="fw-bold text-danger">Giá Bán</Form.Label><Form.Control className="bg-light fw-bold text-danger" readOnly value={formDataSP.giaBan}/></Form.Group></Col><Col md={4}><Form.Group><Form.Label className="fw-bold">Hình ảnh</Form.Label><Form.Control type="file" onChange={e=>handleUpload(e,'PRODUCT')}/></Form.Group><img src={formDataSP.anh||NO_IMAGE} className="w-100 mt-2 border rounded"/></Col></Row><Form.Group className="mt-2"><Form.Label>Mô tả</Form.Label><ReactQuill theme="snow" value={formDataSP.moTa} onChange={v=>setFormDataSP({...formDataSP,moTa:v})}/></Form.Group></Form></Modal.Body><Modal.Footer><Button variant="secondary" onClick={()=>setModal({...modal,sp:false})}>Hủy</Button><Button onClick={onSaveSP}>Lưu</Button></Modal.Footer></Modal>
+      {/* --- MODAL THÊM/SỬA SẢN PHẨM (REDESIGN LẠI CHO ĐẸP) --- */}
+      <Modal show={modal.sp} onHide={()=>setModal({...modal,sp:false})} size="xl" centered>
+        <Modal.Header closeButton className="bg-success text-white">
+          <Modal.Title className="fw-bold">{editData.sp?'CẬP NHẬT SẢN PHẨM':'THÊM SẢN PHẨM MỚI'}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="bg-light">
+          <Form>
+            <Row>
+              {/* CỘT TRÁI: THÔNG TIN CƠ BẢN */}
+              <Col md={8}>
+                <Card className="shadow-sm border-0 mb-3">
+                  <Card.Body>
+                    <h6 className="fw-bold text-success border-bottom pb-2 mb-3">📦 THÔNG TIN CHUNG</h6>
+                    <Row>
+                      <Col md={12}>
+                        <Form.Group className="mb-3">
+                          <Form.Label className="fw-bold">Tên sản phẩm <span className="text-danger">*</span></Form.Label>
+                          <Form.Control size="lg" value={formDataSP.ten} onChange={e=>setFormDataSP({...formDataSP,ten:e.target.value})} placeholder="Nhập tên sản phẩm..."/>
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label className="fw-bold">Danh mục</Form.Label>
+                          <Form.Select value={formDataSP.phanLoai} onChange={e=>setFormDataSP({...formDataSP,phanLoai:e.target.value})}>
+                            <option value="">-- Chọn danh mục --</option>
+                            {dsDanhMuc.map(d=><option key={d.id} value={d.id}>{d.parent?'-- ':''}{d.ten}</option>)}
+                          </Form.Select>
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label className="fw-bold">Đơn vị tính</Form.Label>
+                          <Form.Control value={formDataSP.donVi} onChange={e=>setFormDataSP({...formDataSP,donVi:e.target.value})} placeholder="Ví dụ: Cái, Hộp, Kg..."/>
+                        </Form.Group>
+                      </Col>
+                    </Row>
+                  </Card.Body>
+                </Card>
+
+                <Card className="shadow-sm border-0 mb-3">
+                  <Card.Body>
+                    <h6 className="fw-bold text-primary border-bottom pb-2 mb-3">💰 GIÁ CẢ & KHO HÀNG</h6>
+                    <Row>
+                      <Col md={4}>
+                        <Form.Group className="mb-3">
+                          <Form.Label className="fw-bold">Giá Gốc (¥)</Form.Label>
+                          <Form.Control type="number" value={formDataSP.giaGoc} onChange={e => setFormDataSP({ ...formDataSP, giaGoc: parseInt(e.target.value) || 0 })} />
+                        </Form.Group>
+                      </Col>
+                      <Col md={4}>
+                        <Form.Group className="mb-3">
+                          <Form.Label className="fw-bold">% Giảm</Form.Label>
+                          <Form.Control type="number" value={formDataSP.phanTramGiam} onChange={e => setFormDataSP({ ...formDataSP, phanTramGiam: parseInt(e.target.value) || 0 })} />
+                        </Form.Group>
+                      </Col>
+                      <Col md={4}>
+                        <Form.Group className="mb-3">
+                          <Form.Label className="fw-bold text-danger">Giá Bán (Sau giảm)</Form.Label>
+                          <Form.Control className="bg-light fw-bold text-danger" readOnly value={formDataSP.giaBan?.toLocaleString()} />
+                        </Form.Group>
+                      </Col>
+                      <Col md={12}>
+                        <Form.Group>
+                          <Form.Label className="fw-bold">Số lượng trong kho</Form.Label>
+                          <Form.Control type="number" value={formDataSP.soLuong} onChange={e => setFormDataSP({ ...formDataSP, soLuong: parseInt(e.target.value) || 0 })}/>
+                        </Form.Group>
+                      </Col>
+                    </Row>
+                  </Card.Body>
+                </Card>
+
+                <Card className="shadow-sm border-0">
+                  <Card.Body>
+                    <Form.Group>
+                      <Form.Label className="fw-bold">Mô tả sản phẩm</Form.Label>
+                      <ReactQuill theme="snow" value={formDataSP.moTa} onChange={v=>setFormDataSP({...formDataSP,moTa:v})} style={{height:'200px', marginBottom:'50px'}}/>
+                    </Form.Group>
+                  </Card.Body>
+                </Card>
+              </Col>
+
+              {/* CỘT PHẢI: ẢNH & TÙY CHỌN */}
+              <Col md={4}>
+                <Card className="shadow-sm border-0 mb-3">
+                  <Card.Body className="text-center">
+                    <h6 className="fw-bold text-secondary border-bottom pb-2 mb-3">📷 HÌNH ẢNH</h6>
+                    <div className="border rounded p-2 mb-3 bg-white" style={{minHeight:'200px', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                      <img src={formDataSP.anh||NO_IMAGE} className="img-fluid" style={{maxHeight:'250px'}}/>
+                    </div>
+                    <Form.Control type="file" onChange={e=>handleUpload(e,'PRODUCT')} />
+                  </Card.Body>
+                </Card>
+
+                <Card className="shadow-sm border-0">
+                  <Card.Body>
+                    <h6 className="fw-bold text-warning border-bottom pb-2 mb-3">⚙️ TÙY CHỌN KHÁC</h6>
+                    <Form.Check 
+                      type="switch" id="isMoi" label="Sản phẩm Mới (New)" className="mb-2 fw-bold text-success"
+                      checked={formDataSP.isMoi} onChange={e=>setFormDataSP({...formDataSP, isMoi:e.target.checked})}
+                    />
+                    <Form.Check 
+                      type="switch" id="isBanChay" label="Sản phẩm Bán Chạy" className="mb-2 fw-bold text-primary"
+                      checked={formDataSP.isBanChay} onChange={e=>setFormDataSP({...formDataSP, isBanChay:e.target.checked})}
+                    />
+                    {/* NÚT FLASH SALE ĐÃ ĐƯỢC THÊM VÀO ĐÂY */}
+                    <Form.Check 
+                      type="switch" id="isFlashSale" label="⚡ Bật Flash Sale" className="mb-2 fw-bold text-warning"
+                      checked={formDataSP.isFlashSale} onChange={e=>setFormDataSP({...formDataSP, isFlashSale:e.target.checked})}
+                    />
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={()=>setModal({...modal,sp:false})}>Hủy bỏ</Button>
+          <Button variant="success" size="lg" className="px-5 fw-bold" onClick={onSaveSP}>LƯU SẢN PHẨM</Button>
+        </Modal.Footer>
+      </Modal>
+
       <Modal show={modal.dm} onHide={()=>setModal({...modal,dm:false})} centered><Modal.Header closeButton><Modal.Title>Danh mục</Modal.Title></Modal.Header><Modal.Body><Form.Group className="mb-2"><Form.Label>Tên</Form.Label><Form.Control value={formDM.ten} onChange={e=>setFormDM({...formDM,ten:e.target.value})}/></Form.Group><Form.Group className="mb-2"><Form.Label>Thứ tự</Form.Label><Form.Control type="number" value={formDM.order} onChange={e=>setFormDM({...formDM,order:e.target.value})}/></Form.Group><Form.Group className="mb-2"><Form.Label>Icon</Form.Label><Form.Select value={formDM.icon} onChange={e=>setFormDM({...formDM,icon:e.target.value})}><option>-- Chọn --</option>{ICON_LIST.map(i=><option key={i} value={i}>{i}</option>)}</Form.Select></Form.Group><Form.Group><Form.Label>Cha</Form.Label><Form.Select value={formDM.parent} onChange={e=>setFormDM({...formDM,parent:e.target.value})}><option value="">Gốc</option>{dsDanhMuc.filter(d=>!d.parent).map(d=><option key={d.id} value={d.customId||d.id}>{d.ten}</option>)}</Form.Select></Form.Group></Modal.Body><Modal.Footer><Button variant="secondary" onClick={()=>setModal({...modal,dm:false})}>Hủy</Button><Button onClick={onSaveDM}>Lưu</Button></Modal.Footer></Modal>
       <Modal show={modal.user} onHide={()=>setModal({...modal,user:false})} centered><Modal.Header closeButton><Modal.Title>Sửa điểm</Modal.Title></Modal.Header><Modal.Body><Form.Group><Form.Label>Điểm tích lũy</Form.Label><Form.Control type="number" value={userPoint} onChange={e=>setUserPoint(e.target.value)}/></Form.Group></Modal.Body><Modal.Footer><Button variant="secondary" onClick={()=>setModal({...modal,user:false})}>Hủy</Button><Button onClick={async()=>{await updateDoc(doc(db,"users",editData.user.id),{diemTichLuy:parseInt(userPoint)}); setModal({...modal,user:false})}}>Lưu</Button></Modal.Footer></Modal>
     </div>

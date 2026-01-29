@@ -325,6 +325,15 @@ const themVaoGio = (sp) => {
                   <div className="sidebar-header"><i className="fa-solid fa-bars me-2"></i> DANH MỤC</div>
                   {shopConfig.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date() && <Link to="/flash-sale" className="d-block p-2 bg-danger text-white fw-bold text-center text-decoration-none">⚡ FLASH SALE ĐANG DIỄN RA</Link>}
                   <div className="category-list">
+                    {dsSanPham.some(s => s.phanTramGiam > 0) && (
+                      <div 
+                        className={`category-item fw-bold text-danger ${location.pathname.includes('khuyen-mai-soc') ? 'active' : ''}`}
+                        onClick={() => navigate('/danh-muc/khuyen-mai-soc')} // Chúng ta sẽ dùng logic danh mục để lọc
+                      >
+                        <span>🔥 KHUYẾN MÃI SỐC</span>
+                        <i className="fa-solid fa-chevron-right small"></i>
+                      </div>
+                    )}
                     {dsDanhMuc.filter(d => !d.parent).map(parent => {
                       const hasChild = dsDanhMuc.some(c => c.parent === parent.id);
                       const isOpen = openMenuId === parent.id;
