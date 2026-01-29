@@ -46,7 +46,6 @@ function Store() {
   });
 
   const [tuKhoa, setTuKhoa] = useState('');
-  // Cập nhật State shopConfig để nhận thêm các trường mới
   const [shopConfig, setShopConfig] = useState({ 
     tenShop: 'Thực Phẩm Mai Vàng', slogan: '', logo: '', diaChi: '', sdt: '', fax:'', email:'',
     openingHours: '', topBarText: '', flashSaleEnd: '', copyright:'', linkPolicy:'', linkGuide:'', 
@@ -65,7 +64,6 @@ function Store() {
   useEffect(() => { window.scrollTo(0, 0); }, [location]);
 
   useEffect(() => {
-    // ... (Giữ nguyên logic lấy dữ liệu) ...
     const unsubSP = onSnapshot(collection(db, "sanPham"), sn => {
         const data = sn.docs.map(d => ({ id: d.id, ...d.data() }));
         setDsSanPham(data.reverse()); 
@@ -89,7 +87,6 @@ function Store() {
     return () => { unsubSP(); unsubDM(); unsubDH(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
   }, []);
 
-  // ... (Giữ nguyên các useEffect khác: FlashSale, Recent, Cart, LocalStorage) ...
   useEffect(() => {
     if(!shopConfig?.flashSaleEnd) return;
     const check = () => {
@@ -132,7 +129,6 @@ function Store() {
 
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
 
-  // ... (Giữ nguyên các hàm: themVaoGio, chinhSuaSoLuong, xoaSanPham, handleLogout) ...
   const themVaoGio = (sp) => { 
     if(sp.soLuong <= 0) return toast.error("Sản phẩm đã hết hàng!");
     const check = gioHang.find(i => i.id === sp.id); 
@@ -253,14 +249,26 @@ function Store() {
                 <div className="sidebar-main">
                   <div className="sidebar-header"><i className="fa-solid fa-bars me-2"></i> DANH MỤC</div>
                   {shopConfig.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date() && <Link to="/flash-sale" className="d-block p-2 bg-danger text-white fw-bold text-center text-decoration-none">⚡ FLASH SALE ĐANG DIỄN RA</Link>}
+                  
                   <div className="category-list">
+                    {/* MENU ĐỘNG: KHUYẾN MÃI - MỚI - BÁN CHẠY - TIN TỨC */}
                     {dsSanPham.some(s => s.phanTramGiam > 0) && (
                       <div className={`category-item fw-bold text-danger ${location.pathname.includes('khuyen-mai-soc') ? 'active' : ''}`} onClick={() => navigate('/danh-muc/khuyen-mai-soc')}><span>🔥 KHUYẾN MÃI SỐC</span><i className="fa-solid fa-chevron-right small"></i></div>
                     )}
+                    
+                    {dsSanPham.some(s => s.isMoi) && (
+                      <div className={`category-item fw-bold text-info ${location.pathname.includes('san-pham-moi') ? 'active' : ''}`} onClick={() => navigate('/danh-muc/san-pham-moi')}><span>✨ SẢN PHẨM MỚI</span><i className="fa-solid fa-chevron-right small"></i></div>
+                    )}
+
+                    {dsSanPham.some(s => s.isBanChay) && (
+                      <div className={`category-item fw-bold text-warning ${location.pathname.includes('san-pham-ban-chay') ? 'active' : ''}`} onClick={() => navigate('/danh-muc/san-pham-ban-chay')}><span>🔥 BÁN CHẠY NHẤT</span><i className="fa-solid fa-chevron-right small"></i></div>
+                    )}
+
                     <div className={`category-item fw-bold text-success ${location.pathname.includes('/tin-tuc') ? 'active' : ''}`} onClick={() => navigate('/tin-tuc')}>
-                      <span><i className="fa-solid fa-utensils me-2"></i> GÓC ẨM THỰC</span>
-                      <i className="fa-solid fa-chevron-right small"></i>
+                        <span><i className="fa-solid fa-utensils me-2"></i> GÓC ẨM THỰC</span><i className="fa-solid fa-chevron-right small"></i>
                     </div>
+                    {/* ---------------------------------------------------- */}
+
                     {dsDanhMuc.filter(d => !d.parent).map(parent => {
                       const hasChild = dsDanhMuc.some(c => c.parent === parent.id);
                       const isOpen = openMenuId === parent.id;
@@ -353,7 +361,6 @@ function Store() {
         </div>
         )}
 
-      {/* --- FOOTER ĐÃ ĐƯỢC CẬP NHẬT --- */}
       {!isAdminPage && (
         <footer className="footer-section">
           <Container>
@@ -370,7 +377,7 @@ function Store() {
               <Col md={3} className="mb-4">
                 <h5 className="footer-title">VỀ CHÚNG TÔI</h5>
                 <Link to="/" className="footer-link">Trang chủ</Link>
-                <Link to="/danh-muc/khuyen-mai-soc" className="footer-link">Khuyến mãi</Link>
+                <Link to="/danh-muc/khuyen-mai-soc" className="footer-link">Khuyến mãi sốc</Link>
                 <Link to="/tra-cuu" className="footer-link">Tra cứu đơn</Link>
               </Col>
               
@@ -388,7 +395,6 @@ function Store() {
               </Col>
             </Row>
           </Container>
-          {/* Hiển thị Copyright từ Admin */}
           <div className="copyright-bar">
             {shopConfig.copyright || `@${new Date().getFullYear()} ${shopConfig.tenShop}. All rights reserved.`}
           </div>

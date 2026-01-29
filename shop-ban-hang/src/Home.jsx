@@ -4,7 +4,6 @@ import Product from './Product';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { toSlug } from './utils';
 
-// ... (Giữ nguyên component ProductSlider) ...
 const ProductSlider = ({ title, products, icon, themVaoGio, setQuickViewSP }) => {
   const scrollRef = useRef(null);
   const scroll = (d) => { if(scrollRef.current) scrollRef.current.scrollLeft += d==='left'?-300:300; };
@@ -25,16 +24,11 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
   
   const [sortType, setSortType] = useState('default');
   const [minPrice, setMinPrice] = useState(''); const [maxPrice, setMaxPrice] = useState('');
-  
-  // --- SỬA LOGIC LOAD MORE ---
-  // Mặc định hiện 10 sản phẩm (Chia hết cho 2, 5 để đẹp trên mọi màn hình)
-  const [visibleCount, setVisibleCount] = useState(10); 
-  
+  const [visibleCount, setVisibleCount] = useState(10);
   const [timeLeft, setTimeLeft] = useState({ d:0, h:0, m:0, s:0 });
   const [showPopupAds, setShowPopupAds] = useState(false);
   const [quickViewSP, setQuickViewSP] = useState(null);
 
-  // ... (Giữ nguyên các useEffect tính giờ Flash Sale) ...
   useEffect(() => {
     if(!shopConfig?.flashSaleEnd) return;
     const check = () => {
@@ -55,7 +49,16 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
   if (slug) {
     if (slug === 'khuyen-mai-soc') {
       finalProducts = safeDS.filter(sp => sp.phanTramGiam > 0);
-    } else {
+    } 
+    // [MỚI] Lọc sản phẩm Mới
+    else if (slug === 'san-pham-moi') {
+      finalProducts = safeDS.filter(sp => sp.isMoi);
+    }
+    // [MỚI] Lọc sản phẩm Bán Chạy
+    else if (slug === 'san-pham-ban-chay') {
+      finalProducts = safeDS.filter(sp => sp.isBanChay);
+    }
+    else {
       const danhMucHienTai = safeDM.find(d => (d.slug === slug) || (toSlug(d.ten) === slug) || (d.id === slug));
       if (danhMucHienTai) {
         const idDM = danhMucHienTai.id;
@@ -82,11 +85,17 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
         )}
         <div className="bg-white p-3 rounded shadow-sm">
           <div className="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-            <h5 className="fw-bold text-success m-0"><i className="fa-solid fa-list me-2"></i> {slug ? 'DANH SÁCH SẢN PHẨM' : 'TẤT CẢ SẢN PHẨM'}</h5>
+            <h5 className="fw-bold text-success m-0">
+              <i className="fa-solid fa-list me-2"></i> 
+              {/* [MỚI] Hiển thị tiêu đề linh hoạt */}
+              {slug === 'san-pham-moi' ? '✨ SẢN PHẨM MỚI' : 
+               slug === 'san-pham-ban-chay' ? '🔥 SẢN PHẨM BÁN CHẠY' :
+               slug === 'khuyen-mai-soc' ? '⚡ KHUYẾN MÃI SỐC' :
+               slug ? 'DANH SÁCH SẢN PHẨM' : 'TẤT CẢ SẢN PHẨM'}
+            </h5>
             <select className="form-select form-select-sm w-auto" value={sortType} onChange={e=>setSortType(e.target.value)}><option value="default">Mặc định</option><option value="price-asc">Giá tăng dần</option><option value="price-desc">Giá giảm dần</option></select>
           </div>
           {finalProducts.length === 0 ? <Alert variant="warning" className="text-center">Không tìm thấy sản phẩm nào.</Alert> : (
-            // Thay đổi responsive: trên PC (xl) hiện 5 cột, Laptop (lg) 4 cột...
             <Row className="g-3 row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5">
               {finalProducts.slice(0, visibleCount).map(sp => (
                 <Col key={sp.id} className="d-flex align-items-stretch">
@@ -95,14 +104,9 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
               ))}
             </Row>
           )}
-          {/* Nút Xem thêm: Cộng thêm 10 sản phẩm mỗi lần bấm */}
           {visibleCount < finalProducts.length && (
             <div className="text-center mt-4">
-              <Button 
-                variant="outline-success" 
-                className="rounded-pill px-5 fw-bold"
-                onClick={() => setVisibleCount(v => v + 10)}
-              >
+              <Button variant="outline-success" className="rounded-pill px-5 fw-bold" onClick={() => setVisibleCount(v => v + 10)}>
                 Xem thêm sản phẩm <i className="fa-solid fa-chevron-down ms-1"></i>
               </Button>
             </div>
@@ -110,42 +114,27 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
         </div>
       </Col></Row>
 
-      {/* --- MODAL XEM NHANH (QUICK VIEW) ĐÃ ĐƯỢC REDESIGN --- */}
       <Modal show={!!quickViewSP} onHide={()=>setQuickViewSP(null)} size="lg" centered dialogClassName="quick-view-modal">
         <Modal.Body className="p-0">
           {quickViewSP && (
             <Row className="g-0">
               <Col md={6}>
-                <div className="qv-img-box">
-                  <img src={quickViewSP.anh} className="qv-img" alt={quickViewSP.ten} />
-                </div>
+                <div className="qv-img-box"><img src={quickViewSP.anh} className="qv-img" alt={quickViewSP.ten} /></div>
               </Col>
               <Col md={6}>
                 <div className="qv-info-box">
                   <h4 className="qv-title">{quickViewSP.ten}</h4>
-                  
                   <div className="qv-price">
                     {quickViewSP.giaBan?.toLocaleString()} ¥
                     {quickViewSP.phanTramGiam > 0 && <span className="ms-3 text-muted text-decoration-line-through fs-6">{quickViewSP.giaGoc?.toLocaleString()} ¥</span>}
                   </div>
-
                   <div className="mb-3">
                     <span className="fw-bold">Đơn vị:</span> <span className="tag-donvi">{quickViewSP.donVi}</span>
                     <span className="mx-2">|</span>
                     <span className="fw-bold">Tình trạng:</span> <span className={quickViewSP.soLuong > 0 ? "text-success fw-bold" : "text-danger"}>{quickViewSP.soLuong > 0 ? "Còn hàng" : "Hết hàng"}</span>
                   </div>
-
-                  <div className="qv-desc">
-                    <div dangerouslySetInnerHTML={{__html: quickViewSP.moTa || 'Đang cập nhật mô tả...'}}></div>
-                  </div>
-
-                  <Button 
-                    variant="success" 
-                    size="lg" 
-                    className="w-100 fw-bold rounded-pill shadow-sm mt-auto"
-                    onClick={()=>{themVaoGio(quickViewSP); setQuickViewSP(null)}}
-                    disabled={quickViewSP.soLuong <= 0}
-                  >
+                  <div className="qv-desc"><div dangerouslySetInnerHTML={{__html: quickViewSP.moTa || 'Đang cập nhật mô tả...'}}></div></div>
+                  <Button variant="success" size="lg" className="w-100 fw-bold rounded-pill shadow-sm mt-auto" onClick={()=>{themVaoGio(quickViewSP); setQuickViewSP(null)}} disabled={quickViewSP.soLuong <= 0}>
                     <i className="fa-solid fa-cart-plus me-2"></i> THÊM VÀO GIỎ NGAY
                   </Button>
                 </div>
@@ -155,7 +144,6 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
         </Modal.Body>
       </Modal>
 
-      {/* Popup quảng cáo Flash Sale (Giữ nguyên) */}
       <Modal show={showPopupAds} onHide={()=>setShowPopupAds(false)} centered contentClassName="flash-popup-content"><div className="flash-popup-body"><div className="flash-header-bg"><h3 className="fw-bold m-0">🔥 FLASH SALE</h3></div><div className="p-4"><p className="mb-3 fw-bold text-secondary">Kết thúc sau:</p><div className="d-flex justify-content-center gap-2 mb-4"><div className="time-box">{String(timeLeft.d).padStart(2,'0')}</div>:<div className="time-box">{String(timeLeft.h).padStart(2,'0')}</div>:<div className="time-box">{String(timeLeft.m).padStart(2,'0')}</div>:<div className="time-box bg-danger">{String(timeLeft.s).padStart(2,'0')}</div></div><Button variant="danger" className="w-100 rounded-pill fw-bold shadow" onClick={()=>{setShowPopupAds(false); navigate('/flash-sale')}}>XEM NGAY</Button><div className="mt-3 text-muted small cursor-pointer text-decoration-underline" onClick={()=>setShowPopupAds(false)}>Đóng lại</div></div></div></Modal>
     </Container>
   );
