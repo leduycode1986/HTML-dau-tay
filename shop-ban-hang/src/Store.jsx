@@ -1,4 +1,3 @@
-// ... (Phần Import giữ nguyên) ...
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { db, auth } from './firebase'; 
@@ -27,13 +26,12 @@ import News from './News';
 import NewsDetail from './NewsDetail';
 
 function Store() {
-  // ... (Phần Logic State giữ nguyên) ...
   const navigate = useNavigate();
   const location = useLocation();
   
   const [dsSanPham, setDsSanPham] = useState([]);
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
-  const [dsDonHang, setDsDonHang] = useState([]);
+  // [TỐI ƯU]: Đã xóa dsDonHang ở đây để web load nhanh
   const [banners, setBanners] = useState([]); 
   
   const [gioHang, setGioHang] = useState(() => {
@@ -64,13 +62,22 @@ function Store() {
   useEffect(() => { window.scrollTo(0, 0); }, [location]);
 
   useEffect(() => {
+    // Tải Sản phẩm
     const unsubSP = onSnapshot(collection(db, "sanPham"), sn => {
         const data = sn.docs.map(d => ({ id: d.id, ...d.data() }));
         setDsSanPham(data.reverse()); 
     });
-    const unsubDM = onSnapshot(collection(db, "danhMuc"), sn => { const d=sn.docs.map(x=>({id:x.id,...x.data()})); d.sort((a,b)=>parseFloat(a.order||0)-parseFloat(b.order||0)); setDsDanhMuc(d); });
-    const unsubDH = onSnapshot(collection(db, "donHang"), sn => setDsDonHang(sn.docs.map(d=>({id:d.id,...d.data()}))));
+    // Tải Danh mục
+    const unsubDM = onSnapshot(collection(db, "danhMuc"), sn => { 
+        const d=sn.docs.map(x=>({id:x.id,...x.data()})); 
+        d.sort((a,b)=>parseFloat(a.order||0)-parseFloat(b.order||0)); 
+        setDsDanhMuc(d); 
+    });
+    // [TỐI ƯU]: KHÔNG tải donHang ở đây nữa
+    
+    // Tải Banner
     const unsubBanner = onSnapshot(collection(db, "banners"), sn => setBanners(sn.docs.map(d=>({id:d.id,...d.data()}))));
+    // Tải Cấu hình
     const unsubConfig = onSnapshot(doc(db, "cauHinh", "thongTinChung"), d => { if(d.exists()) setShopConfig(d.data()); });
     
     const unsubAuth = onAuthStateChanged(auth, async u => { 
@@ -84,7 +91,7 @@ function Store() {
     });
     
     const scrollH = () => setShowTopBtn(window.scrollY > 300); window.addEventListener('scroll', scrollH);
-    return () => { unsubSP(); unsubDM(); unsubDH(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
+    return () => { unsubSP(); unsubDM(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
   }, []);
 
   useEffect(() => {
@@ -251,7 +258,7 @@ function Store() {
                   {shopConfig.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date() && <Link to="/flash-sale" className="d-block p-2 bg-danger text-white fw-bold text-center text-decoration-none">⚡ FLASH SALE ĐANG DIỄN RA</Link>}
                   
                   <div className="category-list">
-                    {/* MENU ĐỘNG: KHUYẾN MÃI - MỚI - BÁN CHẠY - TIN TỨC */}
+                    {/* MENU ĐỘNG */}
                     {dsSanPham.some(s => s.phanTramGiam > 0) && (
                       <div className={`category-item fw-bold text-danger ${location.pathname.includes('khuyen-mai-soc') ? 'active' : ''}`} onClick={() => navigate('/danh-muc/khuyen-mai-soc')}><span>🔥 KHUYẾN MÃI SỐC</span><i className="fa-solid fa-chevron-right small"></i></div>
                     )}
@@ -267,7 +274,6 @@ function Store() {
                     <div className={`category-item fw-bold text-success ${location.pathname.includes('/tin-tuc') ? 'active' : ''}`} onClick={() => navigate('/tin-tuc')}>
                         <span><i className="fa-solid fa-utensils me-2"></i> GÓC ẨM THỰC</span><i className="fa-solid fa-chevron-right small"></i>
                     </div>
-                    {/* ---------------------------------------------------- */}
 
                     {dsDanhMuc.filter(d => !d.parent).map(parent => {
                       const hasChild = dsDanhMuc.some(c => c.parent === parent.id);
@@ -334,7 +340,9 @@ function Store() {
                 <Route path="/huong-dan" element={<PostPage title="Hướng dẫn mua hàng" content={shopConfig.guideContent} />} />
                 <Route path="/tin-tuc" element={<News />} />
                 <Route path="/tin-tuc/:slug" element={<NewsDetail />} />
-                <Route path="/admin" element={<Admin dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} dsDonHang={dsDonHang} handleUpdateDS_SP={async (t,d)=>t==='ADD'?addDoc(collection(db,"sanPham"),d):t==='DELETE'?deleteDoc(doc(db,"sanPham",d)):updateDoc(doc(db,"sanPham",d.id),d)} handleUpdateDS_DM={async (t,d)=>t==='ADD'?addDoc(collection(db,"danhMuc"),d):t==='DELETE'?deleteDoc(doc(db,"danhMuc",d)):updateDoc(doc(db,"danhMuc",d.id),d)} handleUpdateStatusOrder={(id,s)=>updateDoc(doc(db,"donHang",id),{trangThai:s})} handleDeleteOrder={(id)=>deleteDoc(doc(db,"donHang",id))} />} />
+                
+                {/* [TỐI ƯU]: KHÔNG truyền dsDonHang vào Admin nữa */}
+                <Route path="/admin" element={<Admin dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} handleUpdateDS_SP={async (t,d)=>t==='ADD'?addDoc(collection(db,"sanPham"),d):t==='DELETE'?deleteDoc(doc(db,"sanPham",d)):updateDoc(doc(db,"sanPham",d.id),d)} handleUpdateDS_DM={async (t,d)=>t==='ADD'?addDoc(collection(db,"danhMuc"),d):t==='DELETE'?deleteDoc(doc(db,"danhMuc",d)):updateDoc(doc(db,"danhMuc",d.id),d)} handleUpdateStatusOrder={(id,s)=>updateDoc(doc(db,"donHang",id),{trangThai:s})} handleDeleteOrder={(id)=>deleteDoc(doc(db,"donHang",id))} />} />
               </Routes>
             </Col>
           </Row>
@@ -383,7 +391,6 @@ function Store() {
               
               <Col md={3} className="mb-4">
                 <h5 className="footer-title">HỖ TRỢ</h5>
-                {/* Sử dụng Link từ Admin Config */}
                 <a href={shopConfig.linkPolicy || '#'} className="footer-link">Chính sách đổi trả</a>
                 <a href={shopConfig.linkGuide || '#'} className="footer-link">Hướng dẫn mua hàng</a>
               </Col>

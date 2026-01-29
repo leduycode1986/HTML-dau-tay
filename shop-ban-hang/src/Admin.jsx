@@ -10,7 +10,8 @@ import { toSlug } from './utils';
 const ICON_LIST = ['🏠','📦','🥩','🥦','🍎','🍞','🥫','❄️','🍬','🍫','🍪','🍦','🍺','🥤','🥛','🧃','🧺','🛋️','🍳','🧹','🧽','🧼','🧴','🪥','💄','🔖','⚡','🔥','🎉','🎁'];
 const NO_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg";
 
-function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, dsDonHang = [], handleUpdateStatusOrder, handleDeleteOrder }) {
+// [LƯU Ý]: Đã xóa dsDonHang khỏi props
+function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, handleUpdateStatusOrder, handleDeleteOrder }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginInput, setLoginInput] = useState({ user: '', pass: '' });
   const [showPass, setShowPass] = useState(false);
@@ -32,6 +33,9 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
   const [dsUser, setDsUser] = useState([]); 
   const [dsReview, setDsReview] = useState([]); 
   const [dsTinTuc, setDsTinTuc] = useState([]); 
+  
+  // [MỚI]: State lưu đơn hàng trong Admin
+  const [dsDonHang, setDsDonHang] = useState([]);
 
   const [modal, setModal] = useState({ sp: false, dm: false, order: false, user: false, post: false, news: false });
   const [postEditor, setPostEditor] = useState({ type: '', title: '', content: '' });
@@ -47,14 +51,12 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
   const [userPoint, setUserPoint] = useState(0);
   const [selectedOrder, setSelectedOrder] = useState(null);
   
-  // --- BỘ LỌC & PHÂN TRANG SẢN PHẨM ---
   const [filterCategory, setFilterCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [sortPrice, setSortPrice] = useState('');
   
-  // [MỚI] State cho phân trang
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(30); // Mặc định 30
+  const [itemsPerPage, setItemsPerPage] = useState(30);
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -66,6 +68,9 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
         onSnapshot(collection(db, "users"), s => setDsUser(s.docs.map(d=>({id:d.id,...d.data()})))),
         onSnapshot(collection(db, "reviews"), s => setDsReview(s.docs.map(d=>({id:d.id,...d.data()})))),
         onSnapshot(collection(db, "tinTuc"), s => setDsTinTuc(s.docs.map(d=>({id:d.id,...d.data()})))),
+        
+        // [QUAN TRỌNG]: Tải đơn hàng tại đây (Chỉ Admin mới tải)
+        onSnapshot(collection(db, "donHang"), s => setDsDonHang(s.docs.map(d=>({id:d.id,...d.data()})))),
       ];
       return () => unsubs.forEach(u => u());
     }
@@ -103,7 +108,6 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
   };
 
   // --- LOGIC LỌC + PHÂN TRANG ---
-  // 1. Lọc dữ liệu
   const filteredProducts = dsSanPham
     .filter(sp => filterCategory ? sp.phanLoai === filterCategory : true)
     .filter(sp => {
@@ -121,13 +125,10 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
       return 0;
     });
 
-  // 2. Tính toán phân trang
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentProducts = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-
-  // Hàm chuyển trang
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   if (!isLoggedIn) return (<div className="admin-login-wrapper"><div className="admin-login-card"><h3 className="text-center text-success fw-bold mb-4">QUẢN TRỊ SHOP</h3><Form onSubmit={handleLogin}><Form.Group className="mb-3"><Form.Label className="fw-bold">Tài khoản</Form.Label><Form.Control className="p-3" value={loginInput.user} onChange={e=>setLoginInput({...loginInput, user:e.target.value})}/></Form.Group><Form.Group className="mb-4"><Form.Label className="fw-bold">Mật khẩu</Form.Label><InputGroup><Form.Control className="p-3" type={showPass?"text":"password"} value={loginInput.pass} onChange={e=>setLoginInput({...loginInput, pass:e.target.value})}/><Button variant="outline-secondary" onClick={()=>setShowPass(!showPass)}><i className={showPass?"fa-solid fa-eye-slash":"fa-solid fa-eye"}></i></Button></InputGroup></Form.Group><Button type="submit" variant="success" className="w-100 py-3 fw-bold rounded-pill">ĐĂNG NHẬP</Button></Form></div></div>);
@@ -141,7 +142,6 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
           <Tab eventKey="news" title="📰 TIN TỨC"><div className="bg-white p-3 rounded shadow-sm"><Button variant="success" className="mb-3 fw-bold" onClick={()=>{setEditData({...editData, news:null}); setFormTinTuc({ tieuDe: '', anh: '', tomTat: '', noiDung: '' }); setModal({...modal, news:true})}}>+ VIẾT BÀI MỚI</Button><Table hover bordered><thead><tr><th>Ảnh</th><th>Tiêu đề</th><th>Tóm tắt</th><th>Ngày đăng</th><th>Thao tác</th></tr></thead><tbody>{dsTinTuc.map(tin => (<tr key={tin.id}><td><img src={tin.anh || NO_IMAGE} width="60" height="40" style={{objectFit:'cover'}}/></td><td className="fw-bold">{tin.tieuDe}</td><td style={{maxWidth:'300px'}} className="text-truncate">{tin.tomTat}</td><td>{tin.ngayDang ? new Date(tin.ngayDang.seconds * 1000).toLocaleDateString('vi-VN') : ''}</td><td><Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditData({...editData, news:tin}); setFormTinTuc(tin); setModal({...modal, news:true})}}>Sửa</Button><Button size="sm" variant="danger" onClick={()=>del('tinTuc', tin.id)}>Xóa</Button></td></tr>))}</tbody></Table></div></Tab>
           <Tab eventKey="banner" title="🖼️ BANNER"><div className="bg-white p-3 shadow-sm rounded"><div className="d-flex gap-2 mb-3 align-items-center"><Form.Control type="file" onChange={e=>handleUpload(e,'BANNER')}/><Form.Control placeholder="Link..." value={formBanner.link} onChange={e=>setFormBanner({...formBanner,link:e.target.value})}/><Button onClick={()=>{add('banners', formBanner); setFormBanner({img:'', link:''})}}>Thêm</Button></div><div className="d-flex flex-wrap gap-3">{dsBanner.map(b=><div key={b.id} className="position-relative border rounded p-1" style={{width:200}}><img src={b.img} className="w-100 rounded"/><Button size="sm" variant="danger" className="position-absolute top-0 end-0 rounded-circle" style={{transform:'translate(50%,-50%)'}} onClick={()=>del('banners', b.id)}>X</Button></div>)}</div></div></Tab>
           
-          {/* --- TAB DANH MỤC (ĐÃ LÀM ĐẸP GIAO DIỆN) --- */}
           <Tab eventKey="menu" title="📂 DANH MỤC">
             <div className="bg-white p-3 rounded shadow-sm">
                 <Button variant="success" className="mb-3 fw-bold" onClick={()=>{setEditData({...editData, dm:null}); setFormDM({ten:'', icon:'', parent:'', order:''}); setModal({...modal, dm:true})}}>+ DANH MỤC MỚI</Button>
@@ -169,7 +169,6 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
             </div>
           </Tab>
           
-          {/* --- TAB SẢN PHẨM: CÓ PHÂN TRANG --- */}
           <Tab eventKey="products" title="📦 SẢN PHẨM">
             <div className="bg-white p-3 rounded shadow-sm">
               <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
@@ -180,7 +179,6 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
                     {dsDanhMuc.map(d => <option key={d.id} value={d.id}>{d.ten}</option>)}
                   </Form.Select>
                   
-                  {/* SELECT MỚI: LỌC THEO TÌNH TRẠNG */}
                   <Form.Select size="sm" style={{width:160}} value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}>
                     <option value="">-- Tình trạng --</option>
                     <option value="new">✨ Mới</option>
@@ -205,7 +203,6 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
                 </Table>
               </div>
 
-              {/* --- THANH PHÂN TRANG (PAGINATION) --- */}
               <div className="d-flex justify-content-between align-items-center border-top pt-3">
                  <div className="d-flex align-items-center gap-2">
                     <span className="text-muted small">Hiển thị:</span>
