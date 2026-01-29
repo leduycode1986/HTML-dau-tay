@@ -114,35 +114,58 @@ function Home({ dsSanPham = [], dsDanhMuc = [], themVaoGio, shopConfig }) {
         </div>
       </Col></Row>
 
-      <Modal show={!!quickViewSP} onHide={()=>setQuickViewSP(null)} size="lg" centered dialogClassName="quick-view-modal">
-        <Modal.Body className="p-0">
-          {quickViewSP && (
-            <Row className="g-0">
-              <Col md={6}>
-                <div className="qv-img-box"><img src={quickViewSP.anh} className="qv-img" alt={quickViewSP.ten} /></div>
-              </Col>
-              <Col md={6}>
-                <div className="qv-info-box">
-                  <h4 className="qv-title">{quickViewSP.ten}</h4>
-                  <div className="qv-price">
-                    {quickViewSP.giaBan?.toLocaleString()} ¥
-                    {quickViewSP.phanTramGiam > 0 && <span className="ms-3 text-muted text-decoration-line-through fs-6">{quickViewSP.giaGoc?.toLocaleString()} ¥</span>}
-                  </div>
-                  <div className="mb-3">
-                    <span className="fw-bold">Đơn vị:</span> <span className="tag-donvi">{quickViewSP.donVi}</span>
-                    <span className="mx-2">|</span>
-                    <span className="fw-bold">Tình trạng:</span> <span className={quickViewSP.soLuong > 0 ? "text-success fw-bold" : "text-danger"}>{quickViewSP.soLuong > 0 ? "Còn hàng" : "Hết hàng"}</span>
-                  </div>
-                  <div className="qv-desc"><div dangerouslySetInnerHTML={{__html: quickViewSP.moTa || 'Đang cập nhật mô tả...'}}></div></div>
-                  <Button variant="success" size="lg" className="w-100 fw-bold rounded-pill shadow-sm mt-auto" onClick={()=>{themVaoGio(quickViewSP); setQuickViewSP(null)}} disabled={quickViewSP.soLuong <= 0}>
-                    <i className="fa-solid fa-cart-plus me-2"></i> THÊM VÀO GIỎ NGAY
-                  </Button>
-                </div>
-              </Col>
-            </Row>
-          )}
-        </Modal.Body>
-      </Modal>
+     {/* --- MODAL XEM NHANH (ĐÃ CÓ NÚT TẮT X) --- */}
+<Modal show={!!quickViewSP} onHide={()=>setQuickViewSP(null)} size="lg" centered dialogClassName="quick-view-modal">
+  {/* Thêm position-relative để nút X định vị theo khung này */}
+  <Modal.Body className="p-0 position-relative">
+    
+    {/* [MỚI] NÚT TẮT X Ở ĐÂY */}
+    <div className="btn-close-quickview" onClick={()=>setQuickViewSP(null)} title="Đóng">
+      <i className="fa-solid fa-xmark"></i>
+    </div>
+    {/* ----------------------- */}
+
+    {quickViewSP && (
+      <Row className="g-0">
+        <Col md={6}>
+          <div className="qv-img-box">
+            <img src={quickViewSP.anh} className="qv-img" alt={quickViewSP.ten} />
+          </div>
+        </Col>
+        <Col md={6}>
+          <div className="qv-info-box">
+            <h4 className="qv-title">{quickViewSP.ten}</h4>
+            
+            <div className="qv-price">
+              {quickViewSP.giaBan?.toLocaleString()} ¥
+              {quickViewSP.phanTramGiam > 0 && <span className="ms-3 text-muted text-decoration-line-through fs-6">{quickViewSP.giaGoc?.toLocaleString()} ¥</span>}
+            </div>
+
+            <div className="mb-3">
+              <span className="fw-bold">Đơn vị:</span> <span className="tag-donvi">{quickViewSP.donVi}</span>
+              <span className="mx-2">|</span>
+              <span className="fw-bold">Tình trạng:</span> <span className={quickViewSP.soLuong > 0 ? "text-success fw-bold" : "text-danger"}>{quickViewSP.soLuong > 0 ? "Còn hàng" : "Hết hàng"}</span>
+            </div>
+
+            <div className="qv-desc">
+              <div dangerouslySetInnerHTML={{__html: quickViewSP.moTa || 'Đang cập nhật mô tả...'}}></div>
+            </div>
+
+            <Button 
+              variant="success" 
+              size="lg" 
+              className="w-100 fw-bold rounded-pill shadow-sm mt-auto"
+              onClick={()=>{themVaoGio(quickViewSP); setQuickViewSP(null)}}
+              disabled={quickViewSP.soLuong <= 0}
+            >
+              <i className="fa-solid fa-cart-plus me-2"></i> THÊM VÀO GIỎ NGAY
+            </Button>
+          </div>
+        </Col>
+      </Row>
+    )}
+  </Modal.Body>
+</Modal>
 
       <Modal show={showPopupAds} onHide={()=>setShowPopupAds(false)} centered contentClassName="flash-popup-content"><div className="flash-popup-body"><div className="flash-header-bg"><h3 className="fw-bold m-0">🔥 FLASH SALE</h3></div><div className="p-4"><p className="mb-3 fw-bold text-secondary">Kết thúc sau:</p><div className="d-flex justify-content-center gap-2 mb-4"><div className="time-box">{String(timeLeft.d).padStart(2,'0')}</div>:<div className="time-box">{String(timeLeft.h).padStart(2,'0')}</div>:<div className="time-box">{String(timeLeft.m).padStart(2,'0')}</div>:<div className="time-box bg-danger">{String(timeLeft.s).padStart(2,'0')}</div></div><Button variant="danger" className="w-100 rounded-pill fw-bold shadow" onClick={()=>{setShowPopupAds(false); navigate('/flash-sale')}}>XEM NGAY</Button><div className="mt-3 text-muted small cursor-pointer text-decoration-underline" onClick={()=>setShowPopupAds(false)}>Đóng lại</div></div></div></Modal>
     </Container>
