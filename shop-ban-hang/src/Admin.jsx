@@ -10,7 +10,6 @@ import { toSlug } from './utils';
 const ICON_LIST = ['🏠','📦','🥩','🥦','🍎','🍞','🥫','❄️','🍬','🍫','🍪','🍦','🍺','🥤','🥛','🧃','🧺','🛋️','🍳','🧹','🧽','🧼','🧴','🪥','💄','🔖','⚡','🔥','🎉','🎁'];
 const NO_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg";
 
-// [LƯU Ý]: Đã xóa dsDonHang khỏi props
 function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, handleUpdateStatusOrder, handleDeleteOrder }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginInput, setLoginInput] = useState({ user: '', pass: '' });
@@ -34,7 +33,7 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
   const [dsReview, setDsReview] = useState([]); 
   const [dsTinTuc, setDsTinTuc] = useState([]); 
   
-  // [MỚI]: State lưu đơn hàng trong Admin
+  // State lưu đơn hàng trong Admin
   const [dsDonHang, setDsDonHang] = useState([]);
 
   const [modal, setModal] = useState({ sp: false, dm: false, order: false, user: false, post: false, news: false });
@@ -68,8 +67,6 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
         onSnapshot(collection(db, "users"), s => setDsUser(s.docs.map(d=>({id:d.id,...d.data()})))),
         onSnapshot(collection(db, "reviews"), s => setDsReview(s.docs.map(d=>({id:d.id,...d.data()})))),
         onSnapshot(collection(db, "tinTuc"), s => setDsTinTuc(s.docs.map(d=>({id:d.id,...d.data()})))),
-        
-        // [QUAN TRỌNG]: Tải đơn hàng tại đây (Chỉ Admin mới tải)
         onSnapshot(collection(db, "donHang"), s => setDsDonHang(s.docs.map(d=>({id:d.id,...d.data()})))),
       ];
       return () => unsubs.forEach(u => u());
@@ -199,7 +196,21 @@ function Admin({ dsSanPham = [], handleUpdateDS_SP, dsDanhMuc = [], handleUpdate
               <div className="table-responsive mb-3">
                 <Table hover bordered className="align-middle">
                   <thead className="bg-light"><tr><th>Ảnh</th><th>Tên</th><th>Đơn vị</th><th>Kho</th><th>Giá bán</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
-                  <tbody>{currentProducts.map(sp=>(<tr key={sp.id}><td><img src={sp.anh||NO_IMAGE} width="50" height="50" style={{objectFit:'cover', borderRadius:4}}/></td><td className="fw-bold">{sp.ten}</td><td>{sp.donVi}</td><td className={sp.soLuong<10?'text-danger fw-bold':''}>{sp.soLuong}</td><td className="text-danger fw-bold">{sp.giaBan?.toLocaleString()}¥</td><td>{sp.isFlashSale && <Badge bg="warning" text="dark" className="me-1">⚡ Sale</Badge>}{sp.phanTramGiam > 0 && <Badge bg="danger" className="me-1">-{sp.phanTramGiam}%</Badge>}{sp.isMoi && <Badge bg="success" className="me-1">New</Badge>}</td><td><Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditData({...editData, sp}); setFormDataSP(sp); setModal({...modal, sp:true})}}>Sửa</Button><Button size="sm" variant="danger" onClick={()=>{if(confirm('Xóa?')) handleUpdateDS_SP('DELETE',sp.id)}}>Xóa</Button></td></tr>))}</tbody>
+                  <tbody>{currentProducts.map(sp=>(<tr key={sp.id}>
+                    <td><img src={sp.anh||NO_IMAGE} width="50" height="50" style={{objectFit:'cover', borderRadius:4}}/></td>
+                    <td className="fw-bold">{sp.ten}</td>
+                    <td>{sp.donVi}</td>
+                    <td className={sp.soLuong<10?'text-danger fw-bold':''}>{sp.soLuong}</td>
+                    <td className="text-danger fw-bold">{sp.giaBan?.toLocaleString()}¥</td>
+                    <td>
+                      {sp.isFlashSale && <Badge bg="warning" text="dark" className="me-1">⚡ Sale</Badge>}
+                      {sp.phanTramGiam > 0 && <Badge bg="danger" className="me-1">-{sp.phanTramGiam}%</Badge>}
+                      {sp.isMoi && <Badge bg="success" className="me-1">New</Badge>}
+                      {/* [ĐÃ FIX]: Thêm hiển thị Bán Chạy */}
+                      {sp.isBanChay && <Badge bg="info" className="me-1">🔥 Hot</Badge>}
+                    </td>
+                    <td><Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditData({...editData, sp}); setFormDataSP(sp); setModal({...modal, sp:true})}}>Sửa</Button><Button size="sm" variant="danger" onClick={()=>{if(confirm('Xóa?')) handleUpdateDS_SP('DELETE',sp.id)}}>Xóa</Button></td>
+                  </tr>))}</tbody>
                 </Table>
               </div>
 
