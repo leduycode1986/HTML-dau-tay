@@ -61,7 +61,11 @@ function Store() {
   useEffect(() => { window.scrollTo(0, 0); }, [location]);
 
   useEffect(() => {
-    const unsubSP = onSnapshot(collection(db, "sanPham"), sn => setDsSanPham(sn.docs.map(d=>({id:d.id,...d.data()}))));
+    const unsubSP = onSnapshot(collection(db, "sanPham"), sn => {
+      const data = sn.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Đảo ngược mảng để sản phẩm mới thêm (addDoc sau cùng) lên đầu
+      setDsSanPham(data.reverse()); 
+    });
     const unsubDM = onSnapshot(collection(db, "danhMuc"), sn => { const d=sn.docs.map(x=>({id:x.id,...x.data()})); d.sort((a,b)=>parseFloat(a.order||0)-parseFloat(b.order||0)); setDsDanhMuc(d); });
     const unsubDH = onSnapshot(collection(db, "donHang"), sn => setDsDonHang(sn.docs.map(d=>({id:d.id,...d.data()}))));
     const unsubBanner = onSnapshot(collection(db, "banners"), sn => setBanners(sn.docs.map(d=>({id:d.id,...d.data()}))));

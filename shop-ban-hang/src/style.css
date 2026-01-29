@@ -1106,3 +1106,99 @@ img { max-width: 100%; height: auto; }
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+/* --- QUICK VIEW (XEM NHANH) --- */
+
+/* 1. Nút con mắt (Ẩn mặc định, hiện khi Hover) */
+.quick-view-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0); /* Thu nhỏ */
+  width: 45px;
+  height: 45px;
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Hiệu ứng nảy */
+  z-index: 10;
+  color: #333;
+}
+
+.quick-view-btn:hover {
+  background-color: #198754;
+  color: white;
+}
+
+/* Khi di chuột vào thẻ sản phẩm -> Nút mắt hiện ra */
+.product-card:hover .quick-view-btn {
+  transform: translate(-50%, -50%) scale(1); /* Phóng to ra giữa */
+}
+
+/* Khi di chuột vào thẻ sản phẩm -> Ảnh tối đi 1 chút để nổi nút mắt */
+.product-card:hover .product-img-fixed {
+  filter: brightness(0.9);
+  transition: 0.3s;
+}
+
+/* 2. Modal Xem Nhanh (Popup) */
+.quick-view-modal .modal-content {
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.qv-img-box {
+  background-color: #f8f9fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 400px;
+  padding: 20px;
+}
+
+.qv-img {
+  max-width: 100%;
+  max-height: 380px;
+  object-fit: contain;
+  mix-blend-mode: multiply; /* Giúp ảnh hòa trộn nền tốt hơn */
+}
+
+.qv-info-box {
+  padding: 40px 30px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.qv-title {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  font-size: 1.8rem;
+  color: #333;
+  margin-bottom: 15px;
+  line-height: 1.2;
+}
+
+.qv-price {
+  font-size: 1.6rem;
+  color: #d32f2f;
+  font-weight: 800;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+}
+
+.qv-desc {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.6;
+  flex-grow: 1; /* Đẩy nút mua xuống đáy */
+  overflow-y: auto;
+  max-height: 150px;
+  margin-bottom: 20px;
+}

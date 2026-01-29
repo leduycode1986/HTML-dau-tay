@@ -1,23 +1,17 @@
 import React from 'react';
 import { Card, Button, Badge } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import { toSlug } from './utils'; // <--- QUAN TRỌNG: Import từ utils, KHÔNG import từ App
+import { toSlug } from './utils'; 
 
 function Product({ sp, themVaoGio, openQuickView }) {
   return (
     <Card className="product-card h-100 border-0 shadow-sm">
-      <div className="position-relative overflow-hidden group-hover-zoom">
-        {/* --- KHU VỰC HIỂN THỊ BADGE (ĐÃ SỬA) --- */}
+      <div className="position-relative overflow-hidden">
+        
+        {/* Badge Giảm giá / Mới (Giữ nguyên) */}
         <div className="position-absolute top-0 start-0 p-2" style={{zIndex: 5}}>
-          {/* 1. Flash Sale */}
           {sp.isFlashSale && <Badge bg="warning" text="dark" className="me-1 shadow-sm">⚡ Sale</Badge>}
-          
-          {/* 2. Giảm giá (Chỉ hiện khi > 0) */}
-          {sp.phanTramGiam > 0 && (
-            <Badge bg="danger" className="shadow-sm me-1">-{sp.phanTramGiam}%</Badge>
-          )}
-          
-          {/* 3. Sản phẩm mới */}
+          {sp.phanTramGiam > 0 && <Badge bg="danger" className="shadow-sm me-1">-{sp.phanTramGiam}%</Badge>}
           {sp.isMoi && <Badge bg="success" className="shadow-sm">New</Badge>}
         </div>
         
@@ -25,10 +19,12 @@ function Product({ sp, themVaoGio, openQuickView }) {
           <Card.Img variant="top" src={sp.anh} className="product-img-fixed" alt={sp.ten} />
         </Link>
         
-        {/* Nút xem nhanh */}
-        <div className="quick-view-btn" onClick={(e) => { e.preventDefault(); openQuickView(); }}>
-          <i className="fa-solid fa-eye text-dark"></i>
+        {/* --- NÚT XEM NHANH (SỬA LẠI VỊ TRÍ) --- */}
+        {/* Nút này sẽ tự động căn giữa nhờ CSS .quick-view-btn trong style.css */}
+        <div className="quick-view-btn" onClick={(e) => { e.preventDefault(); openQuickView(); }} title="Xem nhanh">
+          <i className="fa-regular fa-eye fs-5"></i>
         </div>
+        {/* -------------------------------------- */}
       </div>
 
       <Card.Body className="d-flex flex-column p-3">
@@ -40,7 +36,6 @@ function Product({ sp, themVaoGio, openQuickView }) {
           <span className={`small fw-bold ${sp.soLuong > 0 ? "text-success" : "text-danger"}`}>
             Số lượng: {sp.soLuong}
           </span>
-          {/* Gọi class từ CSS vào đây */}
           <span className="tag-donvi">{sp.donVi}</span>
         </div>
 
