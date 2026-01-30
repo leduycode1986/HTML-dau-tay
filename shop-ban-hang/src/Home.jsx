@@ -59,44 +59,39 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
       let q;
       const productRef = collection(db, "sanPham");
       
-      // 1. Nếu là Trang chủ (Không slug, không search)
-      if (!slug && !searchQuery) {
-        if (!isLoadMore) {
-            // Tải 10 SP Mới
-            const qNew = query(productRef, orderBy("ngayTao", "desc"), limit(10)); // Giả sử có field ngayTao, nếu ko có thì bỏ orderBy
-            const snNew = await getDocs(qNew);
-            setNewArrivals(snNew.docs.map(d=>({id:d.id, ...d.data()})));
+      // 1. Logic riêng cho Trang chủ: Tải Slider (Chỉ chạy lần đầu, không chạy khi bấm Xem thêm)
+      if (!slug && !searchQuery && !isLoadMore) {
+          // Tải 10 SP Mới
+          const qNew = query(productRef, orderBy("ngayTao", "desc"), limit(10));
+          const snNew = await getDocs(qNew);
+          setNewArrivals(snNew.docs.map(d=>({id:d.id, ...d.data()})));
 
-            // Tải 10 SP Bán Chạy
-            const qBest = query(productRef, where("isBanChay", "==", true), limit(10));
-            const snBest = await getDocs(qBest);
-            setBestSellers(snBest.docs.map(d=>({id:d.id, ...d.data()})));
-        }
-        setLoading(false);
-        return;
+          // Tải 10 SP Bán Chạy
+          const qBest = query(productRef, where("isBanChay", "==", true), limit(10));
+          const snBest = await getDocs(qBest);
+          setBestSellers(snBest.docs.map(d=>({id:d.id, ...d.data()})));
+          
+          // [FIX]: KHÔNG return ở đây nữa, để code chạy tiếp xuống dưới tải danh sách Grid
       }
 
-      // 2. Xây dựng Query cho Danh mục / Search / Filter đặc biệt
+      // 2. Xây dựng Query cho Danh sách chính (Grid) - Áp dụng cho cả Trang chủ, Danh mục, Search
       let constraints = [];
       
       if (searchQuery) {
-        // Firebase không hỗ trợ Full-text search tốt. Đây là giải pháp tạm: tải về rồi lọc (hoặc dùng thư viện thứ 3)
-        // Ở đây ta tải nhiều hơn chút rồi lọc client (chấp nhận được với scale nhỏ)
-        // Hoặc tìm chính xác theo tên (case-sensitive)
-        // constraints.push(where("ten", ">=", searchQuery), where("ten", "<=", searchQuery + '\uf8ff')); 
+         // Tìm kiếm (Lọc client-side ở dưới)
       }
       else if (slug === 'khuyen-mai-soc') constraints.push(where("phanTramGiam", ">", 0));
       else if (slug === 'san-pham-moi') constraints.push(where("isMoi", "==", true));
       else if (slug === 'san-pham-ban-chay') constraints.push(where("isBanChay", "==", true));
-      else {
+      else if (slug) {
         // Tìm ID danh mục dựa vào Slug
         const danhMuc = dsDanhMuc.find(d => (d.slug === slug) || (toSlug(d.ten) === slug));
         if (danhMuc) {
-           // Tìm cả danh mục con
            const subCats = dsDanhMuc.filter(d => d.parent === danhMuc.id).map(d => d.id);
-           constraints.push(where("phanLoai", "in", [danhMuc.id, ...subCats].slice(0, 10))); // Firebase giới hạn 'in' tối đa 10
+           constraints.push(where("phanLoai", "in", [danhMuc.id, ...subCats].slice(0, 10)));
         }
       }
+      // [FIX]: Nếu không có slug (Trang chủ) -> constraints rỗng -> Tự động tải tất cả sản phẩm
 
       // Thêm giới hạn và phân trang
       if (isLoadMore && lastDoc) {
@@ -106,13 +101,11 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
       }
 
       const snapshot = await getDocs(q);
-      
       const newProds = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       
       // Lọc Search Client-side (Nếu có search)
       let finalProds = newProds;
       if (searchQuery) {
-         // Lưu ý: Đây là cách tạm thời. Khi SP > 1000, cần giải pháp Search Engine riêng (Algolia/Elastic)
          finalProds = newProds.filter(p => p.ten.toLowerCase().includes(searchQuery.toLowerCase()));
       }
 
@@ -143,49 +136,49 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
     <Container fluid className="p-0">
       <Row className="g-0"><Col xs={12} className="p-3">
         
-        {/* TRANG CHỦ: HIỆN 2 SLIDER */}
-        {!slug && !searchQuery ? (
+        {/* 1. SLIDER TRANG CHỦ (Chỉ hiện ở Trang chủ) */}
+        {!slug && !searchQuery && (
           <>
             <ProductSlider title="SẢN PHẨM BÁN CHẠY" icon="🔥" products={bestSellers} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />
             <ProductSlider title="SẢN PHẨM MỚI" icon="✨" products={newArrivals} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />
-            <div className="text-center mt-3"><Alert variant="info">Chọn danh mục bên trái để xem thêm hàng ngàn sản phẩm khác!</Alert></div>
           </>
-        ) : (
-          /* TRANG DANH MỤC / SEARCH: HIỆN GRID */
-          <div className="bg-white p-3 rounded shadow-sm">
-            <div className="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-              <h5 className="fw-bold text-success m-0">
-                <i className="fa-solid fa-list me-2"></i> 
-                {searchQuery ? `Tìm kiếm: "${searchQuery}"` :
-                 slug === 'san-pham-moi' ? '✨ SẢN PHẨM MỚI' : 
-                 slug === 'san-pham-ban-chay' ? '🔥 SẢN PHẨM BÁN CHẠY' :
-                 slug === 'khuyen-mai-soc' ? '⚡ KHUYẾN MÃI SỐC' :
-                 'DANH SÁCH SẢN PHẨM'}
-              </h5>
-            </div>
-            
-            {products.length === 0 && !loading ? (
-                <Alert variant="warning" className="text-center">Không tìm thấy sản phẩm nào.</Alert> 
-            ) : (
-              <Row className="g-3 row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5">
-                {products.map(sp => (
-                  <Col key={sp.id} className="d-flex align-items-stretch">
-                    <Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} />
-                  </Col>
-                ))}
-              </Row>
-            )}
-
-            {/* Nút Xem thêm (Load More) */}
-            {hasMore && (
-              <div className="text-center mt-4">
-                <Button variant="outline-success" className="rounded-pill px-5 fw-bold" onClick={() => fetchProducts(true)} disabled={loading}>
-                  {loading ? <Spinner as="span" animation="border" size="sm" /> : <>Xem thêm <i className="fa-solid fa-chevron-down ms-1"></i></>}
-                </Button>
-              </div>
-            )}
-          </div>
         )}
+
+        {/* 2. DANH SÁCH SẢN PHẨM CHÍNH (GRID - Luôn hiện ở mọi trang) */}
+        <div className="bg-white p-3 rounded shadow-sm mt-3">
+          <div className="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+            <h5 className="fw-bold text-success m-0">
+              <i className="fa-solid fa-list me-2"></i> 
+              {searchQuery ? `Tìm kiếm: "${searchQuery}"` :
+                slug === 'san-pham-moi' ? '✨ SẢN PHẨM MỚI' : 
+                slug === 'san-pham-ban-chay' ? '🔥 SẢN PHẨM BÁN CHẠY' :
+                slug === 'khuyen-mai-soc' ? '⚡ KHUYẾN MÃI SỐC' :
+                slug ? 'DANH SÁCH SẢN PHẨM' : 'GỢI Ý CHO BẠN'} {/* Đổi tên tiêu đề Trang chủ */}
+            </h5>
+          </div>
+          
+          {products.length === 0 && !loading ? (
+              <Alert variant="warning" className="text-center">Không tìm thấy sản phẩm nào.</Alert> 
+          ) : (
+            <Row className="g-3 row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5">
+              {products.map(sp => (
+                <Col key={sp.id} className="d-flex align-items-stretch">
+                  <Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} />
+                </Col>
+              ))}
+            </Row>
+          )}
+
+          {/* Nút Xem thêm (Load More) */}
+          {hasMore && (
+            <div className="text-center mt-4">
+              <Button variant="outline-success" className="rounded-pill px-5 fw-bold" onClick={() => fetchProducts(true)} disabled={loading}>
+                {loading ? <Spinner as="span" animation="border" size="sm" /> : <>Xem thêm <i className="fa-solid fa-chevron-down ms-1"></i></>}
+              </Button>
+            </div>
+          )}
+        </div>
+
       </Col></Row>
 
       {/* MODAL QUICK VIEW */}
