@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Form, Button, Modal, InputGroup } from 'react-bootstrap';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
-
-// 1. THÊM getDoc VÀO IMPORT ĐỂ KIỂM TRA KHO LẦN CUỐI
+import { useNavigate, Link } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp, updateDoc, doc, onSnapshot, getDocs, getDoc, query, where, increment } from 'firebase/firestore'; 
 import { db, auth } from './firebase';
 import { toast } from 'react-toastify';
 
 function Checkout({ gioHang, setGioHang, userData }) {
   const navigate = useNavigate();
-  const [khach, setKhach] = useState({ ten: '', sdt: '', diachi: '', ghiChu: '', quanHuyen: '' });
   
+  // State thông tin khách hàng
+  const [khach, setKhach] = useState({ ten: '', sdt: '', diachi: '', ghiChu: '', quanHuyen: '' });
+  // State lỗi form (Validation)
+  const [errors, setErrors] = useState({});
+
   useEffect(() => {
     if (userData) {
       setKhach(prev => ({
@@ -41,7 +43,11 @@ function Checkout({ gioHang, setGioHang, userData }) {
   useEffect(() => {
     const unsubConfig = onSnapshot(doc(db, "cauHinh", "thongTinChung"), d => d.exists() && setShopConfig(d.data()));
     const unsubShip = onSnapshot(collection(db, "shipping"), sn => setDsShip(sn.docs.map(d=>d.data())));
-    if (gioHang.length === 0 && !showSuccess) {navigate('/cart');}
+    
+    // Nếu giỏ hàng rỗng và không phải đang hiển thị success thì quay về cart
+    if (gioHang.length === 0 && !showSuccess) {
+        navigate('/cart');
+    }
     return () => { unsubConfig(); unsubShip(); }
   }, [gioHang, navigate, showSuccess]);
 
@@ -68,33 +74,55 @@ function Checkout({ gioHang, setGioHang, userData }) {
     }
   };
 
+  // --- HÀM KIỂM TRA DỮ LIỆU ĐẦU VÀO ---
+  const validateForm = () => {
+    let newErrors = {};
+    if (!khach.ten.trim()) newErrors.ten = "Vui lòng nhập họ tên";
+    
+    // Regex: SĐT Việt Nam (10 số, bắt đầu bằng 0)
+    const phoneRegex = /(84|0[3|5|7|8|9])+([0-9]{8})\b/;
+    if (!khach.sdt) {
+        newErrors.sdt = "Vui lòng nhập số điện thoại";
+    } else if (!phoneRegex.test(khach.sdt)) {
+        newErrors.sdt = "Số điện thoại không hợp lệ (cần 10 số)";
+    }
+
+    if (!khach.quanHuyen) newErrors.quanHuyen = "Vui lòng chọn khu vực giao hàng";
+    if (!khach.diachi.trim()) newErrors.diachi = "Vui lòng nhập địa chỉ nhận hàng";
+    
+    setErrors(newErrors);
+    // Trả về true nếu không có lỗi nào
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleOrder = async () => {
-    if (!khach.ten || !khach.sdt || !khach.diachi || !khach.quanHuyen) return toast.warning("Vui lòng nhập đủ thông tin giao hàng!");
+    // 1. Validate Form trước
+    if (!validateForm()) {
+        toast.warning("Vui lòng kiểm tra lại thông tin giao hàng!");
+        return;
+    }
     
     const maDonHang = 'MV-' + Math.floor(100000 + Math.random() * 900000);
     
     try {
-      // --- BƯỚC KIỂM TRA QUAN TRỌNG NHẤT (FINAL CHECK) ---
-      // Trước khi tạo đơn, chạy lên server kiểm tra kho lần cuối
+      // 2. --- FINAL CHECK: Kiểm tra kho lần cuối trên Server ---
       for (const item of gioHang) {
         const productRef = doc(db, "sanPham", item.id);
         const productSnap = await getDoc(productRef);
         
         if (productSnap.exists()) {
           const currentStock = productSnap.data().soLuong;
-          // Nếu tồn kho thực tế < số lượng muốn mua
           if (currentStock < item.soLuong) {
-            toast.error(`Rất tiếc! Món "${item.ten}" hiện chỉ còn ${currentStock} sản phẩm.`);
-            return; // DỪNG NGAY LẬP TỨC, KHÔNG CHO MUA
+            toast.error(`Rất tiếc! Món "${item.ten}" hiện chỉ còn ${currentStock} sản phẩm. Vui lòng chỉnh lại giỏ hàng.`);
+            return; // Dừng ngay, không tạo đơn
           }
         } else {
           toast.error(`Sản phẩm "${item.ten}" không còn tồn tại!`);
           return;
         }
       }
-      // ----------------------------------------------------
 
-      // 1. TẠO ĐƠN HÀNG
+      // 3. TẠO ĐƠN HÀNG
       await addDoc(collection(db, "donHang"), { 
         maDonHang, 
         khachHang: khach, 
@@ -109,7 +137,7 @@ function Checkout({ gioHang, setGioHang, userData }) {
         ship: shippingFee 
       });
 
-      // 2. TRỪ TỒN KHO
+      // 4. TRỪ TỒN KHO
       const updatePromises = gioHang.map(item => {
         const productRef = doc(db, "sanPham", item.id);
         const soLuongMua = parseInt(item.soLuong) || 0;
@@ -119,16 +147,19 @@ function Checkout({ gioHang, setGioHang, userData }) {
       });
       await Promise.all(updatePromises);
 
-      // 3. CỘNG ĐIỂM
+      // 5. CỘNG ĐIỂM TÍCH LŨY
       if (auth.currentUser && userData) {
         await updateDoc(doc(db, "users", auth.currentUser.uid), { 
           diemTichLuy: (userData.diemTichLuy || 0) + potentialPoints 
         });
       }
 
+      // 6. HOÀN TẤT
       setOrderInfo({ ma: maDonHang, tien: tongCong });
       setGioHang([]); 
       setShowSuccess(true);
+      toast.success("🎉 Đặt hàng thành công!");
+      
     } catch (error) {
       console.error(error);
       toast.error("Lỗi đặt hàng: " + error.message);
@@ -162,6 +193,7 @@ function Checkout({ gioHang, setGioHang, userData }) {
         )}
 
         <Row className="g-4">
+          {/* CỘT TRÁI: THÔNG TIN GIAO HÀNG */}
           <Col lg={7}>
             <div className="checkout-card">
               <div className="checkout-card-header">
@@ -170,32 +202,79 @@ function Checkout({ gioHang, setGioHang, userData }) {
               <div className="checkout-body">
                 <Row className="g-3">
                   <Col md={6}>
-                    <Form.Label className="form-label-custom">Họ và tên <span className="required">*</span></Form.Label>
-                    <InputGroup className="input-custom-group">
-                      <InputGroup.Text><i className="fa-regular fa-user"></i></InputGroup.Text>
-                      <Form.Control className="form-control-lg-custom" placeholder="Nhập họ tên" value={khach.ten} onChange={e=>setKhach({...khach,ten:e.target.value})}/>
-                    </InputGroup>
+                    <Form.Group>
+                        <Form.Label className="form-label-custom">Họ và tên <span className="required">*</span></Form.Label>
+                        <InputGroup className="input-custom-group">
+                        <InputGroup.Text><i className="fa-regular fa-user"></i></InputGroup.Text>
+                        <Form.Control 
+                            className="form-control-lg-custom" 
+                            placeholder="Nhập họ tên" 
+                            value={khach.ten} 
+                            onChange={e=>{
+                                setKhach({...khach,ten:e.target.value});
+                                if(errors.ten) setErrors({...errors, ten: null}); // Xóa lỗi khi nhập
+                            }}
+                            isInvalid={!!errors.ten}
+                        />
+                        <Form.Control.Feedback type="invalid">{errors.ten}</Form.Control.Feedback>
+                        </InputGroup>
+                    </Form.Group>
                   </Col>
                   <Col md={6}>
-                    <Form.Label className="form-label-custom">Số điện thoại <span className="required">*</span></Form.Label>
-                    <InputGroup className="input-custom-group">
-                      <InputGroup.Text><i className="fa-solid fa-phone"></i></InputGroup.Text>
-                      <Form.Control className="form-control-lg-custom" placeholder="Nhập số điện thoại" value={khach.sdt} onChange={e=>setKhach({...khach,sdt:e.target.value})}/>
-                    </InputGroup>
+                    <Form.Group>
+                        <Form.Label className="form-label-custom">Số điện thoại <span className="required">*</span></Form.Label>
+                        <InputGroup className="input-custom-group">
+                        <InputGroup.Text><i className="fa-solid fa-phone"></i></InputGroup.Text>
+                        <Form.Control 
+                            className="form-control-lg-custom" 
+                            placeholder="Nhập số điện thoại" 
+                            value={khach.sdt} 
+                            onChange={e=>{
+                                setKhach({...khach,sdt:e.target.value});
+                                if(errors.sdt) setErrors({...errors, sdt: null});
+                            }}
+                            isInvalid={!!errors.sdt}
+                        />
+                        <Form.Control.Feedback type="invalid">{errors.sdt}</Form.Control.Feedback>
+                        </InputGroup>
+                    </Form.Group>
                   </Col>
                   <Col md={12}>
-                    <Form.Label className="form-label-custom">Khu vực giao hàng <span className="required">*</span></Form.Label>
-                    <Form.Select className="form-control-lg-custom" value={khach.quanHuyen} onChange={handleSelectShip}>
-                      <option value="">-- Chọn Quận/Huyện --</option>
-                      {dsShip.map((s,i) => (<option key={i} value={s.khuVuc}>{s.khuVuc} (Phí ship: {parseInt(s.phi).toLocaleString()}¥)</option>))}
-                    </Form.Select>
+                    <Form.Group>
+                        <Form.Label className="form-label-custom">Khu vực giao hàng <span className="required">*</span></Form.Label>
+                        <Form.Select 
+                            className="form-control-lg-custom" 
+                            value={khach.quanHuyen} 
+                            onChange={(e) => {
+                                handleSelectShip(e);
+                                if(errors.quanHuyen) setErrors({...errors, quanHuyen: null});
+                            }}
+                            isInvalid={!!errors.quanHuyen}
+                        >
+                        <option value="">-- Chọn Quận/Huyện --</option>
+                        {dsShip.map((s,i) => (<option key={i} value={s.khuVuc}>{s.khuVuc} (Phí ship: {parseInt(s.phi).toLocaleString()}¥)</option>))}
+                        </Form.Select>
+                        <Form.Control.Feedback type="invalid">{errors.quanHuyen}</Form.Control.Feedback>
+                    </Form.Group>
                   </Col>
                   <Col md={12}>
-                    <Form.Label className="form-label-custom">Địa chỉ nhận hàng <span className="required">*</span></Form.Label>
-                    <InputGroup className="input-custom-group">
-                      <InputGroup.Text><i className="fa-solid fa-location-dot"></i></InputGroup.Text>
-                      <Form.Control className="form-control-lg-custom" placeholder="Số nhà, tên đường, phường/xã..." value={khach.diachi} onChange={e=>setKhach({...khach,diachi:e.target.value})}/>
-                    </InputGroup>
+                    <Form.Group>
+                        <Form.Label className="form-label-custom">Địa chỉ nhận hàng <span className="required">*</span></Form.Label>
+                        <InputGroup className="input-custom-group">
+                        <InputGroup.Text><i className="fa-solid fa-location-dot"></i></InputGroup.Text>
+                        <Form.Control 
+                            className="form-control-lg-custom" 
+                            placeholder="Số nhà, tên đường, phường/xã..." 
+                            value={khach.diachi} 
+                            onChange={e=>{
+                                setKhach({...khach,diachi:e.target.value});
+                                if(errors.diachi) setErrors({...errors, diachi: null});
+                            }}
+                            isInvalid={!!errors.diachi}
+                        />
+                        <Form.Control.Feedback type="invalid">{errors.diachi}</Form.Control.Feedback>
+                        </InputGroup>
+                    </Form.Group>
                   </Col>
                   <Col md={12}>
                     <Form.Label className="form-label-custom">Ghi chú đơn hàng (Tùy chọn)</Form.Label>
@@ -206,6 +285,7 @@ function Checkout({ gioHang, setGioHang, userData }) {
             </div>
           </Col>
 
+          {/* CỘT PHẢI: ĐƠN HÀNG & THANH TOÁN */}
           <Col lg={5}>
             <div className="checkout-card mb-3">
               <div className="checkout-card-header">
@@ -269,6 +349,7 @@ function Checkout({ gioHang, setGioHang, userData }) {
         </Row>
       </Container>
 
+      {/* MODAL THÔNG BÁO THÀNH CÔNG */}
       <Modal show={showSuccess} onHide={()=>{}} centered backdrop="static" keyboard={false}>
         <Modal.Body className="text-center p-5">
           <div className="mb-3"><i className="fa-regular fa-circle-check text-success" style={{fontSize:'80px'}}></i></div>

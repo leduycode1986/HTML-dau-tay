@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { db, auth } from './firebase'; 
 import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col } from 'react-bootstrap';
+import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col, Modal } from 'react-bootstrap';
 import { ToastContainer, toast } from 'react-toastify'; 
 import Slider from "react-slick"; 
 import 'react-toastify/dist/ReactToastify.css'; 
@@ -11,10 +11,10 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import AOS from 'aos'; import 'aos/dist/aos.css';
 
+// Import các component
 import Home from './Home';
 import ProductDetail from './ProductDetail';
 import Cart from './Cart';
-import Admin from './Admin';
 import Auth from './Auth';
 import Member from './Member';
 import OrderLookup from './OrderLookup';
@@ -25,14 +25,17 @@ import PostPage from './PostPage';
 import News from './News';
 import NewsDetail from './NewsDetail';
 
+// [LAZY LOAD]: Tách code Admin ra để trang chủ load nhanh hơn
+const Admin = React.lazy(() => import('./Admin'));
+
 function Store() {
   const navigate = useNavigate();
   const location = useLocation();
   
   const [dsSanPham, setDsSanPham] = useState([]);
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
-  // [TỐI ƯU]: Đã xóa dsDonHang ở đây để web load nhanh
   const [banners, setBanners] = useState([]); 
+  const [showPromoPopup, setShowPromoPopup] = useState(false);
   
   const [gioHang, setGioHang] = useState(() => {
     try {
@@ -61,25 +64,37 @@ function Store() {
   useEffect(() => { AOS.init({ duration: 800, once: false }); }, []);
   useEffect(() => { window.scrollTo(0, 0); }, [location]);
 
+  // [MARKETING]: Hiện popup khuyến mãi sau 3s nếu chưa xem
   useEffect(() => {
-    // Tải Sản phẩm
+    const hasSeen = sessionStorage.getItem('seenPromo');
+    if (!hasSeen) {
+      const t = setTimeout(() => setShowPromoPopup(true), 3000);
+      return () => clearTimeout(t);
+    }
+  }, []);
+
+  const closePromo = () => {
+    setShowPromoPopup(false);
+    sessionStorage.setItem('seenPromo', 'true');
+  };
+
+  useEffect(() => {
+    // 1. Tải Sản phẩm
     const unsubSP = onSnapshot(collection(db, "sanPham"), sn => {
         const data = sn.docs.map(d => ({ id: d.id, ...d.data() }));
         setDsSanPham(data.reverse()); 
     });
-    // Tải Danh mục
+    // 2. Tải Danh mục
     const unsubDM = onSnapshot(collection(db, "danhMuc"), sn => { 
         const d=sn.docs.map(x=>({id:x.id,...x.data()})); 
         d.sort((a,b)=>parseFloat(a.order||0)-parseFloat(b.order||0)); 
         setDsDanhMuc(d); 
     });
-    // [TỐI ƯU]: KHÔNG tải donHang ở đây nữa
-    
-    // Tải Banner
+    // 3. Tải Banner
     const unsubBanner = onSnapshot(collection(db, "banners"), sn => setBanners(sn.docs.map(d=>({id:d.id,...d.data()}))));
-    // Tải Cấu hình
+    // 4. Tải Cấu hình
     const unsubConfig = onSnapshot(doc(db, "cauHinh", "thongTinChung"), d => { if(d.exists()) setShopConfig(d.data()); });
-    
+    // 5. Auth Listener
     const unsubAuth = onAuthStateChanged(auth, async u => { 
       setCurrentUser(u);
       if (u) {
@@ -94,6 +109,7 @@ function Store() {
     return () => { unsubSP(); unsubDM(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
   }, []);
 
+  // Timer Flash Sale
   useEffect(() => {
     if(!shopConfig?.flashSaleEnd) return;
     const check = () => {
@@ -105,6 +121,7 @@ function Store() {
     check(); const t = setInterval(check, 1000); return () => clearInterval(t);
   }, [shopConfig]);
 
+  // Sản phẩm vừa xem
   useEffect(() => {
     if(dsSanPham.length > 0) {
       try {
@@ -115,6 +132,7 @@ function Store() {
     }
   }, [dsSanPham, location.pathname]);
 
+  // Đồng bộ giỏ hàng
   useEffect(() => {
     if (dsSanPham.length > 0) {
       setGioHang(currentCart => {
@@ -147,6 +165,7 @@ function Store() {
     }
     toast.success(`Đã thêm "${sp.ten}"!`); 
   };
+  
   const chinhSuaSoLuong = (id, type) => {
     setGioHang(gioHang.map(i => {
         if (i.id === id) {
@@ -158,6 +177,7 @@ function Store() {
         return i;
     }));
   };
+  
   const xoaSanPham = (id) => setGioHang(gioHang.filter(i=>i.id!==id));
   const handleLogout = async () => { await signOut(auth); if (location.pathname.includes('/member')) {navigate('/');}toast.info("Đã đăng xuất");};
   const sanPhamHienThi = dsSanPham.filter(sp => sp.ten?.toLowerCase().includes(tuKhoa.toLowerCase()));
@@ -169,15 +189,37 @@ function Store() {
       <ToastContainer autoClose={2000} />
       <div className={`back-to-top ${showTopBtn ? 'visible' : ''}`} onClick={() => window.scrollTo({top:0, behavior:'smooth'})}><i className="fa-solid fa-arrow-up"></i></div>
 
+      {/* POPUP KHUYẾN MÃI */}
+      <Modal show={showPromoPopup} onHide={closePromo} centered>
+        <Modal.Body className="text-center p-0" style={{borderRadius:8, overflow:'hidden'}}>
+          <div style={{background:'linear-gradient(135deg, #d32f2f, #ff5252)', padding:'30px', color:'white'}}>
+            <h3 className="fw-bold mb-2">🎁 QUÀ TẶNG BẠN MỚI!</h3>
+            <p>Nhập mã <span className="badge bg-warning text-dark fs-5">MAIVANG10</span></p>
+            <p className="small">Giảm ngay 10% cho đơn hàng đầu tiên</p>
+            <Button variant="light" className="fw-bold text-danger rounded-pill px-4 mt-2" onClick={closePromo}>MUA NGAY KẺO LỠ</Button>
+          </div>
+        </Modal.Body>
+      </Modal>
+
+      {/* CHAT WIDGET */}
+      {!isAdminPage && (
+        <div className="chat-widget" style={{position:'fixed', bottom:'80px', right:'20px', zIndex:1000, display:'flex', flexDirection:'column', gap:'10px'}}>
+          {shopConfig.zalo && <a href={`https://zalo.me/${shopConfig.zalo}`} target="_blank" rel="noreferrer"><img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Icon_of_Zalo.svg" width="45" style={{boxShadow:'0 4px 10px rgba(0,0,0,0.2)', borderRadius:'50%'}}/></a>}
+          {shopConfig.linkFacebook && <a href={shopConfig.linkFacebook} target="_blank" rel="noreferrer"><img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png" width="45" style={{boxShadow:'0 4px 10px rgba(0,0,0,0.2)', borderRadius:'50%'}}/></a>}
+        </div>
+      )}
+
       {!isAdminPage && (
         <>          
-            <div className="top-bar-notification">
+          {/* THANH THÔNG BÁO HEADER */}
+          <div className="top-bar-notification">
             <div className="marquee-text">
                 <span className="me-4">{shopConfig.topBarText || "Chào mừng bạn đến với Thực Phẩm Mai Vàng!"}</span>
                 {shopConfig.openingHours && (<span className="mx-4"><i className="fa-regular fa-clock me-1"></i> Mở cửa: {shopConfig.openingHours}</span>)}                
             </div>
-            </div>
+          </div>
           
+          {/* NAVBAR CHÍNH */}
           <Navbar bg="white" expand="lg" className="sticky-top shadow-sm py-3" style={{zIndex: 100, borderBottom:'3px solid #198754'}}>
             <Container>
             <Navbar.Brand as={Link} to="/" className="me-4 text-decoration-none brand-group">
@@ -198,6 +240,8 @@ function Store() {
                     <span className="hotline-number">{shopConfig.sdt}</span>
                   </div>
                     <Link to="/tra-cuu" className="btn-header-action btn-lookup"><i className="fa-solid fa-truck-fast"></i> Tra đơn</Link>
+                    
+                    {/* GIỎ HÀNG */}
                     <div className="header-cart-wrapper">
                       <Link to="/cart" className="btn-header-action btn-cart-header px-4">
                         <i className="fa-solid fa-cart-shopping"></i> Giỏ <span className="cart-badge">{gioHang.reduce((a,b)=>a+b.soLuong,0)}</span>
@@ -226,6 +270,7 @@ function Store() {
                       </div>
                     </div>
                   
+                  {/* USER DROPDOWN */}
                   {currentUser ? (
                     <Dropdown align="end">
                     <Dropdown.Toggle variant="light" className="border-0 fw-bold d-flex align-items-center gap-2" style={{outline:'none', boxShadow:'none'}}>
@@ -248,6 +293,7 @@ function Store() {
         </>
       )}
 
+      {/* BODY CONTENT */}
       <div className="flex-grow-1 py-3" style={{background: '#f4f6f9'}}>
         <Container>
           <Row>
@@ -341,15 +387,27 @@ function Store() {
                 <Route path="/tin-tuc" element={<News />} />
                 <Route path="/tin-tuc/:slug" element={<NewsDetail />} />
                 
-                {/* [TỐI ƯU]: KHÔNG truyền dsDonHang vào Admin nữa */}
-                <Route path="/admin" element={<Admin dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} handleUpdateDS_SP={async (t,d)=>t==='ADD'?addDoc(collection(db,"sanPham"),d):t==='DELETE'?deleteDoc(doc(db,"sanPham",d)):updateDoc(doc(db,"sanPham",d.id),d)} handleUpdateDS_DM={async (t,d)=>t==='ADD'?addDoc(collection(db,"danhMuc"),d):t==='DELETE'?deleteDoc(doc(db,"danhMuc",d)):updateDoc(doc(db,"danhMuc",d.id),d)} handleUpdateStatusOrder={(id,s)=>updateDoc(doc(db,"donHang",id),{trangThai:s})} handleDeleteOrder={(id)=>deleteDoc(doc(db,"donHang",id))} />} />
+                {/* --- [SỬA ĐỔI QUAN TRỌNG]: Dùng Suspense cho Admin --- */}
+                <Route path="/admin" element={
+                  <Suspense fallback={<div className="p-5 text-center">Đang tải trang quản trị...</div>}>
+                    <Admin 
+                      dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} 
+                      // Lưu ý: Không truyền dsDonHang nữa, Admin tự tải để bảo mật
+                      handleUpdateDS_SP={async (t,d)=>t==='ADD'?addDoc(collection(db,"sanPham"),d):t==='DELETE'?deleteDoc(doc(db,"sanPham",d)):updateDoc(doc(db,"sanPham",d.id),d)} 
+                      handleUpdateDS_DM={async (t,d)=>t==='ADD'?addDoc(collection(db,"danhMuc"),d):t==='DELETE'?deleteDoc(doc(db,"danhMuc",d)):updateDoc(doc(db,"danhMuc",d.id),d)} 
+                      handleUpdateStatusOrder={(id,s)=>updateDoc(doc(db,"donHang",id),{trangThai:s})} 
+                      handleDeleteOrder={(id)=>deleteDoc(doc(db,"donHang",id))} 
+                    />
+                  </Suspense>
+                } />
               </Routes>
             </Col>
           </Row>
         </Container>
       </div>
       
-        {!isAdminPage && recentProducts.length > 0 && (
+      {/* SẢN PHẨM VỪA XEM */}
+      {!isAdminPage && recentProducts.length > 0 && (
         <div className="recent-view-section">
             <Container>
             <h5 className="recent-title"><i className="fa-solid fa-clock-rotate-left"></i> Sản phẩm bạn vừa xem</h5>
@@ -369,6 +427,7 @@ function Store() {
         </div>
         )}
 
+      {/* FOOTER */}
       {!isAdminPage && (
         <footer className="footer-section">
           <Container>
