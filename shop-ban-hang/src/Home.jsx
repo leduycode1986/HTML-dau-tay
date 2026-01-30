@@ -35,7 +35,7 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
   
   // State dữ liệu
   const [products, setProducts] = useState([]); // Danh sách Grid chính
-  const [flashSales, setFlashSales] = useState([]); // Slider Flash Sale
+  const [flashSales, setFlashSales] = useState([]); // [MỚI] Slider Flash Sale
   const [bestSellers, setBestSellers] = useState([]); // Slider Bán chạy
   const [newArrivals, setNewArrivals] = useState([]); // Slider Mới về
   
