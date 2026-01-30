@@ -3,7 +3,7 @@ import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
 import { db, auth } from './firebase'; 
 import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col, Modal } from 'react-bootstrap';
+import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col } from 'react-bootstrap';
 import { ToastContainer, toast } from 'react-toastify'; 
 import Slider from "react-slick"; 
 import 'react-toastify/dist/ReactToastify.css'; 
@@ -35,7 +35,6 @@ function Store() {
   
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [banners, setBanners] = useState([]); 
-  const [showPromoPopup, setShowPromoPopup] = useState(false); // Mặc định tắt
   
   const [gioHang, setGioHang] = useState(() => {
     try { return JSON.parse(localStorage.getItem('cart')) || []; } catch { return []; }
@@ -51,16 +50,11 @@ function Store() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userData, setUserData] = useState(null); 
   const [showTopBtn, setShowTopBtn] = useState(false);
-  const [openMenuId, setOpenMenuId] = useState(null);
   const [recentProducts, setRecentProducts] = useState([]);
   const [timeLeft, setTimeLeft] = useState({ d:0, h:0, m:0, s:0 });
 
   useEffect(() => { AOS.init({ duration: 800, once: false }); }, []);
   useEffect(() => { window.scrollTo(0, 0); }, [location]);
-
-  // [ĐÃ XÓA]: Code tự động bật popup ở đây đã được loại bỏ theo yêu cầu
-
-  const closePromo = () => { setShowPromoPopup(false); };
 
   useEffect(() => {
     const unsubDM = onSnapshot(collection(db, "danhMuc"), sn => { 
@@ -95,6 +89,19 @@ function Store() {
   }, [shopConfig]);
 
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
+
+  // Logic Recent Product
+  useEffect(() => {
+    if(location.pathname === '/') {
+        try {
+            const recentIds = JSON.parse(localStorage.getItem('recent') || '[]');
+            if(recentIds.length > 0) {
+               // Lưu ý: Logic lấy chi tiết recent product nên để Home hoặc component con xử lý để tối ưu
+               // Ở đây giữ placeholder để tránh lỗi logic cũ
+            }
+        } catch(e){}
+    }
+  }, [location.pathname]);
 
   const themVaoGio = (sp) => { 
     if(sp.soLuong <= 0) return toast.error("Sản phẩm đã hết hàng!");
@@ -134,6 +141,7 @@ function Store() {
       <ToastContainer autoClose={2000} />
       {!isAdminPage && <div className={`back-to-top ${showTopBtn ? 'visible' : ''}`} onClick={() => window.scrollTo({top:0, behavior:'smooth'})}><i className="fa-solid fa-arrow-up"></i></div>}
 
+      {/* CHAT WIDGET */}
       {!isAdminPage && (
         <div className="chat-widget" style={{position:'fixed', bottom:'80px', right:'20px', zIndex:1000, display:'flex', flexDirection:'column', gap:'10px'}}>
           {shopConfig.zalo && <a href={`https://zalo.me/${shopConfig.zalo}`} target="_blank" rel="noreferrer"><img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Icon_of_Zalo.svg" width="45" style={{boxShadow:'0 4px 10px rgba(0,0,0,0.2)', borderRadius:'50%'}}/></a>}

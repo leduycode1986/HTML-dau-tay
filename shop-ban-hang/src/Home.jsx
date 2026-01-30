@@ -42,9 +42,7 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
   const [loading, setLoading] = useState(false);
   const [lastDoc, setLastDoc] = useState(null); // Để phân trang (Load More)
   const [hasMore, setHasMore] = useState(true);
-  
   const [quickViewSP, setQuickViewSP] = useState(null);
-  const [sortType, setSortType] = useState('default'); // Sắp xếp giá
 
   // Lấy params tìm kiếm từ URL (?search=...)
   const queryParams = new URLSearchParams(location.search);
@@ -57,9 +55,9 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
       const productRef = collection(db, "sanPham");
       const isHomepage = !slug && !searchQuery;
 
-      // 1. NẾU LÀ TRANG CHỦ & LẦN ĐẦU TẢI -> TẢI CÁC SLIDER TRƯỚC
+      // 1. NẾU LÀ TRANG CHỦ & LẦN ĐẦU TẢI -> TẢI CÁC SLIDER
       if (isHomepage && !isLoadMore) {
-          // A. Slider Flash Sale (Ưu tiên số 1)
+          // A. Slider Flash Sale (Ưu tiên)
           const qFlash = query(productRef, where("isFlashSale", "==", true), limit(10));
           const snFlash = await getDocs(qFlash);
           setFlashSales(snFlash.docs.map(d=>({id:d.id, ...d.data()})));
@@ -83,7 +81,6 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
       else if (slug === 'san-pham-moi') constraints.push(where("isMoi", "==", true));
       else if (slug === 'san-pham-ban-chay') constraints.push(where("isBanChay", "==", true));
       else if (slug) {
-        // Tìm ID danh mục
         const danhMuc = dsDanhMuc.find(d => (d.slug === slug) || (toSlug(d.ten) === slug));
         if (danhMuc) {
            const subCats = dsDanhMuc.filter(d => d.parent === danhMuc.id).map(d => d.id);
@@ -91,15 +88,10 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
         }
       }
 
-      // Logic Sắp Xếp (Sort)
-      if (sortType === 'price-asc') constraints.push(orderBy("giaBan", "asc"));
-      else if (sortType === 'price-desc') constraints.push(orderBy("giaBan", "desc"));
-      else {
-         // Mặc định: Để phân trang ổn định, cần có orderBy. 
-         // Ta dùng 'giaBan' làm mặc định để startAfter hoạt động tốt.
-         // (Lưu ý: Nếu dùng orderBy khác, cần tạo Index trong Firebase Console nếu báo lỗi)
-         constraints.push(orderBy("giaBan", "desc")); 
-      }
+      // [QUAN TRỌNG]: Sắp xếp MỚI NHẤT -> CŨ NHẤT
+      // Lưu ý: Nếu Firebase báo lỗi "Index", bạn cần click vào link trong Console để tạo Index.
+      // Nếu sản phẩm cũ không có trường 'ngayTao', chúng sẽ không hiện.
+      constraints.push(orderBy("ngayTao", "desc")); 
 
       // Logic Phân trang (Load More)
       let qGrid;
@@ -109,21 +101,19 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
         qGrid = query(productRef, ...constraints, limit(12));
       }
 
-      // Thực thi Query
       const snapshot = await getDocs(qGrid);
       const newProds = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
-      // Lọc tìm kiếm (Client-side search vì Firestore search text yếu)
+      // Lọc Search Client-side (Nếu có search)
       let finalProds = newProds;
       if (searchQuery) {
          finalProds = newProds.filter(p => p.ten.toLowerCase().includes(searchQuery.toLowerCase()));
       }
 
-      // Cập nhật State
       if (snapshot.docs.length > 0) {
           setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
       }
-      setHasMore(snapshot.docs.length === 12); // Nếu tải đủ 12 thì khả năng còn nữa
+      setHasMore(snapshot.docs.length === 12); 
 
       if (isLoadMore) {
         setProducts(prev => [...prev, ...finalProds]);
@@ -137,7 +127,6 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
     setLoading(false);
   };
 
-  // Reset và tải lại khi đổi trang (Slug/Search/Sort thay đổi)
   useEffect(() => {
     setProducts([]);
     setFlashSales([]); 
@@ -146,7 +135,7 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
     setLastDoc(null);
     setHasMore(true);
     fetchProducts(false); 
-  }, [slug, searchQuery, dsDanhMuc, sortType]);
+  }, [slug, searchQuery, dsDanhMuc]);
 
   return (
     <Container fluid className="p-0">
@@ -172,11 +161,6 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
                 slug === 'khuyen-mai-soc' ? '⚡ KHUYẾN MÃI SỐC' :
                 slug ? 'DANH SÁCH SẢN PHẨM' : 'GỢI Ý CHO BẠN'} 
             </h5>
-            <select className="form-select form-select-sm w-auto" value={sortType} onChange={e=>setSortType(e.target.value)}>
-                <option value="default">Mặc định</option>
-                <option value="price-asc">Giá tăng dần</option>
-                <option value="price-desc">Giá giảm dần</option>
-            </select>
           </div>
           
           {products.length === 0 && !loading ? (
@@ -203,7 +187,7 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
 
       </Col></Row>
 
-      {/* MODAL QUICK VIEW (ĐÃ CÓ NÚT TẮT X) */}
+      {/* MODAL QUICK VIEW */}
       <Modal show={!!quickViewSP} onHide={()=>setQuickViewSP(null)} size="lg" centered dialogClassName="quick-view-modal">
         <Modal.Body className="p-0 position-relative">
           <div className="btn-close-quickview" onClick={()=>setQuickViewSP(null)} title="Đóng">
