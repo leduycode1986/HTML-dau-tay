@@ -36,7 +36,7 @@ function Store() {
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [banners, setBanners] = useState([]); 
   
-  // [FIX LỖI 1]: Thêm biến state bị thiếu gây lỗi màn hình trắng
+  // Biến state bị thiếu gây lỗi màn hình trắng ở phiên bản trước
   const [openMenuId, setOpenMenuId] = useState(null);
 
   const [gioHang, setGioHang] = useState(() => {
@@ -53,6 +53,7 @@ function Store() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userData, setUserData] = useState(null); 
   const [showTopBtn, setShowTopBtn] = useState(false);
+  const [recentProducts, setRecentProducts] = useState([]);
   const [timeLeft, setTimeLeft] = useState({ d:0, h:0, m:0, s:0 });
 
   useEffect(() => { AOS.init({ duration: 800, once: false }); }, []);
@@ -91,6 +92,18 @@ function Store() {
   }, [shopConfig]);
 
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
+
+  // Logic Recent Product
+  useEffect(() => {
+    if(location.pathname === '/') {
+        try {
+            const recentIds = JSON.parse(localStorage.getItem('recent') || '[]');
+            if(recentIds.length > 0) {
+               // Placeholder logic
+            }
+        } catch(e){}
+    }
+  }, [location.pathname]);
 
   const themVaoGio = (sp) => { 
     if(sp.soLuong <= 0) return toast.error("Sản phẩm đã hết hàng!");
@@ -235,7 +248,6 @@ function Store() {
 
                     {dsDanhMuc.filter(d => !d.parent).map(parent => {
                       const hasChild = dsDanhMuc.some(c => c.parent === parent.id);
-                      // Sử dụng biến openMenuId đã khai báo để check đóng mở
                       const isOpen = openMenuId === parent.id;
                       return (
                         <div key={parent.id}>
