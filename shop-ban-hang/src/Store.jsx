@@ -31,6 +31,7 @@ const Admin = React.lazy(() => import('./Admin'));
 function Store() {
   const navigate = useNavigate();
   const location = useLocation();
+  const isAdminPage = location.pathname.startsWith('/admin'); // Xác định đang ở trang Admin
   
   const [dsSanPham, setDsSanPham] = useState([]);
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
@@ -64,14 +65,16 @@ function Store() {
   useEffect(() => { AOS.init({ duration: 800, once: false }); }, []);
   useEffect(() => { window.scrollTo(0, 0); }, [location]);
 
-  // [MARKETING]: Hiện popup khuyến mãi sau 3s nếu chưa xem
+  // [MARKETING]: Hiện popup khuyến mãi sau 3s nếu chưa xem (VÀ KHÔNG PHẢI ADMIN)
   useEffect(() => {
-    const hasSeen = sessionStorage.getItem('seenPromo');
-    if (!hasSeen) {
-      const t = setTimeout(() => setShowPromoPopup(true), 3000);
-      return () => clearTimeout(t);
+    if (!isAdminPage) {
+      const hasSeen = sessionStorage.getItem('seenPromo');
+      if (!hasSeen) {
+        const t = setTimeout(() => setShowPromoPopup(true), 3000);
+        return () => clearTimeout(t);
+      }
     }
-  }, []);
+  }, [isAdminPage]);
 
   const closePromo = () => {
     setShowPromoPopup(false);
@@ -181,25 +184,32 @@ function Store() {
   const xoaSanPham = (id) => setGioHang(gioHang.filter(i=>i.id!==id));
   const handleLogout = async () => { await signOut(auth); if (location.pathname.includes('/member')) {navigate('/');}toast.info("Đã đăng xuất");};
   const sanPhamHienThi = dsSanPham.filter(sp => sp.ten?.toLowerCase().includes(tuKhoa.toLowerCase()));
-  const isAdminPage = location.pathname.startsWith('/admin');
   const sliderSettings = { dots: true, infinite: true, speed: 500, slidesToShow: 1, slidesToScroll: 1, autoplay: true };
 
   return (
     <div className="app-container d-flex flex-column min-vh-100">
       <ToastContainer autoClose={2000} />
-      <div className={`back-to-top ${showTopBtn ? 'visible' : ''}`} onClick={() => window.scrollTo({top:0, behavior:'smooth'})}><i className="fa-solid fa-arrow-up"></i></div>
+      
+      {/* [FIX]: Chỉ hiện nút Back-to-top nếu không phải trang Admin */}
+      {!isAdminPage && (
+        <div className={`back-to-top ${showTopBtn ? 'visible' : ''}`} onClick={() => window.scrollTo({top:0, behavior:'smooth'})}>
+          <i className="fa-solid fa-arrow-up"></i>
+        </div>
+      )}
 
-      {/* POPUP KHUYẾN MÃI */}
-      <Modal show={showPromoPopup} onHide={closePromo} centered>
-        <Modal.Body className="text-center p-0" style={{borderRadius:8, overflow:'hidden'}}>
-          <div style={{background:'linear-gradient(135deg, #d32f2f, #ff5252)', padding:'30px', color:'white'}}>
-            <h3 className="fw-bold mb-2">🎁 QUÀ TẶNG BẠN MỚI!</h3>
-            <p>Nhập mã <span className="badge bg-warning text-dark fs-5">MAIVANG10</span></p>
-            <p className="small">Giảm ngay 10% cho đơn hàng đầu tiên</p>
-            <Button variant="light" className="fw-bold text-danger rounded-pill px-4 mt-2" onClick={closePromo}>MUA NGAY KẺO LỠ</Button>
-          </div>
-        </Modal.Body>
-      </Modal>
+      {/* [FIX]: POPUP KHUYẾN MÃI - Bọc trong điều kiện !isAdminPage */}
+      {!isAdminPage && (
+        <Modal show={showPromoPopup} onHide={closePromo} centered>
+          <Modal.Body className="text-center p-0" style={{borderRadius:8, overflow:'hidden'}}>
+            <div style={{background:'linear-gradient(135deg, #d32f2f, #ff5252)', padding:'30px', color:'white'}}>
+              <h3 className="fw-bold mb-2">🎁 QUÀ TẶNG BẠN MỚI!</h3>
+              <p>Nhập mã <span className="badge bg-warning text-dark fs-5">MAIVANG10</span></p>
+              <p className="small">Giảm ngay 10% cho đơn hàng đầu tiên</p>
+              <Button variant="light" className="fw-bold text-danger rounded-pill px-4 mt-2" onClick={closePromo}>MUA NGAY KẺO LỠ</Button>
+            </div>
+          </Modal.Body>
+        </Modal>
+      )}
 
       {/* CHAT WIDGET */}
       {!isAdminPage && (
