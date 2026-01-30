@@ -3,7 +3,7 @@ import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
 import { db, auth } from './firebase'; 
 import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col } from 'react-bootstrap';
+import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col, Modal } from 'react-bootstrap';
 import { ToastContainer, toast } from 'react-toastify'; 
 import Slider from "react-slick"; 
 import 'react-toastify/dist/ReactToastify.css'; 
@@ -35,6 +35,7 @@ function Store() {
   
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [banners, setBanners] = useState([]); 
+  const [showPromoPopup, setShowPromoPopup] = useState(false); // Mặc định tắt
   
   const [gioHang, setGioHang] = useState(() => {
     try { return JSON.parse(localStorage.getItem('cart')) || []; } catch { return []; }
@@ -57,8 +58,11 @@ function Store() {
   useEffect(() => { AOS.init({ duration: 800, once: false }); }, []);
   useEffect(() => { window.scrollTo(0, 0); }, [location]);
 
+  // [ĐÃ XÓA]: Code tự động bật popup ở đây đã được loại bỏ theo yêu cầu
+
+  const closePromo = () => { setShowPromoPopup(false); };
+
   useEffect(() => {
-    // Chỉ tải các dữ liệu nhẹ: Danh mục, Banner, Cấu hình
     const unsubDM = onSnapshot(collection(db, "danhMuc"), sn => { 
         const d=sn.docs.map(x=>({id:x.id,...x.data()})); 
         d.sort((a,b)=>parseFloat(a.order||0)-parseFloat(b.order||0)); 
@@ -79,7 +83,6 @@ function Store() {
     return () => { unsubDM(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
   }, []);
 
-  // Timer Flash Sale
   useEffect(() => {
     if(!shopConfig?.flashSaleEnd) return;
     const check = () => {
@@ -131,7 +134,6 @@ function Store() {
       <ToastContainer autoClose={2000} />
       {!isAdminPage && <div className={`back-to-top ${showTopBtn ? 'visible' : ''}`} onClick={() => window.scrollTo({top:0, behavior:'smooth'})}><i className="fa-solid fa-arrow-up"></i></div>}
 
-      {/* CHAT WIDGET */}
       {!isAdminPage && (
         <div className="chat-widget" style={{position:'fixed', bottom:'80px', right:'20px', zIndex:1000, display:'flex', flexDirection:'column', gap:'10px'}}>
           {shopConfig.zalo && <a href={`https://zalo.me/${shopConfig.zalo}`} target="_blank" rel="noreferrer"><img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Icon_of_Zalo.svg" width="45" style={{boxShadow:'0 4px 10px rgba(0,0,0,0.2)', borderRadius:'50%'}}/></a>}

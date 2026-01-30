@@ -34,7 +34,7 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
   const location = useLocation();
   
   // State dữ liệu
-  const [products, setProducts] = useState([]); // Danh sách Grid chính (Tất cả / Theo danh mục)
+  const [products, setProducts] = useState([]); // Danh sách Grid chính
   const [flashSales, setFlashSales] = useState([]); // Slider Flash Sale
   const [bestSellers, setBestSellers] = useState([]); // Slider Bán chạy
   const [newArrivals, setNewArrivals] = useState([]); // Slider Mới về
@@ -44,12 +44,13 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
   const [hasMore, setHasMore] = useState(true);
   
   const [quickViewSP, setQuickViewSP] = useState(null);
+  const [sortType, setSortType] = useState('default'); // Sắp xếp giá
 
   // Lấy params tìm kiếm từ URL (?search=...)
   const queryParams = new URLSearchParams(location.search);
   const searchQuery = queryParams.get('search');
 
-  // --- LOGIC TẢI DỮ LIỆU CHÍNH ---
+  // --- LOGIC TẢI DỮ LIỆU CHÍNH (SERVER-SIDE PAGINATION) ---
   const fetchProducts = async (isLoadMore = false) => {
     setLoading(true);
     try {
@@ -74,9 +75,10 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
           setNewArrivals(snNew.docs.map(d=>({id:d.id, ...d.data()})));
       }
 
-      // 2. TẢI DANH SÁCH LƯỚI (GRID) BÊN DƯỚI (Có Phân Trang)
+      // 2. TẢI DANH SÁCH LƯỚI (GRID) BÊN DƯỚI
       let constraints = [];
 
+      // Logic lọc theo điều kiện
       if (slug === 'khuyen-mai-soc') constraints.push(where("phanTramGiam", ">", 0));
       else if (slug === 'san-pham-moi') constraints.push(where("isMoi", "==", true));
       else if (slug === 'san-pham-ban-chay') constraints.push(where("isBanChay", "==", true));
@@ -88,13 +90,18 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
            constraints.push(where("phanLoai", "in", [danhMuc.id, ...subCats].slice(0, 10)));
         }
       }
-      
-      // Quan trọng: Phải có orderBy để phân trang (startAfter) hoạt động ổn định
-      // Nếu không có field 'ngayTao', Firebase có thể dùng document ID làm order mặc định
-      // Ở đây ta dùng orderBy tên hoặc giá để đảm bảo thứ tự
-      // Lưu ý: Nếu dùng orderBy("ngayTao") thì trong DB phải có index
-      // Để đơn giản và không lỗi Index, ta dùng mặc định (không orderBy phức tạp) cho truy vấn cơ bản
-      
+
+      // Logic Sắp Xếp (Sort)
+      if (sortType === 'price-asc') constraints.push(orderBy("giaBan", "asc"));
+      else if (sortType === 'price-desc') constraints.push(orderBy("giaBan", "desc"));
+      else {
+         // Mặc định: Để phân trang ổn định, cần có orderBy. 
+         // Ta dùng 'giaBan' làm mặc định để startAfter hoạt động tốt.
+         // (Lưu ý: Nếu dùng orderBy khác, cần tạo Index trong Firebase Console nếu báo lỗi)
+         constraints.push(orderBy("giaBan", "desc")); 
+      }
+
+      // Logic Phân trang (Load More)
       let qGrid;
       if (isLoadMore && lastDoc) {
         qGrid = query(productRef, ...constraints, startAfter(lastDoc), limit(12));
@@ -102,16 +109,20 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
         qGrid = query(productRef, ...constraints, limit(12));
       }
 
+      // Thực thi Query
       const snapshot = await getDocs(qGrid);
       const newProds = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
-      // Lọc Search Client-side (Nếu có search)
+      // Lọc tìm kiếm (Client-side search vì Firestore search text yếu)
       let finalProds = newProds;
       if (searchQuery) {
          finalProds = newProds.filter(p => p.ten.toLowerCase().includes(searchQuery.toLowerCase()));
       }
 
-      setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+      // Cập nhật State
+      if (snapshot.docs.length > 0) {
+          setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+      }
       setHasMore(snapshot.docs.length === 12); // Nếu tải đủ 12 thì khả năng còn nữa
 
       if (isLoadMore) {
@@ -126,16 +137,16 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
     setLoading(false);
   };
 
-  // Reset và tải lại khi đổi trang (Slug/Search thay đổi)
+  // Reset và tải lại khi đổi trang (Slug/Search/Sort thay đổi)
   useEffect(() => {
     setProducts([]);
-    setFlashSales([]); // Reset slider
+    setFlashSales([]); 
     setBestSellers([]);
     setNewArrivals([]);
     setLastDoc(null);
     setHasMore(true);
-    fetchProducts(false); // False = Tải mới từ đầu
-  }, [slug, searchQuery, dsDanhMuc]);
+    fetchProducts(false); 
+  }, [slug, searchQuery, dsDanhMuc, sortType]);
 
   return (
     <Container fluid className="p-0">
@@ -161,6 +172,11 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
                 slug === 'khuyen-mai-soc' ? '⚡ KHUYẾN MÃI SỐC' :
                 slug ? 'DANH SÁCH SẢN PHẨM' : 'GỢI Ý CHO BẠN'} 
             </h5>
+            <select className="form-select form-select-sm w-auto" value={sortType} onChange={e=>setSortType(e.target.value)}>
+                <option value="default">Mặc định</option>
+                <option value="price-asc">Giá tăng dần</option>
+                <option value="price-desc">Giá giảm dần</option>
+            </select>
           </div>
           
           {products.length === 0 && !loading ? (
@@ -175,7 +191,7 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
             </Row>
           )}
 
-          {/* Nút Xem thêm */}
+          {/* Nút Xem thêm (Load More) */}
           {hasMore && (
             <div className="text-center mt-4">
               <Button variant="outline-success" className="rounded-pill px-5 fw-bold" onClick={() => fetchProducts(true)} disabled={loading}>
