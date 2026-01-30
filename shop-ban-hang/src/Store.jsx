@@ -3,7 +3,7 @@ import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
 import { db, auth } from './firebase'; 
 import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col, Modal } from 'react-bootstrap';
+import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col } from 'react-bootstrap';
 import { ToastContainer, toast } from 'react-toastify'; 
 import Slider from "react-slick"; 
 import 'react-toastify/dist/ReactToastify.css'; 
@@ -33,10 +33,8 @@ function Store() {
   const location = useLocation();
   const isAdminPage = location.pathname.startsWith('/admin');
   
-  // [TỐI ƯU]: Không tải dsSanPham ở đây nữa để tránh treo máy
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [banners, setBanners] = useState([]); 
-  const [showPromoPopup, setShowPromoPopup] = useState(false);
   
   const [gioHang, setGioHang] = useState(() => {
     try { return JSON.parse(localStorage.getItem('cart')) || []; } catch { return []; }
@@ -53,23 +51,11 @@ function Store() {
   const [userData, setUserData] = useState(null); 
   const [showTopBtn, setShowTopBtn] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [recentProducts, setRecentProducts] = useState([]);
   const [timeLeft, setTimeLeft] = useState({ d:0, h:0, m:0, s:0 });
 
   useEffect(() => { AOS.init({ duration: 800, once: false }); }, []);
   useEffect(() => { window.scrollTo(0, 0); }, [location]);
-
-  // Popup khuyến mãi
-  useEffect(() => {
-    if (!isAdminPage) {
-      const hasSeen = sessionStorage.getItem('seenPromo');
-      if (!hasSeen) {
-        const t = setTimeout(() => setShowPromoPopup(true), 3000);
-        return () => clearTimeout(t);
-      }
-    }
-  }, [isAdminPage]);
-
-  const closePromo = () => { setShowPromoPopup(false); sessionStorage.setItem('seenPromo', 'true'); };
 
   useEffect(() => {
     // Chỉ tải các dữ liệu nhẹ: Danh mục, Banner, Cấu hình
@@ -135,7 +121,6 @@ function Store() {
   const handleLogout = async () => { await signOut(auth); if (location.pathname.includes('/member')) {navigate('/');}toast.info("Đã đăng xuất");};
   const sliderSettings = { dots: true, infinite: true, speed: 500, slidesToShow: 1, slidesToScroll: 1, autoplay: true };
 
-  // [TỐI ƯU]: Xử lý tìm kiếm bằng URL thay vì lọc client-side
   const handleSearch = (e) => {
     e.preventDefault();
     if(tuKhoa.trim()) navigate(`/?search=${encodeURIComponent(tuKhoa)}`);
@@ -146,19 +131,7 @@ function Store() {
       <ToastContainer autoClose={2000} />
       {!isAdminPage && <div className={`back-to-top ${showTopBtn ? 'visible' : ''}`} onClick={() => window.scrollTo({top:0, behavior:'smooth'})}><i className="fa-solid fa-arrow-up"></i></div>}
 
-      {!isAdminPage && (
-        <Modal show={showPromoPopup} onHide={closePromo} centered>
-          <Modal.Body className="text-center p-0" style={{borderRadius:8, overflow:'hidden'}}>
-            <div style={{background:'linear-gradient(135deg, #d32f2f, #ff5252)', padding:'30px', color:'white'}}>
-              <h3 className="fw-bold mb-2">🎁 QUÀ TẶNG BẠN MỚI!</h3>
-              <p>Nhập mã <span className="badge bg-warning text-dark fs-5">MAIVANG10</span></p>
-              <p className="small">Giảm ngay 10% cho đơn hàng đầu tiên</p>
-              <Button variant="light" className="fw-bold text-danger rounded-pill px-4 mt-2" onClick={closePromo}>MUA NGAY KẺO LỠ</Button>
-            </div>
-          </Modal.Body>
-        </Modal>
-      )}
-
+      {/* CHAT WIDGET */}
       {!isAdminPage && (
         <div className="chat-widget" style={{position:'fixed', bottom:'80px', right:'20px', zIndex:1000, display:'flex', flexDirection:'column', gap:'10px'}}>
           {shopConfig.zalo && <a href={`https://zalo.me/${shopConfig.zalo}`} target="_blank" rel="noreferrer"><img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Icon_of_Zalo.svg" width="45" style={{boxShadow:'0 4px 10px rgba(0,0,0,0.2)', borderRadius:'50%'}}/></a>}

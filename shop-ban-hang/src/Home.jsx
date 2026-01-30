@@ -34,7 +34,8 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
   const location = useLocation();
   
   // State dữ liệu
-  const [products, setProducts] = useState([]); // Danh sách Grid chính
+  const [products, setProducts] = useState([]); // Danh sách Grid chính (Tất cả / Theo danh mục)
+  const [flashSales, setFlashSales] = useState([]); // Slider Flash Sale
   const [bestSellers, setBestSellers] = useState([]); // Slider Bán chạy
   const [newArrivals, setNewArrivals] = useState([]); // Slider Mới về
   
@@ -43,25 +44,10 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
   const [hasMore, setHasMore] = useState(true);
   
   const [quickViewSP, setQuickViewSP] = useState(null);
-  const [showPopupAds, setShowPopupAds] = useState(false);
-  const [timeLeft, setTimeLeft] = useState({ d:0, h:0, m:0, s:0 });
 
   // Lấy params tìm kiếm từ URL (?search=...)
   const queryParams = new URLSearchParams(location.search);
   const searchQuery = queryParams.get('search');
-
-  // Flash Sale Timer & Popup
-  useEffect(() => {
-    if(!shopConfig?.flashSaleEnd) return;
-    const check = () => {
-      const dist = new Date(shopConfig.flashSaleEnd).getTime() - new Date().getTime();
-      if (dist > 0) {
-        if (!sessionStorage.getItem('seenPopup') && !slug && !searchQuery) { setShowPopupAds(true); sessionStorage.setItem('seenPopup', 'true'); }
-        setTimeLeft({ d:Math.floor(dist/(1000*60*60*24)), h:Math.floor((dist%(1000*60*60*24))/(1000*60*60)), m:Math.floor((dist%(1000*60*60))/(1000*60)), s:Math.floor((dist%(1000*60))/1000) });
-      } else setShowPopupAds(false);
-    };
-    check(); const t = setInterval(check, 1000); return () => clearInterval(t);
-  }, [shopConfig, slug, searchQuery]);
 
   // --- LOGIC TẢI DỮ LIỆU CHÍNH ---
   const fetchProducts = async (isLoadMore = false) => {
@@ -70,27 +56,28 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
       const productRef = collection(db, "sanPham");
       const isHomepage = !slug && !searchQuery;
 
-      // 1. NẾU LÀ TRANG CHỦ & LẦN ĐẦU TẢI -> TẢI SLIDER TRƯỚC
+      // 1. NẾU LÀ TRANG CHỦ & LẦN ĐẦU TẢI -> TẢI CÁC SLIDER TRƯỚC
       if (isHomepage && !isLoadMore) {
-          // Slider 1: Bán chạy (isBanChay = true)
+          // A. Slider Flash Sale (Ưu tiên số 1)
+          const qFlash = query(productRef, where("isFlashSale", "==", true), limit(10));
+          const snFlash = await getDocs(qFlash);
+          setFlashSales(snFlash.docs.map(d=>({id:d.id, ...d.data()})));
+
+          // B. Slider Bán chạy
           const qBest = query(productRef, where("isBanChay", "==", true), limit(10));
           const snBest = await getDocs(qBest);
           setBestSellers(snBest.docs.map(d=>({id:d.id, ...d.data()})));
 
-          // Slider 2: Sản phẩm mới (isMoi = true)
+          // C. Slider Mới
           const qNew = query(productRef, where("isMoi", "==", true), limit(10));
           const snNew = await getDocs(qNew);
           setNewArrivals(snNew.docs.map(d=>({id:d.id, ...d.data()})));
       }
 
-      // 2. TẢI DANH SÁCH LƯỚI (GRID) BÊN DƯỚI
+      // 2. TẢI DANH SÁCH LƯỚI (GRID) BÊN DƯỚI (Có Phân Trang)
       let constraints = [];
 
-      // Logic lọc theo điều kiện
-      if (searchQuery) {
-         // (Lưu ý: Search client-side ở bước map bên dưới vì Firebase search text yếu)
-      }
-      else if (slug === 'khuyen-mai-soc') constraints.push(where("phanTramGiam", ">", 0));
+      if (slug === 'khuyen-mai-soc') constraints.push(where("phanTramGiam", ">", 0));
       else if (slug === 'san-pham-moi') constraints.push(where("isMoi", "==", true));
       else if (slug === 'san-pham-ban-chay') constraints.push(where("isBanChay", "==", true));
       else if (slug) {
@@ -101,9 +88,13 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
            constraints.push(where("phanLoai", "in", [danhMuc.id, ...subCats].slice(0, 10)));
         }
       }
-      // Nếu là trang chủ -> Không có constraints -> Tải tất cả (Mặc định)
-
-      // Logic Phân trang
+      
+      // Quan trọng: Phải có orderBy để phân trang (startAfter) hoạt động ổn định
+      // Nếu không có field 'ngayTao', Firebase có thể dùng document ID làm order mặc định
+      // Ở đây ta dùng orderBy tên hoặc giá để đảm bảo thứ tự
+      // Lưu ý: Nếu dùng orderBy("ngayTao") thì trong DB phải có index
+      // Để đơn giản và không lỗi Index, ta dùng mặc định (không orderBy phức tạp) cho truy vấn cơ bản
+      
       let qGrid;
       if (isLoadMore && lastDoc) {
         qGrid = query(productRef, ...constraints, startAfter(lastDoc), limit(12));
@@ -111,17 +102,15 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
         qGrid = query(productRef, ...constraints, limit(12));
       }
 
-      // Thực thi Query
       const snapshot = await getDocs(qGrid);
       const newProds = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
-      // Lọc tìm kiếm (nếu có)
+      // Lọc Search Client-side (Nếu có search)
       let finalProds = newProds;
       if (searchQuery) {
          finalProds = newProds.filter(p => p.ten.toLowerCase().includes(searchQuery.toLowerCase()));
       }
 
-      // Cập nhật State
       setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
       setHasMore(snapshot.docs.length === 12); // Nếu tải đủ 12 thì khả năng còn nữa
 
@@ -140,6 +129,7 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
   // Reset và tải lại khi đổi trang (Slug/Search thay đổi)
   useEffect(() => {
     setProducts([]);
+    setFlashSales([]); // Reset slider
     setBestSellers([]);
     setNewArrivals([]);
     setLastDoc(null);
@@ -154,8 +144,9 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
         {/* KHỐI 1: SLIDER (CHỈ HIỆN Ở TRANG CHỦ) */}
         {!slug && !searchQuery && (
           <>
-            <ProductSlider title="SẢN PHẨM BÁN CHẠY" icon="🔥" products={bestSellers} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />
-            <ProductSlider title="SẢN PHẨM MỚI" icon="✨" products={newArrivals} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />
+            <ProductSlider title="⚡ SẢN PHẨM FLASH SALE" icon="⚡" products={flashSales} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />
+            <ProductSlider title="🔥 SẢN PHẨM BÁN CHẠY" icon="🔥" products={bestSellers} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />
+            <ProductSlider title="✨ SẢN PHẨM MỚI VỀ" icon="✨" products={newArrivals} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />
           </>
         )}
 
@@ -229,9 +220,6 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
           )}
         </Modal.Body>
       </Modal>
-
-      {/* POPUP FLASH SALE */}
-      <Modal show={showPopupAds} onHide={()=>setShowPopupAds(false)} centered contentClassName="flash-popup-content"><div className="flash-popup-body"><div className="flash-header-bg"><h3 className="fw-bold m-0">🔥 FLASH SALE</h3></div><div className="p-4"><p className="mb-3 fw-bold text-secondary">Kết thúc sau:</p><div className="d-flex justify-content-center gap-2 mb-4"><div className="time-box">{String(timeLeft.d).padStart(2,'0')}</div>:<div className="time-box">{String(timeLeft.h).padStart(2,'0')}</div>:<div className="time-box">{String(timeLeft.m).padStart(2,'0')}</div>:<div className="time-box bg-danger">{String(timeLeft.s).padStart(2,'0')}</div></div><Button variant="danger" className="w-100 rounded-pill fw-bold shadow" onClick={()=>{setShowPopupAds(false); setShowPopupAds(false)}}>XEM NGAY</Button><div className="mt-3 text-muted small cursor-pointer text-decoration-underline" onClick={()=>setShowPopupAds(false)}>Đóng lại</div></div></div></Modal>
     </Container>
   );
 }
