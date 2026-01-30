@@ -1,7 +1,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { db, auth } from './firebase'; 
-import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, getDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, getDoc } from 'firebase/firestore'; // Bỏ các import thừa
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col } from 'react-bootstrap';
 import { ToastContainer, toast } from 'react-toastify'; 
@@ -11,7 +11,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import AOS from 'aos'; import 'aos/dist/aos.css';
 
-// Import các component
+// Import components
 import Home from './Home';
 import ProductDetail from './ProductDetail';
 import Cart from './Cart';
@@ -50,13 +50,15 @@ function Store() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userData, setUserData] = useState(null); 
   const [showTopBtn, setShowTopBtn] = useState(false);
-  const [recentProducts, setRecentProducts] = useState([]);
   const [timeLeft, setTimeLeft] = useState({ d:0, h:0, m:0, s:0 });
 
   useEffect(() => { AOS.init({ duration: 800, once: false }); }, []);
   useEffect(() => { window.scrollTo(0, 0); }, [location]);
 
+  // --- [ĐÃ XÓA LOGIC POPUP TỰ ĐỘNG Ở ĐÂY] ---
+
   useEffect(() => {
+    // Tải dữ liệu nhẹ: Danh mục, Banner, Cấu hình
     const unsubDM = onSnapshot(collection(db, "danhMuc"), sn => { 
         const d=sn.docs.map(x=>({id:x.id,...x.data()})); 
         d.sort((a,b)=>parseFloat(a.order||0)-parseFloat(b.order||0)); 
@@ -77,6 +79,7 @@ function Store() {
     return () => { unsubDM(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
   }, []);
 
+  // Timer Flash Sale Header (nếu cần)
   useEffect(() => {
     if(!shopConfig?.flashSaleEnd) return;
     const check = () => {
@@ -89,19 +92,6 @@ function Store() {
   }, [shopConfig]);
 
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
-
-  // Logic Recent Product
-  useEffect(() => {
-    if(location.pathname === '/') {
-        try {
-            const recentIds = JSON.parse(localStorage.getItem('recent') || '[]');
-            if(recentIds.length > 0) {
-               // Lưu ý: Logic lấy chi tiết recent product nên để Home hoặc component con xử lý để tối ưu
-               // Ở đây giữ placeholder để tránh lỗi logic cũ
-            }
-        } catch(e){}
-    }
-  }, [location.pathname]);
 
   const themVaoGio = (sp) => { 
     if(sp.soLuong <= 0) return toast.error("Sản phẩm đã hết hàng!");
