@@ -1,9 +1,9 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { db, auth } from './firebase'; 
-import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, getDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, getDoc } from 'firebase/firestore'; 
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col } from 'react-bootstrap';
+import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col, Modal } from 'react-bootstrap';
 import { ToastContainer, toast } from 'react-toastify'; 
 import Slider from "react-slick"; 
 import 'react-toastify/dist/ReactToastify.css'; 
@@ -36,8 +36,8 @@ function Store() {
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [banners, setBanners] = useState([]); 
   
-  // [ĐÃ FIX LỖI QUAN TRỌNG]: Thêm biến này để Menu không bị lỗi undefined
-  const [openMenuId, setOpenMenuId] = useState(null);
+  // [FIX LỖI QUAN TRỌNG]: Thêm biến này để Menu không bị lỗi trắng trang
+  const [openMenuId, setOpenMenuId] = useState(null); 
 
   const [gioHang, setGioHang] = useState(() => {
     try { return JSON.parse(localStorage.getItem('cart')) || []; } catch { return []; }
@@ -130,7 +130,6 @@ function Store() {
       <ToastContainer autoClose={2000} />
       {!isAdminPage && <div className={`back-to-top ${showTopBtn ? 'visible' : ''}`} onClick={() => window.scrollTo({top:0, behavior:'smooth'})}><i className="fa-solid fa-arrow-up"></i></div>}
 
-      {/* CHAT WIDGET */}
       {!isAdminPage && (
         <div className="chat-widget" style={{position:'fixed', bottom:'80px', right:'20px', zIndex:1000, display:'flex', flexDirection:'column', gap:'10px'}}>
           {shopConfig.zalo && <a href={`https://zalo.me/${shopConfig.zalo}`} target="_blank" rel="noreferrer"><img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Icon_of_Zalo.svg" width="45" style={{boxShadow:'0 4px 10px rgba(0,0,0,0.2)', borderRadius:'50%'}}/></a>}
@@ -235,7 +234,7 @@ function Store() {
 
                     {dsDanhMuc.filter(d => !d.parent).map(parent => {
                       const hasChild = dsDanhMuc.some(c => c.parent === parent.id);
-                      // Sử dụng biến openMenuId để điều khiển đóng mở
+                      // Sử dụng biến openMenuId đã khai báo để xử lý sự kiện
                       const isOpen = openMenuId === parent.id;
                       return (
                         <div key={parent.id}>
@@ -252,39 +251,6 @@ function Store() {
             )}
 
             <Col lg={!isAdminPage ? 9 : 12}>
-            {!isAdminPage && (
-            <div className="mb-4">
-                {(() => {
-                const isFlashSaleActive = shopConfig?.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date();
-                return (
-                    <Row className="g-3">
-                    {banners.length > 0 && (
-                        <Col lg={isFlashSaleActive ? 8 : 12} md={12}>
-                        <div className="banner-slider-box">
-                            <Slider {...sliderSettings}>
-                            {banners.map(b => (<Link key={b.id} to={b.link || '#'}><img src={b.img} className="banner-img-fixed" alt="Banner" /></Link>))}
-                            </Slider>
-                        </div>
-                        </Col>
-                    )}
-                    {isFlashSaleActive && (
-                        <Col lg={banners.length > 0 ? 4 : 12} md={12}>
-                        <div className="flash-sale-side-box">
-                            <i className="fa-solid fa-bolt flash-bg-icon"></i>
-                            <h3 className="flash-side-title"><i className="fa-solid fa-bolt fa-shake me-2 text-warning"></i>FLASH SALE</h3>
-                            <p className="small text-white-50 mb-3">Kết thúc sau</p>
-                            <div className="d-flex gap-2 mb-3">
-                            {[{ val: timeLeft.d, label: 'Ngày' }, { val: timeLeft.h, label: 'Giờ' }, { val: timeLeft.m, label: 'Phút' }, { val: timeLeft.s, label: 'Giây' }].map((item, idx) => (<div key={idx} className="text-center"><div className="countdown-box-sm">{String(item.val).padStart(2,'0')}</div><div className="countdown-label-sm">{item.label}</div></div>))}
-                            </div>
-                            <Button variant="light" size="sm" className="rounded-pill fw-bold text-danger px-4 shadow-sm" onClick={() => navigate('/flash-sale')}>XEM TẤT CẢ <i className="fa-solid fa-arrow-right ms-1"></i></Button>
-                        </div>
-                        </Col>
-                    )}
-                    </Row>
-                );
-                })()}
-            </div>
-            )}
               <Routes>
                 <Route path="/" element={<Home dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
                 <Route path="/danh-muc/:slug" element={<Home dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
@@ -304,9 +270,9 @@ function Store() {
                 <Route path="/admin" element={
                   <Suspense fallback={<div className="p-5 text-center">Đang tải trang quản trị...</div>}>
                     <Admin 
-                      dsDanhMuc={dsDanhMuc} 
-                      handleUpdateDS_SP={async (t,d)=>t==='ADD'?addDoc(collection(db,"sanPham"),d):t==='DELETE'?deleteDoc(doc(db,"sanPham",d)):updateDoc(doc(db,"sanPham",d.id),d)} 
-                      handleUpdateDS_DM={async (t,d)=>t==='ADD'?addDoc(collection(db,"danhMuc"),d):t==='DELETE'?deleteDoc(doc(db,"danhMuc",d)):updateDoc(doc(db,"danhMuc",d.id),d)} 
+                      // [FIX]: Bỏ truyền props dữ liệu vào Admin để tránh conflict
+                      handleUpdateDS_SP={(t,d)=>t==='ADD'?addDoc(collection(db,"sanPham"),d):t==='DELETE'?deleteDoc(doc(db,"sanPham",d)):updateDoc(doc(db,"sanPham",d.id),d)} 
+                      handleUpdateDS_DM={(t,d)=>t==='ADD'?addDoc(collection(db,"danhMuc"),d):t==='DELETE'?deleteDoc(doc(db,"danhMuc",d)):updateDoc(doc(db,"danhMuc",d.id),d)} 
                       handleUpdateStatusOrder={(id,s)=>updateDoc(doc(db,"donHang",id),{trangThai:s})} 
                       handleDeleteOrder={(id)=>deleteDoc(doc(db,"donHang",id))} 
                     />

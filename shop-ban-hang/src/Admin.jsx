@@ -10,22 +10,23 @@ import { toSlug } from './utils';
 const ICON_LIST = ['🏠','📦','🥩','🥦','🍎','🍞','🥫','❄️','🍬','🍫','🍪','🍦','🍺','🥤','🥛','🧃','🧺','🛋️','🍳','🧹','🧽','🧼','🧴','🪥','💄','🔖','⚡','🔥','🎉','🎁'];
 const NO_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg";
 
-// [FIX]: Admin tự tải dsSanPham và dsDonHang, không cần nhận từ props nữa
-function Admin({ handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, handleUpdateStatusOrder, handleDeleteOrder }) {
+function Admin({ handleUpdateDS_SP, handleUpdateDS_DM, handleUpdateStatusOrder, handleDeleteOrder }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginInput, setLoginInput] = useState({ user: '', pass: '' });
   const [showPass, setShowPass] = useState(false);
-  const [adminConfig] = useState(() => { try { const s = JSON.parse(localStorage.getItem('adminConfig') || '{}'); return { user: s.user||'admin', pass: s.pass||'123' }; } catch { return { user: 'admin', pass: '123' }; } });
   
-  // --- STATE DỮ LIỆU (Admin tự quản lý) ---
-  const [dsSanPham, setDsSanPham] = useState([]); // [MỚI] Tự tải sản phẩm
-  const [dsDonHang, setDsDonHang] = useState([]); // [MỚI] Tự tải đơn hàng
+  // State Dữ liệu
+  const [dsSanPham, setDsSanPham] = useState([]);
+  const [dsDonHang, setDsDonHang] = useState([]);
+  const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [dsBanner, setDsBanner] = useState([]);
   const [dsCoupon, setDsCoupon] = useState([]);
   const [dsShip, setDsShip] = useState([]); 
   const [dsUser, setDsUser] = useState([]); 
   const [dsReview, setDsReview] = useState([]); 
   const [dsTinTuc, setDsTinTuc] = useState([]); 
+
+  const [adminConfig] = useState(() => { try { const s = JSON.parse(localStorage.getItem('adminConfig') || '{}'); return { user: s.user||'admin', pass: s.pass||'123' }; } catch { return { user: 'admin', pass: '123' }; } });
 
   const [shopConfig, setShopConfig] = useState({ 
     tenShop:'', slogan:'', logo:'', topBarText:'', copyright:'',
@@ -37,12 +38,11 @@ function Admin({ handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, handleUpd
     bankInfo: { bankName: '', accountNum: '', accountName: '', bankBranch: '', qrImage: '' } 
   });
 
-  // Modal State
+  // Modal & Form State
   const [modal, setModal] = useState({ sp: false, dm: false, order: false, user: false, post: false, news: false });
   const [postEditor, setPostEditor] = useState({ type: '', title: '', content: '' });
   const [editData, setEditData] = useState({ sp: null, dm: null, user: null, order: null, news: null });
   
-  // Form State
   const [formDataSP, setFormDataSP] = useState({ ten:'', giaGoc:'', phanTramGiam:0, giaBan:'', donVi:'Cái', soLuong:100, moTa:'', anh:'', phanLoai:'', isMoi:false, isKhuyenMai:false, isBanChay:false, isFlashSale:false });
   const [formDM, setFormDM] = useState({ ten:'', icon:'', parent:'', order:'' });
   const [formBanner, setFormBanner] = useState({ img:'', link:'' });
@@ -52,14 +52,13 @@ function Admin({ handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, handleUpd
   const [userPoint, setUserPoint] = useState(0);
   const [selectedOrder, setSelectedOrder] = useState(null);
   
-  // Filter & Paging
   const [filterCategory, setFilterCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
-  const [sortPrice, setSortPrice] = useState('');
+  const [sortPrice, setSortPrice] = useState('newest'); 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(30);
 
-  // [QUAN TRỌNG]: Tải dữ liệu khi vào Admin
+  // Tải dữ liệu Realtime
   useEffect(() => {
     if (isLoggedIn) {
       const unsubs = [
@@ -70,10 +69,9 @@ function Admin({ handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, handleUpd
         onSnapshot(collection(db, "users"), s => setDsUser(s.docs.map(d=>({id:d.id,...d.data()})))),
         onSnapshot(collection(db, "reviews"), s => setDsReview(s.docs.map(d=>({id:d.id,...d.data()})))),
         onSnapshot(collection(db, "tinTuc"), s => setDsTinTuc(s.docs.map(d=>({id:d.id,...d.data()})))),
-        
-        // [FIX]: Admin tự tải Sản phẩm và Đơn hàng để hiển thị
         onSnapshot(collection(db, "sanPham"), s => setDsSanPham(s.docs.map(d=>({id:d.id,...d.data()})))),
         onSnapshot(collection(db, "donHang"), s => setDsDonHang(s.docs.map(d=>({id:d.id,...d.data()})))),
+        onSnapshot(collection(db, "danhMuc"), s => setDsDanhMuc(s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.order-b.order))),
       ];
       return () => unsubs.forEach(u => u());
     }
@@ -81,17 +79,45 @@ function Admin({ handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, handleUpd
 
   const handleLogin = (e) => { e.preventDefault(); if(loginInput.user===adminConfig.user && loginInput.pass===adminConfig.pass) { localStorage.setItem('adminConfig', JSON.stringify(adminConfig)); setIsLoggedIn(true); } else alert(`Sai mật khẩu!`); };
   const luuCauHinh = async () => { await setDoc(doc(db, "cauHinh", "thongTinChung"), shopConfig); alert("Đã lưu cấu hình!"); };
+  
+  // Hàm upload ảnh
   const handleUpload = (e, type) => { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onloadend=()=>{ if(type==='LOGO') setShopConfig({...shopConfig,logo:r.result}); if(type==='PRODUCT') setFormDataSP({...formDataSP,anh:r.result}); if(type==='BANNER') setFormBanner({...formBanner,img:r.result}); if(type==='QR') setShopConfig(p => ({...p, bankInfo: {...p.bankInfo, qrImage: r.result}})); if(type==='NEWS') setFormTinTuc({...formTinTuc, anh:r.result}); }; r.readAsDataURL(f); };
+  
   const add = async (col, d) => await addDoc(collection(db, col), d); const del = async (col, id) => confirm('Xóa?') && await deleteDoc(doc(db, col, id));
   
+  // Tự động tính giá bán
   useEffect(() => { const g = parseInt(formDataSP.giaGoc)||0; const p = parseInt(formDataSP.phanTramGiam)||0; setFormDataSP(prev => ({...prev, giaBan: g > 0 ? Math.floor(g*(1-p/100)) : 0})); }, [formDataSP.giaGoc, formDataSP.phanTramGiam]);
-  const onSaveSP = () => { handleUpdateDS_SP(editData.sp?'UPDATE':'ADD', {...formDataSP, slug: toSlug(formDataSP.ten)}); setModal({...modal,sp:false}); };
-  const onSaveDM = () => { handleUpdateDS_DM(editData.dm?'UPDATE':'ADD', {...formDM, slug: toSlug(formDM.ten)}); setModal({...modal,dm:false}); };
+  
+  // --- [FIX LỖI QUAN TRỌNG]: Tự động thêm NGÀY TẠO khi thêm mới ---
+  const onSaveSP = async () => { 
+    const data = { ...formDataSP, slug: toSlug(formDataSP.ten) };
+    if (!editData.sp) { 
+        data.ngayTao = serverTimestamp(); // Bắt buộc có dòng này để sort ở trang chủ
+    }
+    
+    // Gọi hàm xử lý từ Store hoặc tự xử lý tại đây
+    if (handleUpdateDS_SP) {
+       handleUpdateDS_SP(editData.sp ? 'UPDATE' : 'ADD', editData.sp ? { ...data, id: editData.sp.id } : data);
+    } else {
+       // Fallback nếu không có props
+       if(editData.sp) await updateDoc(doc(db, "sanPham", editData.sp.id), data);
+       else await addDoc(collection(db, "sanPham"), data);
+    }
+    setModal({...modal,sp:false}); 
+  };
+
+  const onSaveDM = async () => { 
+      const data = {...formDM, slug: toSlug(formDM.ten)};
+      if(handleUpdateDS_DM) handleUpdateDS_DM(editData.dm?'UPDATE':'ADD', {...data, id: editData.dm?.id});
+      else { if(editData.dm) await updateDoc(doc(db, "danhMuc", editData.dm.id), data); else await addDoc(collection(db, "danhMuc"), data); }
+      setModal({...modal,dm:false}); 
+  };
+
   const openPostEditor = (type) => { if (type === 'policy') { setPostEditor({ type: 'policy', title: 'Chính Sách Đổi Trả', content: shopConfig.policyContent || '' }); } else { setPostEditor({ type: 'guide', title: 'Hướng Dẫn Mua Hàng', content: shopConfig.guideContent || '' }); } setModal({...modal, post: true}); };
   const savePostContent = () => { if (postEditor.type === 'policy') { setShopConfig(prev => ({ ...prev, policyContent: postEditor.content })); } else { setShopConfig(prev => ({ ...prev, guideContent: postEditor.content })); } setModal({...modal, post: false}); };
   const onSaveNews = async () => { const data = { ...formTinTuc, slug: toSlug(formTinTuc.tieuDe), ngayDang: serverTimestamp() }; if (editData.news) { await updateDoc(doc(db, "tinTuc", editData.news.id), data); } else { await addDoc(collection(db, "tinTuc"), data); } setModal({...modal, news: false}); };
 
-  // Logic lọc/phân trang
+  // --- [FIX]: Sắp xếp hiển thị Admin (Mới nhất lên đầu) ---
   const filteredProducts = dsSanPham
     .filter(sp => filterCategory ? sp.phanLoai === filterCategory : true)
     .filter(sp => {
@@ -104,6 +130,13 @@ function Admin({ handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, handleUpd
         return true;
     })
     .sort((a, b) => {
+      // Ưu tiên sắp xếp theo ngày tạo (nếu có)
+      if (sortPrice === 'newest') {
+         const dateA = a.ngayTao?.seconds || 0;
+         const dateB = b.ngayTao?.seconds || 0;
+         if (dateA === 0 && dateB === 0) return 0; // Cả 2 đều cũ
+         return dateB - dateA; // Mới nhất lên đầu
+      }
       if (sortPrice === 'asc') return (a.giaBan - b.giaBan);
       if (sortPrice === 'desc') return (b.giaBan - a.giaBan);
       return 0;
@@ -115,16 +148,12 @@ function Admin({ handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, handleUpd
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  // Stats Dashboard
   const totalRevenue = dsDonHang.reduce((acc, order) => acc + (order.tongTien || 0), 0);
   const lowStockProducts = dsSanPham.filter(sp => sp.soLuong <= 5).sort((a,b)=>a.soLuong-b.soLuong);
 
-  // Helper hiển thị kích thước ảnh
   const ImageSize = ({ src }) => {
     const [size, setSize] = useState({ w: 0, h: 0 });
-    const img = new Image();
-    img.src = src;
-    img.onload = () => setSize({ w: img.width, h: img.height });
+    const img = new Image(); img.src = src; img.onload = () => setSize({ w: img.width, h: img.height });
     return <span className="small text-muted d-block mt-1">{size.w} x {size.h} px</span>;
   };
 
@@ -165,7 +194,7 @@ function Admin({ handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, handleUpd
             </div>
           </Tab>
 
-          {/* --- TAB CẤU HÌNH & BANNER --- */}
+          {/* --- TAB CẤU HÌNH --- */}
           <Tab eventKey="config" title="⚙️ CẤU HÌNH & BANNER">
             <div className="bg-white p-4 border rounded shadow-sm">
               <Row>
@@ -242,10 +271,7 @@ function Admin({ handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, handleUpd
                     <Col md={12}>
                         <Form.Label className="fw-bold">Hướng Dẫn Mua Hàng</Form.Label>
                         <InputGroup size="sm">
-                            <Form.Control value={shopConfig.linkGuide} placeholder="/huong-dan" onChange={e=>setShopConfig({...shopConfig, linkGuide:e.target.value})}/>
-                            <Button variant="outline-primary" onClick={() => openPostEditor('guide')}><i className="fa-solid fa-pen"></i> Soạn bài</Button>
-                        </InputGroup>
-                    </Col>
+                            <Form.Control value={shopConfig.linkGuide} placeholder="/huong-dan" onChange={e=>setShopConfig({...shopConfig, linkGuide:e.target.value})}/><Button variant="outline-primary" onClick={() => openPostEditor('guide')}><i className="fa-solid fa-pen"></i> Soạn bài</Button></InputGroup></Col>
                   </Row>
 
                   <h6 className="text-danger fw-bold border-bottom pb-2 mb-3"><i className="fa-solid fa-bolt me-2"></i> FLASH SALE & ĐIỂM</h6>
@@ -261,7 +287,7 @@ function Admin({ handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, handleUpd
             </div>
           </Tab>
 
-          {/* --- CÁC TAB QUẢN LÝ KHÁC --- */}
+          {/* --- TAB MENU --- */}
           <Tab eventKey="menu" title="📂 DANH MỤC">
             <div className="bg-white p-3 rounded shadow-sm">
                 <Button variant="success" className="mb-3 fw-bold" onClick={()=>{setEditData({...editData, dm:null}); setFormDM({ten:'', icon:'', parent:'', order:''}); setModal({...modal, dm:true})}}>+ DANH MỤC MỚI</Button>
@@ -269,7 +295,7 @@ function Admin({ handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, handleUpd
                     <Table hover bordered className="align-middle">
                         <thead className="bg-light"><tr><th>STT</th><th>Tên danh mục</th><th>Icon</th><th>Cấp độ</th><th>Thao tác</th></tr></thead>
                         <tbody>
-                            {dsDanhMuc.sort((a,b)=>a.order-b.order).map(d=>(
+                            {dsDanhMuc.map(d=>(
                                 <tr key={d.id} className={d.parent ? 'bg-light' : 'fw-bold'}>
                                     <td style={{width: '80px'}}>{d.order}</td>
                                     <td>
@@ -279,7 +305,7 @@ function Admin({ handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, handleUpd
                                     <td>{d.parent ? <Badge bg="secondary">Danh mục con</Badge> : <Badge bg="primary">Danh mục gốc</Badge>}</td>
                                     <td style={{width: '120px'}}>
                                         <Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditData({...editData, dm:d}); setFormDM(d); setModal({...modal, dm:true})}}>✏️</Button>
-                                        <Button size="sm" variant="danger" onClick={()=>handleUpdateDS_DM('DELETE',d.id)}>🗑️</Button>
+                                        <Button size="sm" variant="danger" onClick={async()=>{if(confirm('Xóa?')) await deleteDoc(doc(db,"danhMuc",d.id))}}>🗑️</Button>
                                     </td>
                                 </tr>
                             ))}
@@ -289,6 +315,7 @@ function Admin({ handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, handleUpd
             </div>
           </Tab>
           
+          {/* --- TAB SẢN PHẨM --- */}
           <Tab eventKey="products" title="📦 SẢN PHẨM">
             <div className="bg-white p-3 rounded shadow-sm">
               <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
@@ -307,7 +334,7 @@ function Admin({ handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, handleUpd
                     <option value="stock_out">🚫 Hết hàng</option>
                   </Form.Select>
                   <Form.Select size="sm" style={{width:150}} value={sortPrice} onChange={e=>setSortPrice(e.target.value)}>
-                    <option value="">-- Sắp xếp giá --</option>
+                    <option value="newest">✨ Mới nhất</option>
                     <option value="asc">Giá thấp đến cao</option>
                     <option value="desc">Giá cao đến thấp</option>
                   </Form.Select>
@@ -328,7 +355,7 @@ function Admin({ handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, handleUpd
                       {sp.isMoi && <Badge bg="success" className="me-1">New</Badge>}
                       {sp.isBanChay && <Badge bg="info" className="me-1">🔥 Hot</Badge>}
                     </td>
-                    <td><Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditData({...editData, sp}); setFormDataSP(sp); setModal({...modal, sp:true})}}>Sửa</Button><Button size="sm" variant="danger" onClick={()=>{if(confirm('Xóa?')) handleUpdateDS_SP('DELETE',sp.id)}}>Xóa</Button></td>
+                    <td><Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditData({...editData, sp}); setFormDataSP(sp); setModal({...modal, sp:true})}}>Sửa</Button><Button size="sm" variant="danger" onClick={async()=>{if(confirm('Xóa?')) await deleteDoc(doc(db,"sanPham",sp.id))}}>Xóa</Button></td>
                   </tr>))}</tbody>
                 </Table>
               </div>
@@ -339,6 +366,7 @@ function Admin({ handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, handleUpd
             </div>
           </Tab>
 
+          {/* --- TAB ĐƠN HÀNG --- */}
           <Tab eventKey="orders" title={`📋 ĐƠN HÀNG (${dsDonHang.length})`}>
             <div className="table-responsive bg-white rounded shadow-sm p-3">
               <Table hover bordered className="align-middle">
@@ -421,13 +449,12 @@ function Admin({ handleUpdateDS_SP, dsDanhMuc = [], handleUpdateDS_DM, handleUpd
 
       <Modal show={modal.sp} onHide={()=>setModal({...modal,sp:false})} size="xl" centered>
         <Modal.Header closeButton className="bg-success text-white"><Modal.Title>{editData.sp?'Cập nhật sản phẩm':'Thêm sản phẩm mới'}</Modal.Title></Modal.Header>
-        <Modal.Body className="bg-light"><Form><Row><Col md={8}><Card className="shadow-sm border-0 mb-3"><Card.Body><h6 className="fw-bold text-success border-bottom pb-2 mb-3">📦 THÔNG TIN CHUNG</h6><Row><Col md={12}><Form.Group className="mb-3"><Form.Label className="fw-bold">Tên sản phẩm</Form.Label><Form.Control size="lg" value={formDataSP.ten} onChange={e=>setFormDataSP({...formDataSP,ten:e.target.value})} placeholder="Nhập tên sản phẩm..."/></Form.Group></Col><Col md={6}><Form.Group className="mb-3"><Form.Label className="fw-bold">Danh mục</Form.Label><Form.Select value={formDataSP.phanLoai} onChange={e=>setFormDataSP({...formDataSP,phanLoai:e.target.value})}><option value="">-- Chọn danh mục --</option>{dsDanhMuc.map(d=><option key={d.id} value={d.id}>{d.ten}</option>)}</Form.Select></Form.Group></Col><Col md={6}><Form.Group className="mb-3"><Form.Label className="fw-bold">Đơn vị tính</Form.Label><Form.Control value={formDataSP.donVi} onChange={e=>setFormDataSP({...formDataSP,donVi:e.target.value})} placeholder="Ví dụ: Cái, Hộp, Kg..."/></Form.Group></Col></Row></Card.Body></Card><Card className="shadow-sm border-0 mb-3"><Card.Body><h6 className="fw-bold text-primary border-bottom pb-2 mb-3">💰 GIÁ CẢ & KHO HÀNG</h6><Row><Col md={4}><Form.Group className="mb-3"><Form.Label className="fw-bold">Giá Gốc (¥)</Form.Label><Form.Control type="number" value={formDataSP.giaGoc} onChange={e => setFormDataSP({ ...formDataSP, giaGoc: parseInt(e.target.value) || 0 })} /></Form.Group></Col><Col md={4}><Form.Group className="mb-3"><Form.Label className="fw-bold">% Giảm</Form.Label><Form.Control type="number" value={formDataSP.phanTramGiam} onChange={e => setFormDataSP({ ...formDataSP, phanTramGiam: parseInt(e.target.value) || 0 })} /></Form.Group></Col><Col md={4}><Form.Group className="mb-3"><Form.Label className="fw-bold text-danger">Giá Bán (Sau giảm)</Form.Label><Form.Control className="bg-light fw-bold text-danger" readOnly value={formDataSP.giaBan?.toLocaleString()} /></Form.Group></Col><Col md={12}><Form.Group><Form.Label className="fw-bold">Số lượng trong kho</Form.Label><Form.Control type="number" value={formDataSP.soLuong} onChange={e => setFormDataSP({ ...formDataSP, soLuong: parseInt(e.target.value) || 0 })}/></Form.Group></Col></Row></Card.Body></Card><Card className="shadow-sm border-0"><Card.Body><Form.Group><Form.Label className="fw-bold">Mô tả sản phẩm</Form.Label><ReactQuill theme="snow" value={formDataSP.moTa} onChange={v=>setFormDataSP({...formDataSP,moTa:v})} style={{height:'200px', marginBottom:'50px'}}/></Form.Group></Card.Body></Card></Col><Col md={4}><Card className="shadow-sm border-0 mb-3"><Card.Body className="text-center"><h6 className="fw-bold text-secondary border-bottom pb-2 mb-3">📷 HÌNH ẢNH</h6><div className="border rounded p-2 mb-3 bg-white" style={{minHeight:'200px', display:'flex', alignItems:'center', justifyContent:'center'}}><img src={formDataSP.anh||NO_IMAGE} className="img-fluid" style={{maxHeight:'250px'}}/></div><Form.Control type="file" onChange={e=>handleUpload(e,'PRODUCT')} /></Card.Body></Card><Card className="shadow-sm border-0"><Card.Body><h6 className="fw-bold text-warning border-bottom pb-2 mb-3">⚙️ TÙY CHỌN KHÁC</h6><Form.Check type="switch" id="isMoi" label="Sản phẩm Mới (New)" className="mb-2 fw-bold text-success" checked={formDataSP.isMoi} onChange={e=>setFormDataSP({...formDataSP, isMoi:e.target.checked})}/><Form.Check type="switch" id="isBanChay" label="Sản phẩm Bán Chạy" className="mb-2 fw-bold text-primary" checked={formDataSP.isBanChay} onChange={e=>setFormDataSP({...formDataSP, isBanChay:e.target.checked})}/><Form.Check type="switch" id="isFlashSale" label="⚡ Bật Flash Sale" className="mb-2 fw-bold text-warning" checked={formDataSP.isFlashSale} onChange={e=>setFormDataSP({...formDataSP, isFlashSale:e.target.checked})}/></Card.Body></Card></Col></Row></Form></Modal.Body><Modal.Footer><Button variant="secondary" onClick={()=>setModal({...modal,sp:false})}>Hủy bỏ</Button><Button variant="success" onClick={onSaveSP}>Lưu</Button></Modal.Footer></Modal>
+        <Modal.Body className="bg-light"><Form><Row><Col md={8}><Card className="shadow-sm border-0 mb-3"><Card.Body><h6 className="fw-bold text-success border-bottom pb-2 mb-3">📦 THÔNG TIN CHUNG</h6><Row><Col md={12}><Form.Group className="mb-3"><Form.Label className="fw-bold">Tên sản phẩm</Form.Label><Form.Control size="lg" value={formDataSP.ten} onChange={e=>setFormDataSP({...formDataSP,ten:e.target.value})} placeholder="Nhập tên sản phẩm..."/></Form.Group></Col><Col md={6}><Form.Group className="mb-3"><Form.Label className="fw-bold">Danh mục</Form.Label><Form.Select value={formDataSP.phanLoai} onChange={e=>setFormDataSP({...formDataSP,phanLoai:e.target.value})}><option value="">-- Chọn danh mục --</option>{dsDanhMuc.map(d=><option key={d.id} value={d.id}>{d.parent?'-- ':''}{d.ten}</option>)}</Form.Select></Form.Group></Col><Col md={6}><Form.Group className="mb-3"><Form.Label className="fw-bold">Đơn vị tính</Form.Label><Form.Control value={formDataSP.donVi} onChange={e=>setFormDataSP({...formDataSP,donVi:e.target.value})} placeholder="Ví dụ: Cái, Hộp, Kg..."/></Form.Group></Col></Row></Card.Body></Card><Card className="shadow-sm border-0 mb-3"><Card.Body><h6 className="fw-bold text-primary border-bottom pb-2 mb-3">💰 GIÁ CẢ & KHO HÀNG</h6><Row><Col md={4}><Form.Group className="mb-3"><Form.Label className="fw-bold">Giá Gốc (¥)</Form.Label><Form.Control type="number" value={formDataSP.giaGoc} onChange={e => setFormDataSP({ ...formDataSP, giaGoc: parseInt(e.target.value) || 0 })} /></Form.Group></Col><Col md={4}><Form.Group className="mb-3"><Form.Label className="fw-bold">% Giảm</Form.Label><Form.Control type="number" value={formDataSP.phanTramGiam} onChange={e => setFormDataSP({ ...formDataSP, phanTramGiam: parseInt(e.target.value) || 0 })} /></Form.Group></Col><Col md={4}><Form.Group className="mb-3"><Form.Label className="fw-bold text-danger">Giá Bán (Sau giảm)</Form.Label><Form.Control className="bg-light fw-bold text-danger" readOnly value={formDataSP.giaBan?.toLocaleString()} /></Form.Group></Col><Col md={12}><Form.Group><Form.Label className="fw-bold">Số lượng trong kho</Form.Label><Form.Control type="number" value={formDataSP.soLuong} onChange={e => setFormDataSP({ ...formDataSP, soLuong: parseInt(e.target.value) || 0 })}/></Form.Group></Col></Row></Card.Body></Card><Card className="shadow-sm border-0"><Card.Body><Form.Group><Form.Label className="fw-bold">Mô tả sản phẩm</Form.Label><ReactQuill theme="snow" value={formDataSP.moTa} onChange={v=>setFormDataSP({...formDataSP,moTa:v})} style={{height:'200px', marginBottom:'50px'}}/></Form.Group></Card.Body></Card></Col><Col md={4}><Card className="shadow-sm border-0 mb-3"><Card.Body className="text-center"><h6 className="fw-bold text-secondary border-bottom pb-2 mb-3">📷 HÌNH ẢNH</h6><div className="border rounded p-2 mb-3 bg-white" style={{minHeight:'200px', display:'flex', alignItems:'center', justifyContent:'center'}}><img src={formDataSP.anh||NO_IMAGE} className="img-fluid" style={{maxHeight:'250px'}}/></div><Form.Control type="file" onChange={e=>handleUpload(e,'PRODUCT')} /></Card.Body></Card><Card className="shadow-sm border-0"><Card.Body><h6 className="fw-bold text-warning border-bottom pb-2 mb-3">⚙️ TÙY CHỌN KHÁC</h6><Form.Check type="switch" id="isMoi" label="Sản phẩm Mới (New)" className="mb-2 fw-bold text-success" checked={formDataSP.isMoi} onChange={e=>setFormDataSP({...formDataSP, isMoi:e.target.checked})}/><Form.Check type="switch" id="isBanChay" label="Sản phẩm Bán Chạy" className="mb-2 fw-bold text-primary" checked={formDataSP.isBanChay} onChange={e=>setFormDataSP({...formDataSP, isBanChay:e.target.checked})}/><Form.Check type="switch" id="isFlashSale" label="⚡ Bật Flash Sale" className="mb-2 fw-bold text-warning" checked={formDataSP.isFlashSale} onChange={e=>setFormDataSP({...formDataSP, isFlashSale:e.target.checked})}/></Card.Body></Card></Col></Row></Form></Modal.Body><Modal.Footer><Button variant="secondary" onClick={()=>setModal({...modal,sp:false})}>Hủy bỏ</Button><Button variant="success" onClick={onSaveSP}>Lưu</Button></Modal.Footer></Modal>
       
       <Modal show={modal.dm} onHide={()=>setModal({...modal,dm:false})} centered>
         <Modal.Header closeButton className="bg-primary text-white"><Modal.Title className="fw-bold">QUẢN LÝ DANH MỤC</Modal.Title></Modal.Header>
         <Modal.Body className="p-4 bg-light"><Form><Form.Group className="mb-3"><Form.Label className="fw-bold">Tên Danh Mục</Form.Label><InputGroup><InputGroup.Text className="bg-white"><i className="fa-solid fa-tag text-primary"></i></InputGroup.Text><Form.Control size="lg" placeholder="Nhập tên..." value={formDM.ten} onChange={e=>setFormDM({...formDM,ten:e.target.value})}/></InputGroup></Form.Group><Row><Col md={6}><Form.Group className="mb-3"><Form.Label className="fw-bold">Thứ tự hiển thị</Form.Label><Form.Control type="number" value={formDM.order} onChange={e=>setFormDM({...formDM,order:e.target.value})}/></Form.Group></Col><Col md={6}><Form.Group className="mb-3"><Form.Label className="fw-bold">Icon (Emoji)</Form.Label><Form.Select value={formDM.icon} onChange={e=>setFormDM({...formDM,icon:e.target.value})}><option>-- Chọn --</option>{ICON_LIST.map(i=><option key={i} value={i}>{i}</option>)}</Form.Select></Form.Group></Col></Row><Form.Group><Form.Label className="fw-bold">Danh mục cha</Form.Label><Form.Select size="lg" value={formDM.parent} onChange={e=>setFormDM({...formDM,parent:e.target.value})}><option value="">-- Là danh mục gốc --</option>{dsDanhMuc.filter(d=>!d.parent).map(d=><option key={d.id} value={d.customId||d.id}>{d.ten}</option>)}</Form.Select></Form.Group></Form></Modal.Body>
-        <Modal.Footer><Button variant="secondary" onClick={()=>setModal({...modal,dm:false})}>Hủy</Button><Button variant="primary" className="px-4 fw-bold" onClick={onSaveDM}>Lưu Danh Mục</Button></Modal.Footer>
-      </Modal>
+        <Modal.Footer><Button variant="secondary" onClick={()=>setModal({...modal,dm:false})}>Hủy</Button><Button variant="primary" className="px-4 fw-bold" onClick={onSaveDM}>Lưu Danh Mục</Button></Modal.Footer></Modal>
 
       <Modal show={modal.user} onHide={()=>setModal({...modal,user:false})} centered><Modal.Header closeButton><Modal.Title>Sửa điểm thành viên</Modal.Title></Modal.Header><Modal.Body><Form.Group><Form.Label>Điểm tích lũy</Form.Label><Form.Control type="number" value={userPoint} onChange={e=>setUserPoint(e.target.value)}/></Form.Group></Modal.Body><Modal.Footer><Button variant="secondary" onClick={()=>setModal({...modal,user:false})}>Hủy</Button><Button onClick={async()=>{await updateDoc(doc(db,"users",editData.user.id),{diemTichLuy:parseInt(userPoint)}); setModal({...modal,user:false})}}>Lưu</Button></Modal.Footer></Modal>
       <Modal show={modal.post} onHide={()=>setModal({...modal,post:false})} size="xl" centered><Modal.Header closeButton className="bg-primary text-white"><Modal.Title className="fw-bold"><i className="fa-solid fa-pen-to-square me-2"></i> SOẠN THẢO: {postEditor.title}</Modal.Title></Modal.Header><Modal.Body><p className="text-muted fst-italic mb-3">Nội dung bạn soạn thảo dưới đây sẽ hiển thị tại trang <strong>{postEditor.type==='policy'?'Chính sách đổi trả':'Hướng dẫn mua hàng'}</strong>.</p><ReactQuill theme="snow" value={postEditor.content} onChange={(val) => setPostEditor(prev => ({ ...prev, content: val }))} style={{height: '400px', marginBottom: '50px'}}/></Modal.Body><Modal.Footer><Button variant="secondary" onClick={()=>setModal({...modal,post:false})}>Hủy</Button><Button variant="primary" className="fw-bold px-4" onClick={savePostContent}>XÁC NHẬN (Lưu tạm)</Button></Modal.Footer></Modal>
