@@ -1,7 +1,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { db, auth } from './firebase'; 
-import { collection, onSnapshot, doc, getDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col } from 'react-bootstrap';
 import { ToastContainer, toast } from 'react-toastify'; 
@@ -36,7 +36,7 @@ function Store() {
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [banners, setBanners] = useState([]); 
   
-  // Biến state bị thiếu gây lỗi màn hình trắng ở phiên bản trước
+  // [ĐÃ FIX LỖI QUAN TRỌNG]: Thêm biến này để Menu không bị lỗi undefined
   const [openMenuId, setOpenMenuId] = useState(null);
 
   const [gioHang, setGioHang] = useState(() => {
@@ -53,7 +53,6 @@ function Store() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userData, setUserData] = useState(null); 
   const [showTopBtn, setShowTopBtn] = useState(false);
-  const [recentProducts, setRecentProducts] = useState([]);
   const [timeLeft, setTimeLeft] = useState({ d:0, h:0, m:0, s:0 });
 
   useEffect(() => { AOS.init({ duration: 800, once: false }); }, []);
@@ -92,18 +91,6 @@ function Store() {
   }, [shopConfig]);
 
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
-
-  // Logic Recent Product
-  useEffect(() => {
-    if(location.pathname === '/') {
-        try {
-            const recentIds = JSON.parse(localStorage.getItem('recent') || '[]');
-            if(recentIds.length > 0) {
-               // Placeholder logic
-            }
-        } catch(e){}
-    }
-  }, [location.pathname]);
 
   const themVaoGio = (sp) => { 
     if(sp.soLuong <= 0) return toast.error("Sản phẩm đã hết hàng!");
@@ -248,6 +235,7 @@ function Store() {
 
                     {dsDanhMuc.filter(d => !d.parent).map(parent => {
                       const hasChild = dsDanhMuc.some(c => c.parent === parent.id);
+                      // Sử dụng biến openMenuId để điều khiển đóng mở
                       const isOpen = openMenuId === parent.id;
                       return (
                         <div key={parent.id}>

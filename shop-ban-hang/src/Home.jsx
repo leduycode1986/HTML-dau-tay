@@ -49,40 +49,45 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
   const queryParams = new URLSearchParams(location.search);
   const searchQuery = queryParams.get('search');
 
-  // --- LOGIC TẢI DỮ LIỆU CHÍNH (SERVER-SIDE PAGINATION) ---
+  // --- LOGIC TẢI DỮ LIỆU CHÍNH (SAFE MODE - CHỐNG LỖI INDEX) ---
   const fetchProducts = async (isLoadMore = false) => {
     setLoading(true);
     try {
       const productRef = collection(db, "sanPham");
       const isHomepage = !slug && !searchQuery;
 
-      // 1. NẾU LÀ TRANG CHỦ & LẦN ĐẦU TẢI -> TẢI CÁC SLIDER RIÊNG BIỆT
+      // 1. NẾU LÀ TRANG CHỦ & LẦN ĐẦU TẢI -> TẢI CÁC SLIDER
       if (isHomepage && !isLoadMore) {
-          // A. Slider Flash Sale (Ưu tiên) - Lọc sp có isFlashSale = true
+          // A. Flash Sale
           const qFlash = query(productRef, where("isFlashSale", "==", true), limit(10));
           const snFlash = await getDocs(qFlash);
           setFlashSales(snFlash.docs.map(d=>({id:d.id, ...d.data()})));
 
-          // B. Slider Bán chạy
+          // B. Bán chạy
           const qBest = query(productRef, where("isBanChay", "==", true), limit(10));
           const snBest = await getDocs(qBest);
           setBestSellers(snBest.docs.map(d=>({id:d.id, ...d.data()})));
 
-          // C. Slider Mới - Sắp xếp theo ngày tạo mới nhất
-          const qNew = query(productRef, where("isMoi", "==", true), orderBy("ngayTao", "desc"), limit(10));
-          const snNew = await getDocs(qNew);
-          setNewArrivals(snNew.docs.map(d=>({id:d.id, ...d.data()})));
+          // C. Mới về (Thử có sort, nếu lỗi thì bỏ sort)
+          try {
+             const qNew = query(productRef, where("isMoi", "==", true), orderBy("ngayTao", "desc"), limit(10));
+             const snNew = await getDocs(qNew);
+             setNewArrivals(snNew.docs.map(d=>({id:d.id, ...d.data()})));
+          } catch {
+             const qNewFallback = query(productRef, where("isMoi", "==", true), limit(10));
+             const snNewFallback = await getDocs(qNewFallback);
+             setNewArrivals(snNewFallback.docs.map(d=>({id:d.id, ...d.data()})));
+          }
       }
 
       // 2. TẢI DANH SÁCH LƯỚI (GRID) BÊN DƯỚI
       let constraints = [];
 
-      // Logic lọc theo điều kiện
+      // Logic lọc
       if (slug === 'khuyen-mai-soc') constraints.push(where("phanTramGiam", ">", 0));
       else if (slug === 'san-pham-moi') constraints.push(where("isMoi", "==", true));
       else if (slug === 'san-pham-ban-chay') constraints.push(where("isBanChay", "==", true));
       else if (slug) {
-        // Tìm ID danh mục
         const danhMuc = dsDanhMuc.find(d => (d.slug === slug) || (toSlug(d.ten) === slug));
         if (danhMuc) {
            const subCats = dsDanhMuc.filter(d => d.parent === danhMuc.id).map(d => d.id);
@@ -90,52 +95,59 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
         }
       }
 
-      // [QUAN TRỌNG]: Sắp xếp MỚI NHẤT -> CŨ NHẤT cho danh sách Grid
-      // Lưu ý: Cần tạo Index trong Firebase nếu có lỗi (xem Console log)
-      // Nếu không muốn dùng orderBy (sợ lỗi index), có thể bỏ dòng này, nhưng SP sẽ ko sắp xếp.
-      constraints.push(orderBy("ngayTao", "desc")); 
+      // --- [FIX QUAN TRỌNG]: THỬ TẢI CÓ SẮP XẾP TRƯỚC ---
+      try {
+          let qGrid;
+          // Tạo query CÓ sắp xếp
+          if (isLoadMore && lastDoc) {
+            qGrid = query(productRef, ...constraints, orderBy("ngayTao", "desc"), startAfter(lastDoc), limit(12));
+          } else {
+            qGrid = query(productRef, ...constraints, orderBy("ngayTao", "desc"), limit(12));
+          }
+          
+          const snapshot = await getDocs(qGrid);
+          handleSnapshot(snapshot, isLoadMore); // Hàm xử lý kết quả ở dưới
 
-      // Logic Phân trang (Load More)
-      let qGrid;
-      if (isLoadMore && lastDoc) {
-        qGrid = query(productRef, ...constraints, startAfter(lastDoc), limit(12));
-      } else {
-        qGrid = query(productRef, ...constraints, limit(12));
+      } catch (err) {
+          // --- NẾU LỖI INDEX -> TẢI LẠI KHÔNG CẦN SẮP XẾP (ĐỂ WEB KHÔNG TRẮNG) ---
+          if (err.code === 'failed-precondition') {
+             console.warn("Đang chạy chế độ Safe Mode (Không sort) do thiếu Index.");
+             let qGridSafe;
+             if (isLoadMore && lastDoc) {
+                qGridSafe = query(productRef, ...constraints, startAfter(lastDoc), limit(12));
+             } else {
+                qGridSafe = query(productRef, ...constraints, limit(12));
+             }
+             const snapshotSafe = await getDocs(qGridSafe);
+             handleSnapshot(snapshotSafe, isLoadMore);
+          } else {
+             console.error(err);
+          }
       }
 
-      const snapshot = await getDocs(qGrid);
-      const newProds = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (err) {
+      console.error("Lỗi chung:", err);
+    }
+    setLoading(false);
+  };
 
-      // Lọc Search Client-side (Nếu có search)
+  // Hàm phụ để xử lý dữ liệu trả về từ Firebase
+  const handleSnapshot = (snapshot, isLoadMore) => {
+      const newProds = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      
       let finalProds = newProds;
       if (searchQuery) {
          finalProds = newProds.filter(p => p.ten.toLowerCase().includes(searchQuery.toLowerCase()));
       }
 
-      // Cập nhật State cho Grid
-      if (snapshot.docs.length > 0) {
-          setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
-      }
-      // Nếu tải về ít hơn limit (12) thì coi như hết hàng
+      if (snapshot.docs.length > 0) setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
       setHasMore(snapshot.docs.length === 12); 
 
-      if (isLoadMore) {
-        setProducts(prev => [...prev, ...finalProds]);
-      } else {
-        setProducts(finalProds);
-      }
+      if (isLoadMore) setProducts(prev => [...prev, ...finalProds]);
+      else setProducts(finalProds);
+  }
 
-    } catch (err) {
-      console.error("Lỗi tải dữ liệu:", err);
-      // Fallback nếu lỗi Index (Để web không trắng trang)
-      if(err.code === 'failed-precondition') {
-          alert("Lưu ý Admin: Vui lòng mở Console (F12) và click vào đường link Firebase để tạo Index sắp xếp sản phẩm.");
-      }
-    }
-    setLoading(false);
-  };
-
-  // Reset và tải lại khi đổi trang (Slug/Search thay đổi)
+  // Reset và tải lại khi đổi trang
   useEffect(() => {
     setProducts([]);
     setFlashSales([]); 
@@ -143,7 +155,7 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
     setNewArrivals([]);
     setLastDoc(null);
     setHasMore(true);
-    fetchProducts(false); // False = Tải mới từ đầu
+    fetchProducts(false); 
   }, [slug, searchQuery, dsDanhMuc]);
 
   return (
