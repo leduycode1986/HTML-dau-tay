@@ -2,28 +2,83 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Button, Badge, Form } from 'react-bootstrap';
 import { toSlug } from './utils';
-import { collection, addDoc, onSnapshot, query, where, serverTimestamp } from 'firebase/firestore'; 
+import { collection, addDoc, onSnapshot, query, where, serverTimestamp, getDocs, limit } from 'firebase/firestore'; 
 import { db } from './firebase';
 
-function ProductDetail({ dsSanPham, themVaoGio }) {
+function ProductDetail({ themVaoGio }) { // Bỏ dsSanPham ở đây
   const { slug } = useParams();
   const navigate = useNavigate();
+  
   const [sanPham, setSanPham] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState([]);
   const [newReview, setNewReview] = useState({ name: '', rating: 5, comment: '' });
+  const [relatedProducts, setRelatedProducts] = useState([]); // Sản phẩm liên quan
 
+  // 1. Tự tải sản phẩm theo Slug
   useEffect(() => {
-    if (dsSanPham.length > 0) {
-      const found = dsSanPham.find(sp => (sp.slug === slug) || (toSlug(sp.ten) === slug) || (sp.id === slug));
-      setSanPham(found);
-      if (found) {
-        // Load Reviews
-        const q = query(collection(db, "reviews"), where("productId", "==", found.id));
-        const unsub = onSnapshot(q, sn => setReviews(sn.docs.map(d=>d.data())));
-        return () => unsub();
+    const fetchProduct = async () => {
+      setLoading(true);
+      try {
+        const productRef = collection(db, "sanPham");
+        
+        // Tìm theo slug trước
+        let q = query(productRef, where("slug", "==", slug));
+        let snapshot = await getDocs(q);
+
+        // Nếu không tìm thấy theo slug, thử tìm theo ID (đề phòng link cũ)
+        if (snapshot.empty) {
+           // Lưu ý: Tìm theo ID trực tiếp bằng doc() nhanh hơn, nhưng ở đây dùng logic tìm trong list để an toàn
+           const allDocs = await getDocs(productRef); // Cách này hơi chậm nếu SP nhiều, nhưng an toàn cho slug ảo
+           const found = allDocs.docs.find(d => d.id === slug || toSlug(d.data().ten) === slug);
+           if (found) {
+             setSanPham({ id: found.id, ...found.data() });
+           } else {
+             setSanPham(null);
+           }
+        } else {
+           const d = snapshot.docs[0];
+           setSanPham({ id: d.id, ...d.data() });
+        }
+      } catch (err) {
+        console.error(err);
       }
+      setLoading(false);
+    };
+
+    fetchProduct();
+  }, [slug]);
+
+  // 2. Tải Review & Sản phẩm liên quan (Chỉ chạy khi đã có sanPham)
+  useEffect(() => {
+    if (sanPham) {
+      // Lưu lịch sử xem
+      const recent = JSON.parse(localStorage.getItem('recent') || '[]');
+      const newRecent = [sanPham.id, ...recent.filter(id => id !== sanPham.id)].slice(0, 10);
+      localStorage.setItem('recent', JSON.stringify(newRecent));
+
+      // Tải đánh giá
+      const qReview = query(collection(db, "reviews"), where("productId", "==", sanPham.id));
+      const unsubReview = onSnapshot(qReview, sn => setReviews(sn.docs.map(d=>d.data())));
+
+      // Tải sản phẩm liên quan (Cùng danh mục)
+      const fetchRelated = async () => {
+        try {
+            const qRelated = query(
+                collection(db, "sanPham"), 
+                where("phanLoai", "==", sanPham.phanLoai), 
+                limit(5) // Lấy 5 bài
+            );
+            const sn = await getDocs(qRelated);
+            // Lọc bỏ chính sản phẩm đang xem
+            setRelatedProducts(sn.docs.map(d=>({id:d.id, ...d.data()})).filter(p => p.id !== sanPham.id));
+        } catch (e) { console.log(e) }
+      }
+      fetchRelated();
+
+      return () => unsubReview();
     }
-  }, [slug, dsSanPham]);
+  }, [sanPham]);
 
   const submitReview = async () => {
     if(!newReview.name || !newReview.comment) return alert("Vui lòng nhập tên và nội dung!");
@@ -37,10 +92,19 @@ function ProductDetail({ dsSanPham, themVaoGio }) {
     navigate('/checkout');
   };
 
-  if (!sanPham) return <Container className="py-5 text-center">Đang tải...</Container>;
+  if (loading) return (
+    <Container className="py-5 text-center">
+      <div className="spinner-border text-success" role="status"></div>
+      <p className="mt-3 text-muted">Đang tải chi tiết sản phẩm...</p>
+    </Container>
+  );
 
-  // Sản phẩm liên quan (Cùng danh mục)
-  const relatedProducts = dsSanPham.filter(sp => sp.phanLoai === sanPham.phanLoai && sp.id !== sanPham.id).slice(0, 4);
+  if (!sanPham) return (
+    <Container className="py-5 text-center">
+      <h3>🚫 Không tìm thấy sản phẩm</h3>
+      <Link to="/" className="btn btn-success mt-3">Về trang chủ</Link>
+    </Container>
+  );
 
   return (
     <Container className="py-5">
@@ -49,28 +113,54 @@ function ProductDetail({ dsSanPham, themVaoGio }) {
         <Col lg={5}><div className="detail-img-box"><img src={sanPham.anh} alt={sanPham.ten} /></div></Col>
         <Col lg={7}>
           <h1 className="detail-title">{sanPham.ten}</h1>
-          <div className="detail-price mb-3 text-danger fw-bold fs-2">{sanPham.giaBan?.toLocaleString()} ¥</div>
-          
+          <div className="mb-3 pb-2 border-bottom">
+             <div className="detail-price">
+               {parseInt(sanPham.giaBan).toLocaleString()} ¥
+               {sanPham.phanTramGiam > 0 && <span className="text-muted fs-5 text-decoration-line-through fw-normal ms-2">{parseInt(sanPham.giaGoc).toLocaleString()} ¥</span>}
+             </div>
+          </div>
+
+          <div className="d-flex flex-column gap-2 mb-4">
+             <div className="d-flex align-items-center gap-2">
+                <span className="fw-bold text-dark" style={{minWidth:'80px'}}>Tình trạng:</span>
+                <Badge bg={sanPham.soLuong > 0 ? "success" : "secondary"} className="px-3 py-1">
+                  {sanPham.soLuong > 0 ? "Còn hàng" : "Tạm hết hàng"}
+                </Badge>
+             </div>
+             <div className="d-flex align-items-center gap-2">
+                <span className="fw-bold text-dark" style={{minWidth:'80px'}}>Số lượng:</span>
+                <span className="text-danger fw-bold fs-5">{sanPham.soLuong}</span>
+                <span className="tag-donvi" style={{margin:0}}>{sanPham.donVi}</span>
+             </div>
+          </div>
+
           <div className="d-flex gap-2 mb-4">
-            <Button className="btn-add-cart-lg" onClick={() => themVaoGio(sanPham)}>THÊM VÀO GIỎ</Button>
-            <Button variant="danger" className="rounded-pill px-4 fw-bold" onClick={handleBuyNow}>MUA NGAY</Button>
+            <Button className="btn-add-cart-lg" onClick={() => sanPham.soLuong > 0 && themVaoGio(sanPham)} disabled={sanPham.soLuong <= 0}>
+                <i className="fa-solid fa-cart-plus me-2"></i> THÊM VÀO GIỎ
+            </Button>
+            <Button variant="danger" className="rounded-pill px-4 fw-bold" onClick={handleBuyNow} disabled={sanPham.soLuong <= 0}>
+                MUA NGAY
+            </Button>
           </div>
 
           <div className="detail-desc-box"><div dangerouslySetInnerHTML={{__html: sanPham.moTa}}></div></div>
         </Col>
       </Row>
 
-      {/* PHẦN ĐÁNH GIÁ */}
+      {/* PHẦN ĐÁNH GIÁ & SẢN PHẨM LIÊN QUAN */}
       <div className="mt-5 bg-white p-4 rounded shadow-sm">
         <h4 className="border-bottom pb-2 mb-4">Đánh giá sản phẩm ({reviews.length})</h4>
         <Row>
-          <Col md={6}>
-            {reviews.map((r, i) => (
-              <div key={i} className="mb-3 border-bottom pb-2">
-                <div className="fw-bold">{r.name} <span className="text-warning">{'⭐'.repeat(r.rating)}</span></div>
-                <div className="text-muted small">{r.comment}</div>
-              </div>
-            ))}
+          <Col md={6} className="mb-3">
+            {reviews.length === 0 && <p className="text-muted fst-italic">Chưa có đánh giá nào.</p>}
+            <div style={{maxHeight:'300px', overflowY:'auto'}}>
+                {reviews.map((r, i) => (
+                <div key={i} className="mb-3 border-bottom pb-2">
+                    <div className="fw-bold">{r.name} <span className="text-warning">{'⭐'.repeat(r.rating)}</span></div>
+                    <div className="text-muted small">{r.comment}</div>
+                </div>
+                ))}
+            </div>
           </Col>
           <Col md={6} className="bg-light p-3 rounded">
             <h6>Viết đánh giá của bạn</h6>
@@ -86,17 +176,18 @@ function ProductDetail({ dsSanPham, themVaoGio }) {
         </Row>
       </div>
 
-      {/* SẢN PHẨM LIÊN QUAN */}
       {relatedProducts.length > 0 && (
         <div className="mt-5">
           <h4 className="fw-bold text-success mb-3">Sản phẩm liên quan</h4>
           <Row className="g-3">
             {relatedProducts.map(sp => (
               <Col xs={6} md={3} key={sp.id}>
-                <div className="border p-2 rounded text-center">
-                  <Link to={`/san-pham/${toSlug(sp.ten)}`}><img src={sp.anh} style={{width:'100%', height:'150px', objectFit:'cover'}} /></Link>
-                  <div className="fw-bold mt-2">{sp.ten}</div>
-                  <div className="text-danger">{sp.giaBan.toLocaleString()} ¥</div>
+                <div className="border p-2 rounded text-center h-100 bg-white shadow-sm">
+                  <Link to={`/san-pham/${sp.slug || toSlug(sp.ten)}`}>
+                      <img src={sp.anh} style={{width:'100%', height:'150px', objectFit:'cover', borderRadius:'8px'}} />
+                  </Link>
+                  <div className="fw-bold mt-2 text-truncate">{sp.ten}</div>
+                  <div className="text-danger fw-bold">{parseInt(sp.giaBan).toLocaleString()} ¥</div>
                 </div>
               </Col>
             ))}
