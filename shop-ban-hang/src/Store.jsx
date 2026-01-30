@@ -25,26 +25,21 @@ import PostPage from './PostPage';
 import News from './News';
 import NewsDetail from './NewsDetail';
 
-// [LAZY LOAD]: Tách code Admin ra để trang chủ load nhanh hơn
+// Lazy Load Admin
 const Admin = React.lazy(() => import('./Admin'));
 
 function Store() {
   const navigate = useNavigate();
   const location = useLocation();
-  const isAdminPage = location.pathname.startsWith('/admin'); // Xác định đang ở trang Admin
+  const isAdminPage = location.pathname.startsWith('/admin');
   
-  const [dsSanPham, setDsSanPham] = useState([]);
+  // [TỐI ƯU]: Không tải dsSanPham ở đây nữa để tránh treo máy
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [banners, setBanners] = useState([]); 
   const [showPromoPopup, setShowPromoPopup] = useState(false);
   
   const [gioHang, setGioHang] = useState(() => {
-    try {
-      const localData = localStorage.getItem('cart');
-      return localData ? JSON.parse(localData) : [];
-    } catch (error) {
-      return [];
-    }
+    try { return JSON.parse(localStorage.getItem('cart')) || []; } catch { return []; }
   });
 
   const [tuKhoa, setTuKhoa] = useState('');
@@ -56,16 +51,14 @@ function Store() {
   
   const [currentUser, setCurrentUser] = useState(null);
   const [userData, setUserData] = useState(null); 
-
   const [showTopBtn, setShowTopBtn] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
-  const [recentProducts, setRecentProducts] = useState([]);
   const [timeLeft, setTimeLeft] = useState({ d:0, h:0, m:0, s:0 });
 
   useEffect(() => { AOS.init({ duration: 800, once: false }); }, []);
   useEffect(() => { window.scrollTo(0, 0); }, [location]);
 
-  // [MARKETING]: Hiện popup khuyến mãi sau 3s nếu chưa xem (VÀ KHÔNG PHẢI ADMIN)
+  // Popup khuyến mãi
   useEffect(() => {
     if (!isAdminPage) {
       const hasSeen = sessionStorage.getItem('seenPromo');
@@ -76,40 +69,28 @@ function Store() {
     }
   }, [isAdminPage]);
 
-  const closePromo = () => {
-    setShowPromoPopup(false);
-    sessionStorage.setItem('seenPromo', 'true');
-  };
+  const closePromo = () => { setShowPromoPopup(false); sessionStorage.setItem('seenPromo', 'true'); };
 
   useEffect(() => {
-    // 1. Tải Sản phẩm
-    const unsubSP = onSnapshot(collection(db, "sanPham"), sn => {
-        const data = sn.docs.map(d => ({ id: d.id, ...d.data() }));
-        setDsSanPham(data.reverse()); 
-    });
-    // 2. Tải Danh mục
+    // Chỉ tải các dữ liệu nhẹ: Danh mục, Banner, Cấu hình
     const unsubDM = onSnapshot(collection(db, "danhMuc"), sn => { 
         const d=sn.docs.map(x=>({id:x.id,...x.data()})); 
         d.sort((a,b)=>parseFloat(a.order||0)-parseFloat(b.order||0)); 
         setDsDanhMuc(d); 
     });
-    // 3. Tải Banner
     const unsubBanner = onSnapshot(collection(db, "banners"), sn => setBanners(sn.docs.map(d=>({id:d.id,...d.data()}))));
-    // 4. Tải Cấu hình
     const unsubConfig = onSnapshot(doc(db, "cauHinh", "thongTinChung"), d => { if(d.exists()) setShopConfig(d.data()); });
-    // 5. Auth Listener
+    
     const unsubAuth = onAuthStateChanged(auth, async u => { 
       setCurrentUser(u);
       if (u) {
         const docSnap = await getDoc(doc(db, "users", u.uid));
         if (docSnap.exists()) setUserData(docSnap.data());
-      } else {
-        setUserData(null);
-      }
+      } else setUserData(null);
     });
     
     const scrollH = () => setShowTopBtn(window.scrollY > 300); window.addEventListener('scroll', scrollH);
-    return () => { unsubSP(); unsubDM(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
+    return () => { unsubDM(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
   }, []);
 
   // Timer Flash Sale
@@ -123,37 +104,6 @@ function Store() {
     };
     check(); const t = setInterval(check, 1000); return () => clearInterval(t);
   }, [shopConfig]);
-
-  // Sản phẩm vừa xem
-  useEffect(() => {
-    if(dsSanPham.length > 0) {
-      try {
-        const recentIds = JSON.parse(localStorage.getItem('recent') || '[]');
-        const found = recentIds.map(id => dsSanPham.find(p => p.id === id)).filter(Boolean);
-        setRecentProducts(found);
-      } catch (e) { localStorage.removeItem('recent'); }
-    }
-  }, [dsSanPham, location.pathname]);
-
-  // Đồng bộ giỏ hàng
-  useEffect(() => {
-    if (dsSanPham.length > 0) {
-      setGioHang(currentCart => {
-        let isChanged = false;
-        const newCart = currentCart.map(item => {
-          const liveItem = dsSanPham.find(db => db.id === item.id);
-          if (liveItem) {
-            if (liveItem.soLuong !== item.tonKho) {
-              isChanged = true;
-              return { ...item, tonKho: liveItem.soLuong }; 
-            }
-          }
-          return item;
-        });
-        return isChanged ? newCart : currentCart;
-      });
-    }
-  }, [dsSanPham]);
 
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
 
@@ -183,21 +133,19 @@ function Store() {
   
   const xoaSanPham = (id) => setGioHang(gioHang.filter(i=>i.id!==id));
   const handleLogout = async () => { await signOut(auth); if (location.pathname.includes('/member')) {navigate('/');}toast.info("Đã đăng xuất");};
-  const sanPhamHienThi = dsSanPham.filter(sp => sp.ten?.toLowerCase().includes(tuKhoa.toLowerCase()));
   const sliderSettings = { dots: true, infinite: true, speed: 500, slidesToShow: 1, slidesToScroll: 1, autoplay: true };
+
+  // [TỐI ƯU]: Xử lý tìm kiếm bằng URL thay vì lọc client-side
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if(tuKhoa.trim()) navigate(`/?search=${encodeURIComponent(tuKhoa)}`);
+  };
 
   return (
     <div className="app-container d-flex flex-column min-vh-100">
       <ToastContainer autoClose={2000} />
-      
-      {/* [FIX]: Chỉ hiện nút Back-to-top nếu không phải trang Admin */}
-      {!isAdminPage && (
-        <div className={`back-to-top ${showTopBtn ? 'visible' : ''}`} onClick={() => window.scrollTo({top:0, behavior:'smooth'})}>
-          <i className="fa-solid fa-arrow-up"></i>
-        </div>
-      )}
+      {!isAdminPage && <div className={`back-to-top ${showTopBtn ? 'visible' : ''}`} onClick={() => window.scrollTo({top:0, behavior:'smooth'})}><i className="fa-solid fa-arrow-up"></i></div>}
 
-      {/* [FIX]: POPUP KHUYẾN MÃI - Bọc trong điều kiện !isAdminPage */}
       {!isAdminPage && (
         <Modal show={showPromoPopup} onHide={closePromo} centered>
           <Modal.Body className="text-center p-0" style={{borderRadius:8, overflow:'hidden'}}>
@@ -211,7 +159,6 @@ function Store() {
         </Modal>
       )}
 
-      {/* CHAT WIDGET */}
       {!isAdminPage && (
         <div className="chat-widget" style={{position:'fixed', bottom:'80px', right:'20px', zIndex:1000, display:'flex', flexDirection:'column', gap:'10px'}}>
           {shopConfig.zalo && <a href={`https://zalo.me/${shopConfig.zalo}`} target="_blank" rel="noreferrer"><img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Icon_of_Zalo.svg" width="45" style={{boxShadow:'0 4px 10px rgba(0,0,0,0.2)', borderRadius:'50%'}}/></a>}
@@ -221,7 +168,6 @@ function Store() {
 
       {!isAdminPage && (
         <>          
-          {/* THANH THÔNG BÁO HEADER */}
           <div className="top-bar-notification">
             <div className="marquee-text">
                 <span className="me-4">{shopConfig.topBarText || "Chào mừng bạn đến với Thực Phẩm Mai Vàng!"}</span>
@@ -229,7 +175,6 @@ function Store() {
             </div>
           </div>
           
-          {/* NAVBAR CHÍNH */}
           <Navbar bg="white" expand="lg" className="sticky-top shadow-sm py-3" style={{zIndex: 100, borderBottom:'3px solid #198754'}}>
             <Container>
             <Navbar.Brand as={Link} to="/" className="me-4 text-decoration-none brand-group">
@@ -238,7 +183,7 @@ function Store() {
             </Navbar.Brand>
               <Navbar.Toggle />
               <Navbar.Collapse>
-                <Form className="d-flex flex-grow-1 mx-lg-5 my-2 my-lg-0 search-form-custom" onSubmit={(e) => { e.preventDefault(); navigate('/'); }}>
+                <Form className="d-flex flex-grow-1 mx-lg-5 my-2 my-lg-0 search-form-custom" onSubmit={handleSearch}>
                 <div className="input-group">
                     <Form.Control type="search" placeholder="Tìm sản phẩm...?" value={tuKhoa} onChange={e => setTuKhoa(e.target.value)} className="search-input" />
                     <Button variant="success" type="submit" className="search-btn"><i className="fa-solid fa-magnifying-glass"></i></Button>
@@ -251,7 +196,6 @@ function Store() {
                   </div>
                     <Link to="/tra-cuu" className="btn-header-action btn-lookup"><i className="fa-solid fa-truck-fast"></i> Tra đơn</Link>
                     
-                    {/* GIỎ HÀNG */}
                     <div className="header-cart-wrapper">
                       <Link to="/cart" className="btn-header-action btn-cart-header px-4">
                         <i className="fa-solid fa-cart-shopping"></i> Giỏ <span className="cart-badge">{gioHang.reduce((a,b)=>a+b.soLuong,0)}</span>
@@ -280,7 +224,6 @@ function Store() {
                       </div>
                     </div>
                   
-                  {/* USER DROPDOWN */}
                   {currentUser ? (
                     <Dropdown align="end">
                     <Dropdown.Toggle variant="light" className="border-0 fw-bold d-flex align-items-center gap-2" style={{outline:'none', boxShadow:'none'}}>
@@ -303,7 +246,6 @@ function Store() {
         </>
       )}
 
-      {/* BODY CONTENT */}
       <div className="flex-grow-1 py-3" style={{background: '#f4f6f9'}}>
         <Container>
           <Row>
@@ -314,22 +256,10 @@ function Store() {
                   {shopConfig.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date() && <Link to="/flash-sale" className="d-block p-2 bg-danger text-white fw-bold text-center text-decoration-none">⚡ FLASH SALE ĐANG DIỄN RA</Link>}
                   
                   <div className="category-list">
-                    {/* MENU ĐỘNG */}
-                    {dsSanPham.some(s => s.phanTramGiam > 0) && (
-                      <div className={`category-item fw-bold text-danger ${location.pathname.includes('khuyen-mai-soc') ? 'active' : ''}`} onClick={() => navigate('/danh-muc/khuyen-mai-soc')}><span>🔥 KHUYẾN MÃI SỐC</span><i className="fa-solid fa-chevron-right small"></i></div>
-                    )}
-                    
-                    {dsSanPham.some(s => s.isMoi) && (
-                      <div className={`category-item fw-bold text-info ${location.pathname.includes('san-pham-moi') ? 'active' : ''}`} onClick={() => navigate('/danh-muc/san-pham-moi')}><span>✨ SẢN PHẨM MỚI</span><i className="fa-solid fa-chevron-right small"></i></div>
-                    )}
-
-                    {dsSanPham.some(s => s.isBanChay) && (
-                      <div className={`category-item fw-bold text-warning ${location.pathname.includes('san-pham-ban-chay') ? 'active' : ''}`} onClick={() => navigate('/danh-muc/san-pham-ban-chay')}><span>🔥 BÁN CHẠY NHẤT</span><i className="fa-solid fa-chevron-right small"></i></div>
-                    )}
-
-                    <div className={`category-item fw-bold text-success ${location.pathname.includes('/tin-tuc') ? 'active' : ''}`} onClick={() => navigate('/tin-tuc')}>
-                        <span><i className="fa-solid fa-utensils me-2"></i> GÓC ẨM THỰC</span><i className="fa-solid fa-chevron-right small"></i>
-                    </div>
+                    <div className={`category-item fw-bold text-danger ${location.pathname.includes('khuyen-mai-soc') ? 'active' : ''}`} onClick={() => navigate('/danh-muc/khuyen-mai-soc')}><span>🔥 KHUYẾN MÃI SỐC</span><i className="fa-solid fa-chevron-right small"></i></div>
+                    <div className={`category-item fw-bold text-info ${location.pathname.includes('san-pham-moi') ? 'active' : ''}`} onClick={() => navigate('/danh-muc/san-pham-moi')}><span>✨ SẢN PHẨM MỚI</span><i className="fa-solid fa-chevron-right small"></i></div>
+                    <div className={`category-item fw-bold text-warning ${location.pathname.includes('san-pham-ban-chay') ? 'active' : ''}`} onClick={() => navigate('/danh-muc/san-pham-ban-chay')}><span>🔥 BÁN CHẠY NHẤT</span><i className="fa-solid fa-chevron-right small"></i></div>
+                    <div className={`category-item fw-bold text-success ${location.pathname.includes('/tin-tuc') ? 'active' : ''}`} onClick={() => navigate('/tin-tuc')}><span><i className="fa-solid fa-utensils me-2"></i> GÓC ẨM THỰC</span><i className="fa-solid fa-chevron-right small"></i></div>
 
                     {dsDanhMuc.filter(d => !d.parent).map(parent => {
                       const hasChild = dsDanhMuc.some(c => c.parent === parent.id);
@@ -383,26 +313,25 @@ function Store() {
             </div>
             )}
               <Routes>
-                <Route path="/" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
-                <Route path="/danh-muc/:slug" element={<Home dsSanPham={sanPhamHienThi} dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
-                <Route path="/san-pham/:slug" element={<ProductDetail dsSanPham={dsSanPham} themVaoGio={themVaoGio} />} />
+                <Route path="/" element={<Home dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
+                <Route path="/danh-muc/:slug" element={<Home dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
+                <Route path="/san-pham/:slug" element={<ProductDetail themVaoGio={themVaoGio} />} />
                 <Route path="/cart" element={<Cart gioHang={gioHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} currentUser={currentUser} />} />
                 <Route path="/checkout" element={<Checkout gioHang={gioHang} setGioHang={setGioHang} userData={userData} />} />
                 <Route path="/member" element={<Member themVaoGio={themVaoGio} />} />
                 <Route path="/tra-cuu" element={<OrderLookup />} />
-                <Route path="/flash-sale" element={<FlashSale dsSanPham={dsSanPham} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
+                <Route path="/flash-sale" element={<FlashSale themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/chinh-sach" element={<PostPage title="Chính sách đổi trả" content={shopConfig.policyContent} />} />
                 <Route path="/huong-dan" element={<PostPage title="Hướng dẫn mua hàng" content={shopConfig.guideContent} />} />
                 <Route path="/tin-tuc" element={<News />} />
                 <Route path="/tin-tuc/:slug" element={<NewsDetail />} />
                 
-                {/* --- [SỬA ĐỔI QUAN TRỌNG]: Dùng Suspense cho Admin --- */}
+                {/* Lazy Load Admin */}
                 <Route path="/admin" element={
                   <Suspense fallback={<div className="p-5 text-center">Đang tải trang quản trị...</div>}>
                     <Admin 
-                      dsSanPham={dsSanPham} dsDanhMuc={dsDanhMuc} 
-                      // Lưu ý: Không truyền dsDonHang nữa, Admin tự tải để bảo mật
+                      dsDanhMuc={dsDanhMuc} 
                       handleUpdateDS_SP={async (t,d)=>t==='ADD'?addDoc(collection(db,"sanPham"),d):t==='DELETE'?deleteDoc(doc(db,"sanPham",d)):updateDoc(doc(db,"sanPham",d.id),d)} 
                       handleUpdateDS_DM={async (t,d)=>t==='ADD'?addDoc(collection(db,"danhMuc"),d):t==='DELETE'?deleteDoc(doc(db,"danhMuc",d)):updateDoc(doc(db,"danhMuc",d.id),d)} 
                       handleUpdateStatusOrder={(id,s)=>updateDoc(doc(db,"donHang",id),{trangThai:s})} 
@@ -416,28 +345,6 @@ function Store() {
         </Container>
       </div>
       
-      {/* SẢN PHẨM VỪA XEM */}
-      {!isAdminPage && recentProducts.length > 0 && (
-        <div className="recent-view-section">
-            <Container>
-            <h5 className="recent-title"><i className="fa-solid fa-clock-rotate-left"></i> Sản phẩm bạn vừa xem</h5>
-            <div className="recent-list-scroll">
-                {recentProducts.map(sp => (
-                <Link key={sp.id} to={`/san-pham/${sp.slug || toSlug(sp.ten)}`} className="recent-card">
-                <img src={sp.anh} alt={sp.ten} className="recent-card-img" />
-                <div className="recent-card-body">
-                <div className="recent-card-name" title={sp.ten}>{sp.ten}</div>
-                <div className="recent-card-price mb-1">{sp.giaBan?.toLocaleString()} <span className="currency-symbol">¥</span></div>
-                <div className="small text-muted d-flex align-items-center gap-1"><span>Số lượng:</span><span className="fw-bold text-danger">{sp.soLuong}</span><span className="tag-donvi" style={{fontSize:'10px', padding:'1px 5px', margin:0}}>{sp.donVi}</span></div>
-                </div>                    
-            </Link>
-                ))}
-            </div>
-            </Container>
-        </div>
-        )}
-
-      {/* FOOTER */}
       {!isAdminPage && (
         <footer className="footer-section">
           <Container>
@@ -446,24 +353,20 @@ function Store() {
                 <h5 className="footer-title">{shopConfig.tenShop}</h5>
                 <p><i className="fa-solid fa-location-dot me-2 text-success"></i> {shopConfig.diaChi}</p>
                 <p><i className="fa-solid fa-phone me-2 text-success"></i> {shopConfig.sdt}</p>
-                {/* Thêm Fax và Email */}
                 {shopConfig.fax && <p><i className="fa-solid fa-fax me-2 text-success"></i> {shopConfig.fax}</p>}
                 {shopConfig.email && <p><i className="fa-solid fa-envelope me-2 text-success"></i> {shopConfig.email}</p>}
               </Col>
-              
               <Col md={3} className="mb-4">
                 <h5 className="footer-title">VỀ CHÚNG TÔI</h5>
                 <Link to="/" className="footer-link">Trang chủ</Link>
                 <Link to="/danh-muc/khuyen-mai-soc" className="footer-link">Khuyến mãi sốc</Link>
                 <Link to="/tra-cuu" className="footer-link">Tra cứu đơn</Link>
               </Col>
-              
               <Col md={3} className="mb-4">
                 <h5 className="footer-title">HỖ TRỢ</h5>
                 <a href={shopConfig.linkPolicy || '#'} className="footer-link">Chính sách đổi trả</a>
                 <a href={shopConfig.linkGuide || '#'} className="footer-link">Hướng dẫn mua hàng</a>
               </Col>
-              
               <Col md={2} className="mb-4">
                 <h5 className="footer-title">KẾT NỐI</h5>
                 {shopConfig.linkFacebook && <a href={shopConfig.linkFacebook} target="_blank" className="d-block mb-2 text-white text-decoration-none"><i className="fa-brands fa-facebook me-2 text-primary"></i> Facebook</a>}
