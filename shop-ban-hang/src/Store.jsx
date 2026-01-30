@@ -1,14 +1,11 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { db, auth } from './firebase'; 
-import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, getDoc } from 'firebase/firestore'; 
+import { collection, onSnapshot, doc, getDoc } from 'firebase/firestore'; 
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col, Modal } from 'react-bootstrap';
+import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col } from 'react-bootstrap';
 import { ToastContainer, toast } from 'react-toastify'; 
-import Slider from "react-slick"; 
 import 'react-toastify/dist/ReactToastify.css'; 
-import "slick-carousel/slick/slick.css"; 
-import "slick-carousel/slick/slick-theme.css";
 import AOS from 'aos'; import 'aos/dist/aos.css';
 
 // Import các component
@@ -34,9 +31,8 @@ function Store() {
   const isAdminPage = location.pathname.startsWith('/admin');
   
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
-  const [banners, setBanners] = useState([]); 
+  const [banners, setBanners] = useState([]); // Store chỉ tải dữ liệu, không hiển thị
   
-  // [FIX LỖI QUAN TRỌNG]: Thêm biến này để Menu không bị lỗi trắng trang
   const [openMenuId, setOpenMenuId] = useState(null); 
 
   const [gioHang, setGioHang] = useState(() => {
@@ -53,7 +49,6 @@ function Store() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userData, setUserData] = useState(null); 
   const [showTopBtn, setShowTopBtn] = useState(false);
-  const [timeLeft, setTimeLeft] = useState({ d:0, h:0, m:0, s:0 });
 
   useEffect(() => { AOS.init({ duration: 800, once: false }); }, []);
   useEffect(() => { window.scrollTo(0, 0); }, [location]);
@@ -78,17 +73,6 @@ function Store() {
     const scrollH = () => setShowTopBtn(window.scrollY > 300); window.addEventListener('scroll', scrollH);
     return () => { unsubDM(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
   }, []);
-
-  useEffect(() => {
-    if(!shopConfig?.flashSaleEnd) return;
-    const check = () => {
-      const dist = new Date(shopConfig.flashSaleEnd).getTime() - new Date().getTime();
-      if (dist > 0) {
-        setTimeLeft({ d:Math.floor(dist/(1000*60*60*24)), h:Math.floor((dist%(1000*60*60*24))/(1000*60*60)), m:Math.floor((dist%(1000*60*60))/(1000*60)), s:Math.floor((dist%(1000*60))/1000) });
-      }
-    };
-    check(); const t = setInterval(check, 1000); return () => clearInterval(t);
-  }, [shopConfig]);
 
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
 
@@ -118,7 +102,6 @@ function Store() {
   
   const xoaSanPham = (id) => setGioHang(gioHang.filter(i=>i.id!==id));
   const handleLogout = async () => { await signOut(auth); if (location.pathname.includes('/member')) {navigate('/');}toast.info("Đã đăng xuất");};
-  const sliderSettings = { dots: true, infinite: true, speed: 500, slidesToShow: 1, slidesToScroll: 1, autoplay: true };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -234,7 +217,6 @@ function Store() {
 
                     {dsDanhMuc.filter(d => !d.parent).map(parent => {
                       const hasChild = dsDanhMuc.some(c => c.parent === parent.id);
-                      // Sử dụng biến openMenuId đã khai báo để xử lý sự kiện
                       const isOpen = openMenuId === parent.id;
                       return (
                         <div key={parent.id}>
@@ -251,9 +233,10 @@ function Store() {
             )}
 
             <Col lg={!isAdminPage ? 9 : 12}>
+              {/* QUAN TRỌNG: Truyền banners sang Home để Home tự render */}
               <Routes>
-                <Route path="/" element={<Home dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
-                <Route path="/danh-muc/:slug" element={<Home dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
+                <Route path="/" element={<Home dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} banners={banners} />} />
+                <Route path="/danh-muc/:slug" element={<Home dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} banners={banners} />} />
                 <Route path="/san-pham/:slug" element={<ProductDetail themVaoGio={themVaoGio} />} />
                 <Route path="/cart" element={<Cart gioHang={gioHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} currentUser={currentUser} />} />
                 <Route path="/checkout" element={<Checkout gioHang={gioHang} setGioHang={setGioHang} userData={userData} />} />
@@ -266,16 +249,9 @@ function Store() {
                 <Route path="/tin-tuc" element={<News />} />
                 <Route path="/tin-tuc/:slug" element={<NewsDetail />} />
                 
-                {/* Lazy Load Admin */}
                 <Route path="/admin" element={
                   <Suspense fallback={<div className="p-5 text-center">Đang tải trang quản trị...</div>}>
-                    <Admin 
-                      // [FIX]: Bỏ truyền props dữ liệu vào Admin để tránh conflict
-                      handleUpdateDS_SP={(t,d)=>t==='ADD'?addDoc(collection(db,"sanPham"),d):t==='DELETE'?deleteDoc(doc(db,"sanPham",d)):updateDoc(doc(db,"sanPham",d.id),d)} 
-                      handleUpdateDS_DM={(t,d)=>t==='ADD'?addDoc(collection(db,"danhMuc"),d):t==='DELETE'?deleteDoc(doc(db,"danhMuc",d)):updateDoc(doc(db,"danhMuc",d.id),d)} 
-                      handleUpdateStatusOrder={(id,s)=>updateDoc(doc(db,"donHang",id),{trangThai:s})} 
-                      handleDeleteOrder={(id)=>deleteDoc(doc(db,"donHang",id))} 
-                    />
+                    <Admin /> 
                   </Suspense>
                 } />
               </Routes>

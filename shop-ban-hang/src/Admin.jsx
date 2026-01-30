@@ -80,26 +80,23 @@ function Admin({ handleUpdateDS_SP, handleUpdateDS_DM, handleUpdateStatusOrder, 
   const handleLogin = (e) => { e.preventDefault(); if(loginInput.user===adminConfig.user && loginInput.pass===adminConfig.pass) { localStorage.setItem('adminConfig', JSON.stringify(adminConfig)); setIsLoggedIn(true); } else alert(`Sai mật khẩu!`); };
   const luuCauHinh = async () => { await setDoc(doc(db, "cauHinh", "thongTinChung"), shopConfig); alert("Đã lưu cấu hình!"); };
   
-  // Hàm upload ảnh
   const handleUpload = (e, type) => { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onloadend=()=>{ if(type==='LOGO') setShopConfig({...shopConfig,logo:r.result}); if(type==='PRODUCT') setFormDataSP({...formDataSP,anh:r.result}); if(type==='BANNER') setFormBanner({...formBanner,img:r.result}); if(type==='QR') setShopConfig(p => ({...p, bankInfo: {...p.bankInfo, qrImage: r.result}})); if(type==='NEWS') setFormTinTuc({...formTinTuc, anh:r.result}); }; r.readAsDataURL(f); };
   
   const add = async (col, d) => await addDoc(collection(db, col), d); const del = async (col, id) => confirm('Xóa?') && await deleteDoc(doc(db, col, id));
   
-  // Tự động tính giá bán
   useEffect(() => { const g = parseInt(formDataSP.giaGoc)||0; const p = parseInt(formDataSP.phanTramGiam)||0; setFormDataSP(prev => ({...prev, giaBan: g > 0 ? Math.floor(g*(1-p/100)) : 0})); }, [formDataSP.giaGoc, formDataSP.phanTramGiam]);
   
-  // --- [FIX LỖI QUAN TRỌNG]: Tự động thêm NGÀY TẠO khi thêm mới ---
+  // [FIX QUAN TRỌNG]: Tự động thêm NGÀY TẠO khi thêm mới
   const onSaveSP = async () => { 
     const data = { ...formDataSP, slug: toSlug(formDataSP.ten) };
     if (!editData.sp) { 
-        data.ngayTao = serverTimestamp(); // Bắt buộc có dòng này để sort ở trang chủ
+        data.ngayTao = serverTimestamp(); // Bắt buộc có dòng này
     }
     
     // Gọi hàm xử lý từ Store hoặc tự xử lý tại đây
     if (handleUpdateDS_SP) {
        handleUpdateDS_SP(editData.sp ? 'UPDATE' : 'ADD', editData.sp ? { ...data, id: editData.sp.id } : data);
     } else {
-       // Fallback nếu không có props
        if(editData.sp) await updateDoc(doc(db, "sanPham", editData.sp.id), data);
        else await addDoc(collection(db, "sanPham"), data);
     }
@@ -130,12 +127,10 @@ function Admin({ handleUpdateDS_SP, handleUpdateDS_DM, handleUpdateStatusOrder, 
         return true;
     })
     .sort((a, b) => {
-      // Ưu tiên sắp xếp theo ngày tạo (nếu có)
       if (sortPrice === 'newest') {
          const dateA = a.ngayTao?.seconds || 0;
          const dateB = b.ngayTao?.seconds || 0;
-         if (dateA === 0 && dateB === 0) return 0; // Cả 2 đều cũ
-         return dateB - dateA; // Mới nhất lên đầu
+         return dateB - dateA;
       }
       if (sortPrice === 'asc') return (a.giaBan - b.giaBan);
       if (sortPrice === 'desc') return (b.giaBan - a.giaBan);
@@ -243,8 +238,7 @@ function Admin({ handleUpdateDS_SP, handleUpdateDS_DM, handleUpdateStatusOrder, 
                             <Form.Control type="file" size="sm" onChange={e=>handleUpload(e,'BANNER')}/>
                             <Form.Text className="text-muted">Kích thước chuẩn: <strong>1200 x 400 px</strong></Form.Text>
                         </div>
-                        <Form.Control size="sm" placeholder="Link khi click..." value={formBanner.link} onChange={e=>setFormBanner({...formBanner,link:e.target.value})}/>
-                        <Button size="sm" onClick={()=>{add('banners', formBanner); setFormBanner({img:'', link:''})}}>Thêm</Button>
+                        <Form.Control size="sm" placeholder="Link khi click..." value={formBanner.link} onChange={e=>setFormBanner({...formBanner,link:e.target.value})}/><Button size="sm" onClick={()=>{add('banners', formBanner); setFormBanner({img:'', link:''})}}>Thêm</Button>
                     </div>
                     <div className="d-flex flex-wrap gap-3" style={{maxHeight:'250px', overflowY:'auto'}}>
                         {dsBanner.map(b=> (
