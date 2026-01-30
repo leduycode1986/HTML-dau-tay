@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Row, Col, Container, Alert, Button, Modal, Spinner } from 'react-bootstrap';
 import Product from './Product';
 import { Link, useParams, useLocation } from 'react-router-dom';
@@ -8,11 +8,21 @@ import { toSlug } from './utils';
 
 // Slider hiển thị danh sách ngang
 const ProductSlider = ({ title, products, icon, themVaoGio, setQuickViewSP }) => {
+  const scrollRef = useRef(null);
+  const scroll = (d) => { if(scrollRef.current) scrollRef.current.scrollLeft += d==='left'?-300:300; };
+  
   if (!products || products.length === 0) return null;
+  
   return ( 
     <div className="mb-4 bg-white p-3 rounded shadow-sm">
-       {title && <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom"><h5 className="fw-bold text-success m-0"><span className="me-2">{icon}</span> {title}</h5></div>}
-       <div className="d-flex gap-3 overflow-auto pb-2" style={{scrollBehavior:'smooth', scrollbarWidth:'thin'}}>
+       {title && <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+          <h5 className="fw-bold text-success m-0"><span className="me-2">{icon}</span> {title}</h5>
+          <div className="d-flex gap-2">
+            <button className="btn btn-sm btn-light border" onClick={()=>scroll('left')}><i className="fa-solid fa-chevron-left"></i></button>
+            <button className="btn btn-sm btn-light border" onClick={()=>scroll('right')}><i className="fa-solid fa-chevron-right"></i></button>
+          </div>
+       </div>}
+       <div className="d-flex gap-3 overflow-auto pb-2" ref={scrollRef} style={{scrollBehavior:'smooth', scrollbarWidth:'none'}}>
          {products.map(sp => (<div key={sp.id} style={{minWidth: '180px', maxWidth: '180px', flex: '0 0 auto'}}><Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} /></div>))}
        </div>
     </div> 
@@ -24,11 +34,12 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
   const location = useLocation();
   
   // State dữ liệu
-  const [products, setProducts] = useState([]);
-  const [bestSellers, setBestSellers] = useState([]); // Cho trang chủ
-  const [newArrivals, setNewArrivals] = useState([]); // Cho trang chủ
+  const [products, setProducts] = useState([]); // Danh sách Grid chính
+  const [bestSellers, setBestSellers] = useState([]); // Slider Bán chạy
+  const [newArrivals, setNewArrivals] = useState([]); // Slider Mới về
+  
   const [loading, setLoading] = useState(false);
-  const [lastDoc, setLastDoc] = useState(null); // Để load more
+  const [lastDoc, setLastDoc] = useState(null); // Để phân trang (Load More)
   const [hasMore, setHasMore] = useState(true);
   
   const [quickViewSP, setQuickViewSP] = useState(null);
@@ -52,63 +63,65 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
     check(); const t = setInterval(check, 1000); return () => clearInterval(t);
   }, [shopConfig, slug, searchQuery]);
 
-  // --- LOGIC TẢI DỮ LIỆU ---
+  // --- LOGIC TẢI DỮ LIỆU CHÍNH ---
   const fetchProducts = async (isLoadMore = false) => {
     setLoading(true);
     try {
-      let q;
       const productRef = collection(db, "sanPham");
-      
-      // 1. Logic riêng cho Trang chủ: Tải Slider (Chỉ chạy lần đầu, không chạy khi bấm Xem thêm)
-      if (!slug && !searchQuery && !isLoadMore) {
-          // Tải 10 SP Mới
-          const qNew = query(productRef, orderBy("ngayTao", "desc"), limit(10));
-          const snNew = await getDocs(qNew);
-          setNewArrivals(snNew.docs.map(d=>({id:d.id, ...d.data()})));
+      const isHomepage = !slug && !searchQuery;
 
-          // Tải 10 SP Bán Chạy
+      // 1. NẾU LÀ TRANG CHỦ & LẦN ĐẦU TẢI -> TẢI SLIDER TRƯỚC
+      if (isHomepage && !isLoadMore) {
+          // Slider 1: Bán chạy (isBanChay = true)
           const qBest = query(productRef, where("isBanChay", "==", true), limit(10));
           const snBest = await getDocs(qBest);
           setBestSellers(snBest.docs.map(d=>({id:d.id, ...d.data()})));
-          
-          // [FIX]: KHÔNG return ở đây nữa, để code chạy tiếp xuống dưới tải danh sách Grid
+
+          // Slider 2: Sản phẩm mới (isMoi = true)
+          const qNew = query(productRef, where("isMoi", "==", true), limit(10));
+          const snNew = await getDocs(qNew);
+          setNewArrivals(snNew.docs.map(d=>({id:d.id, ...d.data()})));
       }
 
-      // 2. Xây dựng Query cho Danh sách chính (Grid) - Áp dụng cho cả Trang chủ, Danh mục, Search
+      // 2. TẢI DANH SÁCH LƯỚI (GRID) BÊN DƯỚI
       let constraints = [];
-      
+
+      // Logic lọc theo điều kiện
       if (searchQuery) {
-         // Tìm kiếm (Lọc client-side ở dưới)
+         // (Lưu ý: Search client-side ở bước map bên dưới vì Firebase search text yếu)
       }
       else if (slug === 'khuyen-mai-soc') constraints.push(where("phanTramGiam", ">", 0));
       else if (slug === 'san-pham-moi') constraints.push(where("isMoi", "==", true));
       else if (slug === 'san-pham-ban-chay') constraints.push(where("isBanChay", "==", true));
       else if (slug) {
-        // Tìm ID danh mục dựa vào Slug
+        // Tìm ID danh mục
         const danhMuc = dsDanhMuc.find(d => (d.slug === slug) || (toSlug(d.ten) === slug));
         if (danhMuc) {
            const subCats = dsDanhMuc.filter(d => d.parent === danhMuc.id).map(d => d.id);
            constraints.push(where("phanLoai", "in", [danhMuc.id, ...subCats].slice(0, 10)));
         }
       }
-      // [FIX]: Nếu không có slug (Trang chủ) -> constraints rỗng -> Tự động tải tất cả sản phẩm
+      // Nếu là trang chủ -> Không có constraints -> Tải tất cả (Mặc định)
 
-      // Thêm giới hạn và phân trang
+      // Logic Phân trang
+      let qGrid;
       if (isLoadMore && lastDoc) {
-        q = query(productRef, ...constraints, startAfter(lastDoc), limit(12));
+        qGrid = query(productRef, ...constraints, startAfter(lastDoc), limit(12));
       } else {
-        q = query(productRef, ...constraints, limit(12));
+        qGrid = query(productRef, ...constraints, limit(12));
       }
 
-      const snapshot = await getDocs(q);
+      // Thực thi Query
+      const snapshot = await getDocs(qGrid);
       const newProds = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      
-      // Lọc Search Client-side (Nếu có search)
+
+      // Lọc tìm kiếm (nếu có)
       let finalProds = newProds;
       if (searchQuery) {
          finalProds = newProds.filter(p => p.ten.toLowerCase().includes(searchQuery.toLowerCase()));
       }
 
+      // Cập nhật State
       setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
       setHasMore(snapshot.docs.length === 12); // Nếu tải đủ 12 thì khả năng còn nữa
 
@@ -119,24 +132,26 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
       }
 
     } catch (err) {
-      console.error("Lỗi tải sản phẩm:", err);
+      console.error("Lỗi tải dữ liệu:", err);
     }
     setLoading(false);
   };
 
-  // Reset khi đổi trang (Slug thay đổi)
+  // Reset và tải lại khi đổi trang (Slug/Search thay đổi)
   useEffect(() => {
     setProducts([]);
+    setBestSellers([]);
+    setNewArrivals([]);
     setLastDoc(null);
     setHasMore(true);
-    fetchProducts(false);
+    fetchProducts(false); // False = Tải mới từ đầu
   }, [slug, searchQuery, dsDanhMuc]);
 
   return (
     <Container fluid className="p-0">
       <Row className="g-0"><Col xs={12} className="p-3">
         
-        {/* 1. SLIDER TRANG CHỦ (Chỉ hiện ở Trang chủ) */}
+        {/* KHỐI 1: SLIDER (CHỈ HIỆN Ở TRANG CHỦ) */}
         {!slug && !searchQuery && (
           <>
             <ProductSlider title="SẢN PHẨM BÁN CHẠY" icon="🔥" products={bestSellers} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />
@@ -144,7 +159,7 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
           </>
         )}
 
-        {/* 2. DANH SÁCH SẢN PHẨM CHÍNH (GRID - Luôn hiện ở mọi trang) */}
+        {/* KHỐI 2: GRID DANH SÁCH SẢN PHẨM (LUÔN HIỆN) */}
         <div className="bg-white p-3 rounded shadow-sm mt-3">
           <div className="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
             <h5 className="fw-bold text-success m-0">
@@ -153,7 +168,7 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
                 slug === 'san-pham-moi' ? '✨ SẢN PHẨM MỚI' : 
                 slug === 'san-pham-ban-chay' ? '🔥 SẢN PHẨM BÁN CHẠY' :
                 slug === 'khuyen-mai-soc' ? '⚡ KHUYẾN MÃI SỐC' :
-                slug ? 'DANH SÁCH SẢN PHẨM' : 'GỢI Ý CHO BẠN'} {/* Đổi tên tiêu đề Trang chủ */}
+                slug ? 'DANH SÁCH SẢN PHẨM' : 'GỢI Ý CHO BẠN'} 
             </h5>
           </div>
           
@@ -169,7 +184,7 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
             </Row>
           )}
 
-          {/* Nút Xem thêm (Load More) */}
+          {/* Nút Xem thêm */}
           {hasMore && (
             <div className="text-center mt-4">
               <Button variant="outline-success" className="rounded-pill px-5 fw-bold" onClick={() => fetchProducts(true)} disabled={loading}>
@@ -181,19 +196,33 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig }) {
 
       </Col></Row>
 
-      {/* MODAL QUICK VIEW */}
+      {/* MODAL QUICK VIEW (ĐÃ CÓ NÚT TẮT X) */}
       <Modal show={!!quickViewSP} onHide={()=>setQuickViewSP(null)} size="lg" centered dialogClassName="quick-view-modal">
         <Modal.Body className="p-0 position-relative">
-          <div className="btn-close-quickview" onClick={()=>setQuickViewSP(null)} title="Đóng"><i className="fa-solid fa-xmark"></i></div>
+          <div className="btn-close-quickview" onClick={()=>setQuickViewSP(null)} title="Đóng">
+            <i className="fa-solid fa-xmark"></i>
+          </div>
           {quickViewSP && (
             <Row className="g-0">
               <Col md={6}><div className="qv-img-box"><img src={quickViewSP.anh} className="qv-img" alt={quickViewSP.ten} /></div></Col>
               <Col md={6}>
                 <div className="qv-info-box">
                   <h4 className="qv-title">{quickViewSP.ten}</h4>
-                  <div className="qv-price">{quickViewSP.giaBan?.toLocaleString()} ¥</div>
+                  <div className="qv-price">
+                    {parseInt(quickViewSP.giaBan).toLocaleString()} ¥
+                    {quickViewSP.phanTramGiam > 0 && <span className="ms-3 text-muted text-decoration-line-through fs-6">{parseInt(quickViewSP.giaGoc).toLocaleString()} ¥</span>}
+                  </div>
+                  
+                  <div className="mb-3">
+                    <span className="fw-bold">Đơn vị:</span> <span className="tag-donvi">{quickViewSP.donVi}</span>
+                    <span className="mx-2">|</span>
+                    <span className="fw-bold">Tình trạng:</span> <span className={quickViewSP.soLuong > 0 ? "text-success fw-bold" : "text-danger"}>{quickViewSP.soLuong > 0 ? "Còn hàng" : "Hết hàng"}</span>
+                  </div>
+
                   <div className="qv-desc"><div dangerouslySetInnerHTML={{__html: quickViewSP.moTa}}></div></div>
-                  <Button variant="success" size="lg" className="w-100 fw-bold rounded-pill shadow-sm mt-auto" onClick={()=>{themVaoGio(quickViewSP); setQuickViewSP(null)}} disabled={quickViewSP.soLuong <= 0}>THÊM VÀO GIỎ NGAY</Button>
+                  <Button variant="success" size="lg" className="w-100 fw-bold rounded-pill shadow-sm mt-auto" onClick={()=>{themVaoGio(quickViewSP); setQuickViewSP(null)}} disabled={quickViewSP.soLuong <= 0}>
+                    <i className="fa-solid fa-cart-plus me-2"></i> THÊM VÀO GIỎ NGAY
+                  </Button>
                 </div>
               </Col>
             </Row>
