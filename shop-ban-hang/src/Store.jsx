@@ -1,9 +1,9 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { db, auth } from './firebase'; 
-import { collection, onSnapshot, doc, getDoc } from 'firebase/firestore'; 
+import { collection, onSnapshot, doc, deleteDoc, updateDoc, addDoc, getDoc } from 'firebase/firestore'; 
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col } from 'react-bootstrap';
+import { Badge, Button, Form, Container, Navbar, Nav, Dropdown, Row, Col, Modal } from 'react-bootstrap';
 import { ToastContainer, toast } from 'react-toastify'; 
 import 'react-toastify/dist/ReactToastify.css'; 
 import AOS from 'aos'; import 'aos/dist/aos.css';
@@ -28,11 +28,11 @@ const Admin = React.lazy(() => import('./Admin'));
 function Store() {
   const navigate = useNavigate();
   const location = useLocation();
-  const isAdminPage = location.pathname.startsWith('/admin');
   
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
-  const [banners, setBanners] = useState([]); // Store chỉ tải dữ liệu, không hiển thị
+  const [banners, setBanners] = useState([]); 
   
+  // [FIX LỖI QUAN TRỌNG]: Thêm biến này để Menu Sidebar hoạt động, không bị lỗi trắng trang
   const [openMenuId, setOpenMenuId] = useState(null); 
 
   const [gioHang, setGioHang] = useState(() => {
@@ -49,10 +49,12 @@ function Store() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userData, setUserData] = useState(null); 
   const [showTopBtn, setShowTopBtn] = useState(false);
+  const [timeLeft, setTimeLeft] = useState({ d:0, h:0, m:0, s:0 });
 
   useEffect(() => { AOS.init({ duration: 800, once: false }); }, []);
   useEffect(() => { window.scrollTo(0, 0); }, [location]);
 
+  // Tải dữ liệu chính
   useEffect(() => {
     const unsubDM = onSnapshot(collection(db, "danhMuc"), sn => { 
         const d=sn.docs.map(x=>({id:x.id,...x.data()})); 
@@ -73,6 +75,18 @@ function Store() {
     const scrollH = () => setShowTopBtn(window.scrollY > 300); window.addEventListener('scroll', scrollH);
     return () => { unsubDM(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
   }, []);
+
+  // Timer cho Flash Sale ở Sidebar
+  useEffect(() => {
+    if(!shopConfig?.flashSaleEnd) return;
+    const check = () => {
+      const dist = new Date(shopConfig.flashSaleEnd).getTime() - new Date().getTime();
+      if (dist > 0) {
+        setTimeLeft({ d:Math.floor(dist/(1000*60*60*24)), h:Math.floor((dist%(1000*60*60*24))/(1000*60*60)), m:Math.floor((dist%(1000*60*60))/(1000*60)), s:Math.floor((dist%(1000*60))/1000) });
+      }
+    };
+    check(); const t = setInterval(check, 1000); return () => clearInterval(t);
+  }, [shopConfig]);
 
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
 
@@ -111,16 +125,16 @@ function Store() {
   return (
     <div className="app-container d-flex flex-column min-vh-100">
       <ToastContainer autoClose={2000} />
-      {!isAdminPage && <div className={`back-to-top ${showTopBtn ? 'visible' : ''}`} onClick={() => window.scrollTo({top:0, behavior:'smooth'})}><i className="fa-solid fa-arrow-up"></i></div>}
+      {!location.pathname.startsWith('/admin') && <div className={`back-to-top ${showTopBtn ? 'visible' : ''}`} onClick={() => window.scrollTo({top:0, behavior:'smooth'})}><i className="fa-solid fa-arrow-up"></i></div>}
 
-      {!isAdminPage && (
+      {!location.pathname.startsWith('/admin') && (
         <div className="chat-widget" style={{position:'fixed', bottom:'80px', right:'20px', zIndex:1000, display:'flex', flexDirection:'column', gap:'10px'}}>
           {shopConfig.zalo && <a href={`https://zalo.me/${shopConfig.zalo}`} target="_blank" rel="noreferrer"><img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Icon_of_Zalo.svg" width="45" style={{boxShadow:'0 4px 10px rgba(0,0,0,0.2)', borderRadius:'50%'}}/></a>}
           {shopConfig.linkFacebook && <a href={shopConfig.linkFacebook} target="_blank" rel="noreferrer"><img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png" width="45" style={{boxShadow:'0 4px 10px rgba(0,0,0,0.2)', borderRadius:'50%'}}/></a>}
         </div>
       )}
 
-      {!isAdminPage && (
+      {!location.pathname.startsWith('/admin') && (
         <>          
           <div className="top-bar-notification">
             <div className="marquee-text">
@@ -203,7 +217,7 @@ function Store() {
       <div className="flex-grow-1 py-3" style={{background: '#f4f6f9'}}>
         <Container>
           <Row>
-            {!isAdminPage && (
+            {!location.pathname.startsWith('/admin') && (
               <Col lg={3} className="d-none d-lg-block mb-4">
                 <div className="sidebar-main">
                   <div className="sidebar-header"><i className="fa-solid fa-bars me-2"></i> DANH MỤC</div>
@@ -217,6 +231,7 @@ function Store() {
 
                     {dsDanhMuc.filter(d => !d.parent).map(parent => {
                       const hasChild = dsDanhMuc.some(c => c.parent === parent.id);
+                      // Sử dụng biến openMenuId để điều khiển đóng mở
                       const isOpen = openMenuId === parent.id;
                       return (
                         <div key={parent.id}>
@@ -232,8 +247,8 @@ function Store() {
               </Col>
             )}
 
-            <Col lg={!isAdminPage ? 9 : 12}>
-              {/* QUAN TRỌNG: Truyền banners sang Home để Home tự render */}
+            <Col lg={!location.pathname.startsWith('/admin') ? 9 : 12}>
+              {/* Truyền banners sang Home để Home tự render */}
               <Routes>
                 <Route path="/" element={<Home dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} banners={banners} />} />
                 <Route path="/danh-muc/:slug" element={<Home dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} banners={banners} />} />
@@ -260,7 +275,7 @@ function Store() {
         </Container>
       </div>
       
-      {!isAdminPage && (
+      {!location.pathname.startsWith('/admin') && (
         <footer className="footer-section">
           <Container>
             <Row>
