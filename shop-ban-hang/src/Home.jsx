@@ -12,7 +12,12 @@ import "slick-carousel/slick/slick-theme.css";
 const ProductSlider = ({ title, products, icon, themVaoGio, setQuickViewSP }) => {
   const scrollRef = useRef(null);
   const scroll = (d) => { if(scrollRef.current) scrollRef.current.scrollLeft += d==='left'?-300:300; };
-  if (!products || products.length === 0) return null;
+  
+  // Chỉ hiện slider nếu có ít nhất 1 sản phẩm hợp lệ
+  const validProducts = products?.filter(p => p.id && p.ten) || [];
+
+  if (validProducts.length === 0) return null;
+  
   return ( 
     <div className="mb-4 bg-white p-3 rounded shadow-sm">
        {title && <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
@@ -23,13 +28,10 @@ const ProductSlider = ({ title, products, icon, themVaoGio, setQuickViewSP }) =>
           </div>
        </div>}
        <div className="d-flex gap-3 overflow-auto pb-2" ref={scrollRef} style={{scrollBehavior:'smooth', scrollbarWidth:'none'}}>
-         {products.map(sp => (
-           // [FIX]: Chỉ render nếu có ID
-           sp.id ? (
+         {validProducts.map(sp => (
              <div key={sp.id} style={{minWidth: '180px', maxWidth: '180px', flex: '0 0 auto'}}>
                <Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} />
              </div>
-           ) : null
          ))}
        </div>
     </div> 
@@ -76,9 +78,13 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
                        .catch(() => getDocs(query(productRef, where("isMoi", "==", true), limit(10))));
           
           const [snFlash, snBest, snNew] = await Promise.all([pFlash, pBest, pNew]);
-          setFlashSales(snFlash.docs.map(d=>({id:d.id, ...d.data()})));
-          setBestSellers(snBest.docs.map(d=>({id:d.id, ...d.data()})));
-          setNewArrivals(snNew.docs.map(d=>({id:d.id, ...d.data()})));
+          
+          // Lọc sạch dữ liệu Slider luôn
+          const cleanData = (sn) => sn.docs.map(d=>({id:d.id, ...d.data()})).filter(p => p.ten && (p.giaBan || p.giaGoc));
+
+          setFlashSales(cleanData(snFlash));
+          setBestSellers(cleanData(snBest));
+          setNewArrivals(cleanData(snNew));
       }
 
       let constraints = [];
@@ -126,19 +132,15 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
       const hasNextPage = rawDocs.length === fetchLimit;
       if (hasNextPage) rawDocs.pop(); 
 
-      // [FIX LỖI TRỐNG SẢN PHẨM]: Lọc kỹ dữ liệu rác
-      const newProds = rawDocs
-        .map(d => {
-            const data = d.data();
-            // Chỉ lấy những sản phẩm có Tên và Giá hợp lệ
-            if (!data.ten || (!data.giaBan && !data.giaGoc)) return null;
-            return { id: d.id, ...data };
-        })
-        .filter(item => item !== null); // Loại bỏ null
+      // [FIX LỖI TRỐNG SẢN PHẨM QUAN TRỌNG]: 
+      // Lọc bỏ sản phẩm rác ngay tại đây, TRƯỚC KHI SET STATE
+      const cleanProds = rawDocs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(p => p.id && p.ten && (p.giaBan !== undefined || p.giaGoc !== undefined));
 
-      let finalProds = newProds;
+      let finalProds = cleanProds;
       if (searchQuery) {
-         finalProds = newProds.filter(p => p.ten.toLowerCase().includes(searchQuery.toLowerCase()));
+         finalProds = cleanProds.filter(p => p.ten.toLowerCase().includes(searchQuery.toLowerCase()));
          setHasMore(false); 
       } else {
          setHasMore(hasNextPage); 
@@ -185,13 +187,14 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
             )}
             <div className="bg-white p-3 rounded shadow-sm mt-3">
               <div className="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2"><h5 className="fw-bold text-success m-0"><i className="fa-solid fa-list me-2"></i> {searchQuery ? `Tìm kiếm: "${searchQuery}"` : slug === 'san-pham-moi' ? '✨ SẢN PHẨM MỚI' : slug === 'san-pham-ban-chay' ? '🔥 SẢN PHẨM BÁN CHẠY' : slug === 'khuyen-mai-soc' ? '⚡ KHUYẾN MÃI SỐC' : slug ? 'DANH SÁCH SẢN PHẨM' : 'GỢI Ý CHO BẠN'} </h5></div>
+              
               {products.length === 0 ? <Alert variant="warning" className="text-center">Không tìm thấy sản phẩm nào.</Alert> : (
                 <Row className="g-3 row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5">
+                  {/* Bây giờ mảng products đã sạch, không còn null, Grid sẽ tự động xếp đẹp */}
                   {products.map(sp => (
-                     // [FIX]: Render an toàn, không render div rỗng
-                     sp.id && (
-                        <Col key={sp.id} className="d-flex align-items-stretch"><Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} /></Col>
-                     )
+                     <Col key={sp.id} className="d-flex align-items-stretch">
+                        <Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} />
+                     </Col>
                   ))}
                 </Row>
               )}
