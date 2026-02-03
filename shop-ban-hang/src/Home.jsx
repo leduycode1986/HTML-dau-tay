@@ -13,7 +13,6 @@ const ProductSlider = ({ title, products, icon, themVaoGio, setQuickViewSP }) =>
   const scrollRef = useRef(null);
   const scroll = (d) => { if(scrollRef.current) scrollRef.current.scrollLeft += d==='left'?-300:300; };
   
-  // Lọc kỹ dữ liệu đầu vào cho Slider
   const validProducts = products?.filter(p => p.id && p.ten) || [];
   if (validProducts.length === 0) return null;
   
@@ -53,7 +52,7 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
   const queryParams = new URLSearchParams(location.search);
   const searchQuery = queryParams.get('search');
   
-  // [FIX CHỐT]: Tải 20 item mỗi lần để bù trừ cho các sản phẩm lỗi bị lọc bỏ
+  // Tải dư giả lập để check còn hàng
   const FETCH_LIMIT = 20;
 
   useEffect(() => {
@@ -71,10 +70,10 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
       const productRef = collection(db, "sanPham");
       const isHomepage = !slug && !searchQuery;
 
-      // 1. Load Sliders (Chỉ trang chủ)
       if (isHomepage && !isLoadMore) {
           const pFlash = getDocs(query(productRef, where("isFlashSale", "==", true), limit(10)));
           const pBest = getDocs(query(productRef, where("isBanChay", "==", true), limit(10)));
+          // Fallback cho slider: nếu sort lỗi thì load thường
           const pNew = getDocs(query(productRef, where("isMoi", "==", true), orderBy("ngayTao", "desc"), limit(10)))
                        .catch(() => getDocs(query(productRef, where("isMoi", "==", true), limit(10))));
           
@@ -86,7 +85,6 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
           setNewArrivals(cleanData(snNew));
       }
 
-      // 2. Load Grid Chính
       let constraints = [];
       if (slug === 'khuyen-mai-soc') constraints.push(where("phanTramGiam", ">", 0));
       else if (slug === 'san-pham-moi') constraints.push(where("isMoi", "==", true));
@@ -99,11 +97,12 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
         }
       }
 
+      // [CHIẾN THUẬT MỚI]: Thử tải có sort trước
+      // Nếu thất bại hoặc ít dữ liệu hơn mong đợi -> Tải không sort
       let qGrid;
       if (searchQuery) {
           qGrid = query(productRef, ...constraints); 
       } else {
-          // Ưu tiên sắp xếp ngày tạo
           if (isLoadMore && lastDoc) {
              qGrid = query(productRef, ...constraints, orderBy("ngayTao", "desc"), startAfter(lastDoc), limit(FETCH_LIMIT));
           } else {
@@ -113,13 +112,24 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
 
       try {
           const snapshot = await getDocs(qGrid);
-          // Nếu lỗi do index hoặc không có field, fallback về tải thường
-          if (snapshot.empty && !isLoadMore && !searchQuery && !slug) throw new Error("FALLBACK");
+          
+          // [FIX QUAN TRỌNG]: Nếu snapshot rỗng (do data cũ) HOẶC snapshot quá ít (bị ẩn bớt)
+          // Thì chuyển sang chế độ NO SORT để hiện hết
+          if ((snapshot.empty) && !isLoadMore && !searchQuery && !slug) {
+             throw new Error("FALLBACK_NO_SORT");
+          }
+          
           handleSnapshot(snapshot, isLoadMore);
+
       } catch (err) {
-          // Fallback Mode
+          // Chế độ tải an toàn: Không sắp xếp ngày tạo (Hiện tất cả sản phẩm cũ/mới)
           let qGridSafe = query(productRef, ...constraints, limit(FETCH_LIMIT));
-          if (isLoadMore && lastDoc) qGridSafe = query(productRef, ...constraints, startAfter(lastDoc), limit(FETCH_LIMIT));
+          if (isLoadMore && lastDoc) {
+              // Lưu ý: startAfter với document không sort có thể không chuẩn xác 100% nếu không có orderBy
+              // Nên ở chế độ fallback này ta dùng startAfter doc
+              qGridSafe = query(productRef, ...constraints, startAfter(lastDoc), limit(FETCH_LIMIT));
+          }
+          
           const snapshotSafe = await getDocs(qGridSafe);
           handleSnapshot(snapshotSafe, isLoadMore);
       }
@@ -131,32 +141,23 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
   const handleSnapshot = (snapshot, isLoadMore) => {
       const rawDocs = snapshot.docs;
       
-      // 1. Lọc sạch rác (Null, thiếu tên, thiếu giá)
       const validDocs = rawDocs
         .map(d => ({ id: d.id, ...d.data() }))
         .filter(p => p.id && p.ten && (p.giaBan !== undefined || p.giaGoc !== undefined));
       
-      // 2. Logic Xem thêm: Nếu tải về số lượng raw == Limit thì khả năng cao vẫn còn hàng
-      // Ta không cắt bớt nữa, có bao nhiêu hợp lệ thì hiện bấy nhiêu để lấp đầy Grid
+      // Nếu tải về ít hơn limit -> Hết hàng
       if (rawDocs.length < FETCH_LIMIT) {
-          setHasMore(false); // Hết hàng
+          setHasMore(false); 
       } else {
-          setHasMore(true); // Còn hàng
+          setHasMore(true); 
           if (rawDocs.length > 0) setLastDoc(rawDocs[rawDocs.length - 1]);
       }
 
-      // 3. Sắp xếp lại client (Mới lên đầu)
+      // Sắp xếp lại client-side để gom sản phẩm mới lên đầu
       validDocs.sort((a,b) => (b.ngayTao?.seconds || 0) - (a.ngayTao?.seconds || 0));
 
-      // Client Search Filter
-      let finalProds = validDocs;
-      if (searchQuery) {
-          finalProds = finalProds.filter(p => p.ten.toLowerCase().includes(searchQuery.toLowerCase()));
-          setHasMore(false); 
-      }
-
-      if (isLoadMore) setProducts(prev => [...prev, ...finalProds]);
-      else setProducts(finalProds);
+      if (isLoadMore) setProducts(prev => [...prev, ...validDocs]);
+      else setProducts(validDocs);
   }
 
   useEffect(() => {
@@ -196,7 +197,6 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
               
               {products.length === 0 ? <Alert variant="warning" className="text-center">Không tìm thấy sản phẩm nào.</Alert> : (
                 <Row className="g-3 row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5">
-                  {/* Grid hiển thị chỉ những sản phẩm sạch */}
                   {products.map(sp => (
                      <Col key={sp.id} className="d-flex align-items-stretch">
                         <Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} />
