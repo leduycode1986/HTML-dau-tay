@@ -12,7 +12,11 @@ import "slick-carousel/slick/slick-theme.css";
 const ProductSlider = ({ title, products, icon, themVaoGio, setQuickViewSP }) => {
   const scrollRef = useRef(null);
   const scroll = (d) => { if(scrollRef.current) scrollRef.current.scrollLeft += d==='left'?-300:300; };
-  if (!products || products.length === 0) return null;
+  
+  // Lọc kỹ dữ liệu đầu vào cho Slider
+  const validProducts = products?.filter(p => p.id && p.ten) || [];
+  if (validProducts.length === 0) return null;
+  
   return ( 
     <div className="mb-4 bg-white p-3 rounded shadow-sm">
        {title && <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
@@ -23,12 +27,10 @@ const ProductSlider = ({ title, products, icon, themVaoGio, setQuickViewSP }) =>
           </div>
        </div>}
        <div className="d-flex gap-3 overflow-auto pb-2" ref={scrollRef} style={{scrollBehavior:'smooth', scrollbarWidth:'none'}}>
-         {products.map(sp => (
-             sp.id && (
-               <div key={sp.id} style={{minWidth: '180px', maxWidth: '180px', flex: '0 0 auto'}}>
-                 <Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} />
-               </div>
-             )
+         {validProducts.map(sp => (
+             <div key={sp.id} style={{minWidth: '180px', maxWidth: '180px', flex: '0 0 auto'}}>
+               <Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} />
+             </div>
          ))}
        </div>
     </div> 
@@ -51,7 +53,8 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
   const queryParams = new URLSearchParams(location.search);
   const searchQuery = queryParams.get('search');
   
-  const ITEMS_PER_PAGE = 12;
+  // [FIX CHỐT]: Tải 20 item mỗi lần để bù trừ cho các sản phẩm lỗi bị lọc bỏ
+  const FETCH_LIMIT = 20;
 
   useEffect(() => {
     if(!shopConfig?.flashSaleEnd) return;
@@ -68,6 +71,7 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
       const productRef = collection(db, "sanPham");
       const isHomepage = !slug && !searchQuery;
 
+      // 1. Load Sliders (Chỉ trang chủ)
       if (isHomepage && !isLoadMore) {
           const pFlash = getDocs(query(productRef, where("isFlashSale", "==", true), limit(10)));
           const pBest = getDocs(query(productRef, where("isBanChay", "==", true), limit(10)));
@@ -77,12 +81,12 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
           const [snFlash, snBest, snNew] = await Promise.all([pFlash, pBest, pNew]);
           
           const cleanData = (sn) => sn.docs.map(d=>({id:d.id, ...d.data()})).filter(p => p.ten && (p.giaBan || p.giaGoc));
-
           setFlashSales(cleanData(snFlash));
           setBestSellers(cleanData(snBest));
           setNewArrivals(cleanData(snNew));
       }
 
+      // 2. Load Grid Chính
       let constraints = [];
       if (slug === 'khuyen-mai-soc') constraints.push(where("phanTramGiam", ">", 0));
       else if (slug === 'san-pham-moi') constraints.push(where("isMoi", "==", true));
@@ -95,13 +99,11 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
         }
       }
 
-      // Tải dư 1 cái để check trang sau (12 + 1 = 13)
-      const FETCH_LIMIT = ITEMS_PER_PAGE + 1;
-      
       let qGrid;
       if (searchQuery) {
           qGrid = query(productRef, ...constraints); 
       } else {
+          // Ưu tiên sắp xếp ngày tạo
           if (isLoadMore && lastDoc) {
              qGrid = query(productRef, ...constraints, orderBy("ngayTao", "desc"), startAfter(lastDoc), limit(FETCH_LIMIT));
           } else {
@@ -109,39 +111,52 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
           }
       }
 
-      const snapshot = await getDocs(qGrid);
-      handleSnapshot(snapshot, isLoadMore, FETCH_LIMIT);
+      try {
+          const snapshot = await getDocs(qGrid);
+          // Nếu lỗi do index hoặc không có field, fallback về tải thường
+          if (snapshot.empty && !isLoadMore && !searchQuery && !slug) throw new Error("FALLBACK");
+          handleSnapshot(snapshot, isLoadMore);
+      } catch (err) {
+          // Fallback Mode
+          let qGridSafe = query(productRef, ...constraints, limit(FETCH_LIMIT));
+          if (isLoadMore && lastDoc) qGridSafe = query(productRef, ...constraints, startAfter(lastDoc), limit(FETCH_LIMIT));
+          const snapshotSafe = await getDocs(qGridSafe);
+          handleSnapshot(snapshotSafe, isLoadMore);
+      }
 
     } catch (err) { console.error(err); }
     setLoading(false);
   };
 
-  const handleSnapshot = (snapshot, isLoadMore, fetchLimit) => {
-      let rawDocs = snapshot.docs;
+  const handleSnapshot = (snapshot, isLoadMore) => {
+      const rawDocs = snapshot.docs;
       
-      // Kiểm tra xem có đủ sản phẩm để sang trang sau không (Lấy được 13 cái)
-      const hasNextPage = rawDocs.length === fetchLimit;
+      // 1. Lọc sạch rác (Null, thiếu tên, thiếu giá)
+      const validDocs = rawDocs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(p => p.id && p.ten && (p.giaBan !== undefined || p.giaGoc !== undefined));
       
-      if (hasNextPage) {
-          rawDocs.pop(); // Bỏ cái thứ 13 đi, chỉ hiển thị 12 cái
-      }
-
-      const newProds = rawDocs.map(d => ({ id: d.id, ...d.data() }));
-
-      if (rawDocs.length > 0) {
-          setLastDoc(rawDocs[rawDocs.length - 1]);
-      }
-
-      // [FIX QUAN TRỌNG]: Kiểm tra số lượng thực tế sau khi tải
-      // Nếu số lượng tải về ít hơn Limit (ví dụ tải 13 mà chỉ được 10) -> Hết hàng -> Ẩn nút
-      if (rawDocs.length < ITEMS_PER_PAGE) {
-          setHasMore(false);
+      // 2. Logic Xem thêm: Nếu tải về số lượng raw == Limit thì khả năng cao vẫn còn hàng
+      // Ta không cắt bớt nữa, có bao nhiêu hợp lệ thì hiện bấy nhiêu để lấp đầy Grid
+      if (rawDocs.length < FETCH_LIMIT) {
+          setHasMore(false); // Hết hàng
       } else {
-          setHasMore(hasNextPage);
+          setHasMore(true); // Còn hàng
+          if (rawDocs.length > 0) setLastDoc(rawDocs[rawDocs.length - 1]);
       }
 
-      if (isLoadMore) setProducts(prev => [...prev, ...newProds]);
-      else setProducts(newProds);
+      // 3. Sắp xếp lại client (Mới lên đầu)
+      validDocs.sort((a,b) => (b.ngayTao?.seconds || 0) - (a.ngayTao?.seconds || 0));
+
+      // Client Search Filter
+      let finalProds = validDocs;
+      if (searchQuery) {
+          finalProds = finalProds.filter(p => p.ten.toLowerCase().includes(searchQuery.toLowerCase()));
+          setHasMore(false); 
+      }
+
+      if (isLoadMore) setProducts(prev => [...prev, ...finalProds]);
+      else setProducts(finalProds);
   }
 
   useEffect(() => {
@@ -181,6 +196,7 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
               
               {products.length === 0 ? <Alert variant="warning" className="text-center">Không tìm thấy sản phẩm nào.</Alert> : (
                 <Row className="g-3 row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5">
+                  {/* Grid hiển thị chỉ những sản phẩm sạch */}
                   {products.map(sp => (
                      <Col key={sp.id} className="d-flex align-items-stretch">
                         <Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} />
