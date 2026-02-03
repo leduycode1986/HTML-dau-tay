@@ -12,11 +12,7 @@ import "slick-carousel/slick/slick-theme.css";
 const ProductSlider = ({ title, products, icon, themVaoGio, setQuickViewSP }) => {
   const scrollRef = useRef(null);
   const scroll = (d) => { if(scrollRef.current) scrollRef.current.scrollLeft += d==='left'?-300:300; };
-  
-  // Chỉ hiện slider nếu có sản phẩm hợp lệ
-  const validProducts = products?.filter(p => p.id && p.ten) || [];
-  if (validProducts.length === 0) return null;
-  
+  if (!products || products.length === 0) return null;
   return ( 
     <div className="mb-4 bg-white p-3 rounded shadow-sm">
        {title && <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
@@ -27,10 +23,12 @@ const ProductSlider = ({ title, products, icon, themVaoGio, setQuickViewSP }) =>
           </div>
        </div>}
        <div className="d-flex gap-3 overflow-auto pb-2" ref={scrollRef} style={{scrollBehavior:'smooth', scrollbarWidth:'none'}}>
-         {validProducts.map(sp => (
-             <div key={sp.id} style={{minWidth: '180px', maxWidth: '180px', flex: '0 0 auto'}}>
-               <Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} />
-             </div>
+         {products.map(sp => (
+             sp.id && (
+               <div key={sp.id} style={{minWidth: '180px', maxWidth: '180px', flex: '0 0 auto'}}>
+                 <Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} />
+               </div>
+             )
          ))}
        </div>
     </div> 
@@ -79,6 +77,7 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
           const [snFlash, snBest, snNew] = await Promise.all([pFlash, pBest, pNew]);
           
           const cleanData = (sn) => sn.docs.map(d=>({id:d.id, ...d.data()})).filter(p => p.ten && (p.giaBan || p.giaGoc));
+
           setFlashSales(cleanData(snFlash));
           setBestSellers(cleanData(snBest));
           setNewArrivals(cleanData(snNew));
@@ -96,7 +95,7 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
         }
       }
 
-      // [KỸ THUẬT QUAN TRỌNG]: Tải 13 để check nút xem thêm
+      // Tải dư 1 cái để check trang sau (12 + 1 = 13)
       const FETCH_LIMIT = ITEMS_PER_PAGE + 1;
       
       let qGrid;
@@ -110,16 +109,8 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
           }
       }
 
-      try {
-          const snapshot = await getDocs(qGrid);
-          if (snapshot.empty && !isLoadMore && !searchQuery && !slug) throw new Error("FALLBACK");
-          handleSnapshot(snapshot, isLoadMore, FETCH_LIMIT);
-      } catch (err) {
-          let qGridSafe = query(productRef, ...constraints, limit(FETCH_LIMIT));
-          if (isLoadMore && lastDoc) qGridSafe = query(productRef, ...constraints, startAfter(lastDoc), limit(FETCH_LIMIT));
-          const snapshotSafe = await getDocs(qGridSafe);
-          handleSnapshot(snapshotSafe, isLoadMore, FETCH_LIMIT);
-      }
+      const snapshot = await getDocs(qGrid);
+      handleSnapshot(snapshot, isLoadMore, FETCH_LIMIT);
 
     } catch (err) { console.error(err); }
     setLoading(false);
@@ -128,28 +119,29 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
   const handleSnapshot = (snapshot, isLoadMore, fetchLimit) => {
       let rawDocs = snapshot.docs;
       
-      // 1. Kiểm tra xem có trang sau không (dựa trên raw count)
-      const hasNextPageRaw = rawDocs.length === fetchLimit;
-      if (hasNextPageRaw) rawDocs.pop(); // Bỏ phần tử thứ 13 đi
-
-      // 2. Lọc sạch dữ liệu rác
-      const cleanProds = rawDocs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter(p => p.id && p.ten && (p.giaBan !== undefined || p.giaGoc !== undefined));
-
-      let finalProds = cleanProds;
-      if (searchQuery) {
-         finalProds = cleanProds.filter(p => p.ten.toLowerCase().includes(searchQuery.toLowerCase()));
-         setHasMore(false); 
-      } else {
-         setHasMore(hasNextPageRaw); // Set nút xem thêm dựa trên việc tải đủ 13
-         if (rawDocs.length > 0) setLastDoc(rawDocs[rawDocs.length - 1]);
+      // Kiểm tra xem có đủ sản phẩm để sang trang sau không (Lấy được 13 cái)
+      const hasNextPage = rawDocs.length === fetchLimit;
+      
+      if (hasNextPage) {
+          rawDocs.pop(); // Bỏ cái thứ 13 đi, chỉ hiển thị 12 cái
       }
 
-      finalProds.sort((a,b) => (b.ngayTao?.seconds || 0) - (a.ngayTao?.seconds || 0));
+      const newProds = rawDocs.map(d => ({ id: d.id, ...d.data() }));
 
-      if (isLoadMore) setProducts(prev => [...prev, ...finalProds]);
-      else setProducts(finalProds);
+      if (rawDocs.length > 0) {
+          setLastDoc(rawDocs[rawDocs.length - 1]);
+      }
+
+      // [FIX QUAN TRỌNG]: Kiểm tra số lượng thực tế sau khi tải
+      // Nếu số lượng tải về ít hơn Limit (ví dụ tải 13 mà chỉ được 10) -> Hết hàng -> Ẩn nút
+      if (rawDocs.length < ITEMS_PER_PAGE) {
+          setHasMore(false);
+      } else {
+          setHasMore(hasNextPage);
+      }
+
+      if (isLoadMore) setProducts(prev => [...prev, ...newProds]);
+      else setProducts(newProds);
   }
 
   useEffect(() => {
