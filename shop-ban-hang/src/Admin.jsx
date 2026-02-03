@@ -6,20 +6,20 @@ import 'react-quill/dist/quill.snow.css';
 import { doc, setDoc, collection, onSnapshot, deleteDoc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore'; 
 import { db } from './firebase'; 
 import { toSlug } from './utils';
+import { toast } from 'react-toastify';
 
 const ICON_LIST = ['🏠','📦','🥩','🥦','🍎','🍞','🥫','❄️','🍬','🍫','🍪','🍦','🍺','🥤','🥛','🧃','🧺','🛋️','🍳','🧹','🧽','🧼','🧴','🪥','💄','🔖','⚡','🔥','🎉','🎁'];
 const NO_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg";
 
 function Admin() { 
-  // --- STATE QUẢN LÝ ---
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginInput, setLoginInput] = useState({ user: '', pass: '' });
   const [showPass, setShowPass] = useState(false);
-  const [isUploading, setIsUploading] = useState(false); // Trạng thái upload ảnh
+  const [isUploading, setIsUploading] = useState(false); // Thêm state loading upload
 
   const [adminConfig] = useState(() => { try { const s = JSON.parse(localStorage.getItem('adminConfig') || '{}'); return { user: s.user||'admin', pass: s.pass||'123' }; } catch { return { user: 'admin', pass: '123' }; } });
   
-  // Dữ liệu từ Firebase
+  // State dữ liệu (Tự tải đầy đủ như file gốc)
   const [dsSanPham, setDsSanPham] = useState([]);
   const [dsDonHang, setDsDonHang] = useState([]);
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
@@ -40,7 +40,6 @@ function Admin() {
     bankInfo: { bankName: '', accountNum: '', accountName: '', bankBranch: '', qrImage: '' } 
   });
 
-  // Modal & Form
   const [modal, setModal] = useState({ sp: false, dm: false, order: false, user: false, post: false, news: false });
   const [postEditor, setPostEditor] = useState({ type: '', title: '', content: '' });
   const [editData, setEditData] = useState({ sp: null, dm: null, user: null, order: null, news: null });
@@ -54,14 +53,13 @@ function Admin() {
   const [userPoint, setUserPoint] = useState(0);
   const [selectedOrder, setSelectedOrder] = useState(null);
   
-  // Filter & Pagination
   const [filterCategory, setFilterCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [sortPrice, setSortPrice] = useState('newest'); 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(30);
 
-  // --- TẢI DỮ LIỆU ---
+  // useEffect tải toàn bộ dữ liệu (Khôi phục từ file gốc)
   useEffect(() => {
     if (isLoggedIn) {
       const unsubs = [
@@ -83,7 +81,7 @@ function Admin() {
   const handleLogin = (e) => { e.preventDefault(); if(loginInput.user===adminConfig.user && loginInput.pass===adminConfig.pass) { localStorage.setItem('adminConfig', JSON.stringify(adminConfig)); setIsLoggedIn(true); } else alert(`Sai mật khẩu!`); };
   const luuCauHinh = async () => { await setDoc(doc(db, "cauHinh", "thongTinChung"), shopConfig); alert("Đã lưu cấu hình!"); };
   
-  // --- [FIX LỖI 1]: HÀM NÉN ẢNH (Giúp web nhanh hơn) ---
+  // --- [FIX 1]: Hàm nén ảnh tự động ---
   const compressImage = (file) => {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -99,7 +97,7 @@ function Admin() {
           canvas.height = img.height * scaleSize;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.7); // Nén chất lượng 70%
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
           resolve(dataUrl);
         };
       };
@@ -107,12 +105,10 @@ function Admin() {
   };
 
   const handleUpload = async (e, type) => { 
-    const f = e.target.files[0]; 
-    if(!f) return; 
-    
-    setIsUploading(true);
-    const compressedImg = await compressImage(f); // Nén xong mới lưu
-    setIsUploading(false);
+    const f = e.target.files[0]; if(!f) return; 
+    setIsUploading(true); // Hiện spinner
+    const compressedImg = await compressImage(f); 
+    setIsUploading(false); // Tắt spinner
 
     if(type==='LOGO') setShopConfig({...shopConfig,logo:compressedImg}); 
     if(type==='PRODUCT') setFormDataSP({...formDataSP,anh:compressedImg}); 
@@ -121,31 +117,36 @@ function Admin() {
     if(type==='NEWS') setFormTinTuc({...formTinTuc, anh:compressedImg}); 
   };
   
-  // Các hàm tiện ích Firebase
+  // Các hàm CRUD trực tiếp (Khôi phục tính năng từ file gốc)
   const add = async (col, d) => await addDoc(collection(db, col), d); 
   const del = async (col, id) => confirm('Xóa?') && await deleteDoc(doc(db, col, id));
   
-  // Tự động tính giá bán
   useEffect(() => { const g = parseInt(formDataSP.giaGoc)||0; const p = parseInt(formDataSP.phanTramGiam)||0; setFormDataSP(prev => ({...prev, giaBan: g > 0 ? Math.floor(g*(1-p/100)) : 0})); }, [formDataSP.giaGoc, formDataSP.phanTramGiam]);
   
-  // --- [FIX LỖI 2]: TỰ ĐỘNG THÊM NGÀY TẠO KHI LƯU ---
+  // --- [FIX 2]: VALIDATE + Thêm ngày tạo khi lưu sản phẩm ---
+  const validateSP = () => {
+    if (!formDataSP.ten.trim()) { toast.warning("Vui lòng nhập tên sản phẩm!"); return false; }
+    if (formDataSP.giaGoc <= 0 && formDataSP.giaBan <= 0) { toast.warning("Vui lòng nhập giá sản phẩm!"); return false; }
+    if (!formDataSP.phanLoai) { toast.warning("Vui lòng chọn danh mục!"); return false; }
+    return true;
+  }
+
   const onSaveSP = async () => { 
+    if (!validateSP()) return;
+
     const data = { ...formDataSP, slug: toSlug(formDataSP.ten) };
-    
-    // Nếu là thêm mới HOẶC sửa sản phẩm cũ chưa có ngày tạo
+    // Nếu thêm mới HOẶC sửa sản phẩm cũ chưa có ngày tạo
     if (!editData.sp || !editData.sp.ngayTao) { 
-        data.ngayTao = serverTimestamp(); // QUAN TRỌNG: Giúp hiển thị đúng ở trang chủ
+        data.ngayTao = serverTimestamp(); 
     }
     
     try {
-        if (editData.sp) {
-            await updateDoc(doc(db, "sanPham", editData.sp.id), data);
-        } else {
-            await addDoc(collection(db, "sanPham"), data);
-        }
-        setModal({...modal, sp: false}); 
-    } catch (err) {
-        alert("Lỗi lưu: " + err.message);
+        if(editData.sp) await updateDoc(doc(db, "sanPham", editData.sp.id), data);
+        else await addDoc(collection(db, "sanPham"), data);
+        setModal({...modal,sp:false}); 
+        toast.success("Lưu thành công!");
+    } catch(err) {
+        alert("Lỗi: " + err.message);
     }
   };
 
@@ -156,16 +157,14 @@ function Admin() {
       setModal({...modal,dm:false}); 
   };
 
-  // Xử lý đơn hàng
   const handleUpdateStatusOrder = async (id, status) => { await updateDoc(doc(db, "donHang", id), {trangThai: status}); };
   const handleDeleteOrder = async (id) => { if(confirm("Xóa đơn hàng này?")) await deleteDoc(doc(db, "donHang", id)); };
 
-  // Xử lý bài viết
   const openPostEditor = (type) => { if (type === 'policy') { setPostEditor({ type: 'policy', title: 'Chính Sách Đổi Trả', content: shopConfig.policyContent || '' }); } else { setPostEditor({ type: 'guide', title: 'Hướng Dẫn Mua Hàng', content: shopConfig.guideContent || '' }); } setModal({...modal, post: true}); };
   const savePostContent = () => { if (postEditor.type === 'policy') { setShopConfig(prev => ({ ...prev, policyContent: postEditor.content })); } else { setShopConfig(prev => ({ ...prev, guideContent: postEditor.content })); } setModal({...modal, post: false}); };
   const onSaveNews = async () => { const data = { ...formTinTuc, slug: toSlug(formTinTuc.tieuDe), ngayDang: serverTimestamp() }; if (editData.news) { await updateDoc(doc(db, "tinTuc", editData.news.id), data); } else { await addDoc(collection(db, "tinTuc"), data); } setModal({...modal, news: false}); };
 
-  // --- [FIX LỖI 3]: SẮP XẾP DANH SÁCH HIỂN THỊ ---
+  // --- [FIX 3]: Sắp xếp hiển thị Admin (Mới nhất lên đầu) ---
   const filteredProducts = dsSanPham
     .filter(sp => filterCategory ? sp.phanLoai === filterCategory : true)
     .filter(sp => {
@@ -178,7 +177,6 @@ function Admin() {
         return true;
     })
     .sort((a, b) => {
-      // Mặc định: Mới nhất lên đầu (dựa vào giây)
       if (sortPrice === 'newest') {
          const dateA = a.ngayTao?.seconds || 0;
          const dateB = b.ngayTao?.seconds || 0;
@@ -189,7 +187,6 @@ function Admin() {
       return 0;
     });
 
-  // Phân trang
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentProducts = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
