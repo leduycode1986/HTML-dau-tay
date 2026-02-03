@@ -9,13 +9,10 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css";
 
-// Component Slider hiển thị danh sách ngang
 const ProductSlider = ({ title, products, icon, themVaoGio, setQuickViewSP }) => {
   const scrollRef = useRef(null);
   const scroll = (d) => { if(scrollRef.current) scrollRef.current.scrollLeft += d==='left'?-300:300; };
-  
   if (!products || products.length === 0) return null;
-  
   return ( 
     <div className="mb-4 bg-white p-3 rounded shadow-sm">
        {title && <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
@@ -26,13 +23,19 @@ const ProductSlider = ({ title, products, icon, themVaoGio, setQuickViewSP }) =>
           </div>
        </div>}
        <div className="d-flex gap-3 overflow-auto pb-2" ref={scrollRef} style={{scrollBehavior:'smooth', scrollbarWidth:'none'}}>
-         {products.map(sp => (<div key={sp.id} style={{minWidth: '180px', maxWidth: '180px', flex: '0 0 auto'}}><Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} /></div>))}
+         {products.map(sp => (
+           // [FIX]: Chỉ render nếu có ID
+           sp.id ? (
+             <div key={sp.id} style={{minWidth: '180px', maxWidth: '180px', flex: '0 0 auto'}}>
+               <Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} />
+             </div>
+           ) : null
+         ))}
        </div>
     </div> 
   );
 };
 
-// Component Chính
 function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
   const { slug } = useParams();
   const location = useLocation();
@@ -49,7 +52,6 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
   const queryParams = new URLSearchParams(location.search);
   const searchQuery = queryParams.get('search');
   
-  // SỐ LƯỢNG SẢN PHẨM HIỂN THỊ
   const ITEMS_PER_PAGE = 12;
 
   useEffect(() => {
@@ -91,14 +93,12 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
         }
       }
 
-      // [FIX PHÂN TRANG]: Tải dư 1 cái để kiểm tra
       const FETCH_LIMIT = ITEMS_PER_PAGE + 1;
       
       let qGrid;
       if (searchQuery) {
           qGrid = query(productRef, ...constraints); 
       } else {
-          // Ưu tiên sort ngày tạo
           if (isLoadMore && lastDoc) {
              qGrid = query(productRef, ...constraints, orderBy("ngayTao", "desc"), startAfter(lastDoc), limit(FETCH_LIMIT));
           } else {
@@ -108,15 +108,11 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
 
       try {
           const snapshot = await getDocs(qGrid);
-          // Nếu rỗng do thiếu field ngày tạo (ở trang đầu) -> chuyển sang chế độ tải thường
           if (snapshot.empty && !isLoadMore && !searchQuery && !slug) throw new Error("FALLBACK");
-          
           handleSnapshot(snapshot, isLoadMore, FETCH_LIMIT);
       } catch (err) {
-          // Safe Mode: Tải không sort
           let qGridSafe = query(productRef, ...constraints, limit(FETCH_LIMIT));
           if (isLoadMore && lastDoc) qGridSafe = query(productRef, ...constraints, startAfter(lastDoc), limit(FETCH_LIMIT));
-          
           const snapshotSafe = await getDocs(qGridSafe);
           handleSnapshot(snapshotSafe, isLoadMore, FETCH_LIMIT);
       }
@@ -127,22 +123,25 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
 
   const handleSnapshot = (snapshot, isLoadMore, fetchLimit) => {
       let rawDocs = snapshot.docs;
-      
-      // Kiểm tra xem có đủ sản phẩm để sang trang sau không (Lấy được 13 cái)
       const hasNextPage = rawDocs.length === fetchLimit;
-      
-      if (hasNextPage) {
-          rawDocs.pop(); // Bỏ cái thứ 13 đi, chỉ hiển thị 12 cái
-      }
+      if (hasNextPage) rawDocs.pop(); 
 
-      const newProds = rawDocs.map(d => ({ id: d.id, ...d.data() }));
+      // [FIX LỖI TRỐNG SẢN PHẨM]: Lọc kỹ dữ liệu rác
+      const newProds = rawDocs
+        .map(d => {
+            const data = d.data();
+            // Chỉ lấy những sản phẩm có Tên và Giá hợp lệ
+            if (!data.ten || (!data.giaBan && !data.giaGoc)) return null;
+            return { id: d.id, ...data };
+        })
+        .filter(item => item !== null); // Loại bỏ null
+
       let finalProds = newProds;
-
       if (searchQuery) {
          finalProds = newProds.filter(p => p.ten.toLowerCase().includes(searchQuery.toLowerCase()));
          setHasMore(false); 
       } else {
-         setHasMore(hasNextPage); // Chỉ hiện nút nếu thực sự còn trang sau
+         setHasMore(hasNextPage); 
          if (rawDocs.length > 0) setLastDoc(rawDocs[rawDocs.length - 1]);
       }
 
@@ -187,7 +186,14 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
             <div className="bg-white p-3 rounded shadow-sm mt-3">
               <div className="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2"><h5 className="fw-bold text-success m-0"><i className="fa-solid fa-list me-2"></i> {searchQuery ? `Tìm kiếm: "${searchQuery}"` : slug === 'san-pham-moi' ? '✨ SẢN PHẨM MỚI' : slug === 'san-pham-ban-chay' ? '🔥 SẢN PHẨM BÁN CHẠY' : slug === 'khuyen-mai-soc' ? '⚡ KHUYẾN MÃI SỐC' : slug ? 'DANH SÁCH SẢN PHẨM' : 'GỢI Ý CHO BẠN'} </h5></div>
               {products.length === 0 ? <Alert variant="warning" className="text-center">Không tìm thấy sản phẩm nào.</Alert> : (
-                <Row className="g-3 row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5">{products.map(sp => (<Col key={sp.id} className="d-flex align-items-stretch"><Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} /></Col>))}</Row>
+                <Row className="g-3 row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5">
+                  {products.map(sp => (
+                     // [FIX]: Render an toàn, không render div rỗng
+                     sp.id && (
+                        <Col key={sp.id} className="d-flex align-items-stretch"><Product sp={sp} themVaoGio={themVaoGio} openQuickView={()=>setQuickViewSP(sp)} /></Col>
+                     )
+                  ))}
+                </Row>
               )}
               {hasMore && <div className="text-center mt-4"><Button variant="outline-success" className="rounded-pill px-5 fw-bold" onClick={() => fetchProducts(true)} disabled={loading}>{loading ? <Spinner as="span" animation="border" size="sm" /> : <>Xem thêm <i className="fa-solid fa-chevron-down ms-1"></i></>}</Button></div>}
             </div>
