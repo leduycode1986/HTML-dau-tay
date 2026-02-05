@@ -51,7 +51,7 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
   const [bestSellers, setBestSellers] = useState([]); 
   const [newArrivals, setNewArrivals] = useState([]); 
   const [loading, setLoading] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(12);
+  const [visibleCount, setVisibleCount] = useState(15);
   const [quickViewSP, setQuickViewSP] = useState(null);
   const [timeLeft, setTimeLeft] = useState({ d:0, h:0, m:0, s:0 });
 
