@@ -378,7 +378,7 @@ function Admin() {
                   <h6 className="text-danger fw-bold border-bottom pb-2 mb-3"><i className="fa-solid fa-bolt me-2"></i> FLASH SALE & ĐIỂM</h6>
                   <Row className="g-3">
                     <Col md={6}><Form.Group><Form.Label className="fw-bold">Kết thúc Flash Sale</Form.Label><Form.Control size="sm" type="datetime-local" value={shopConfig.flashSaleEnd} onChange={e=>setShopConfig({...shopConfig, flashSaleEnd:e.target.value})}/></Form.Group></Col>
-                    <Col md={6}><Form.Group><Form.Label className="fw-bold">Tỷ lệ điểm (VNĐ/1 điểm)</Form.Label><Form.Control size="sm" type="number" value={shopConfig.tyLeDiem} onChange={e=>setShopConfig({...shopConfig, tyLeDiem:e.target.value})}/></Form.Group></Col>
+                    <Col md={6}><Form.Group><Form.Label className="fw-bold">Tỷ lệ điểm (Yên/1 điểm)</Form.Label><Form.Control size="sm" type="number" value={shopConfig.tyLeDiem} onChange={e=>setShopConfig({...shopConfig, tyLeDiem:e.target.value})}/></Form.Group></Col>
                   </Row>
                 </Col>
               </Row>
