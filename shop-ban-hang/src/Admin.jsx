@@ -81,7 +81,6 @@ function Admin() {
   const handleLogin = (e) => { e.preventDefault(); if(loginInput.user===adminConfig.user && loginInput.pass===adminConfig.pass) { localStorage.setItem('adminConfig', JSON.stringify(adminConfig)); setIsLoggedIn(true); } else alert(`Sai mật khẩu!`); };
   const luuCauHinh = async () => { await setDoc(doc(db, "cauHinh", "thongTinChung"), shopConfig); alert("Đã lưu cấu hình!"); };
   
-  // Hàm nén ảnh
   const compressImage = (file) => {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -121,7 +120,6 @@ function Admin() {
   
   useEffect(() => { const g = parseInt(formDataSP.giaGoc)||0; const p = parseInt(formDataSP.phanTramGiam)||0; setFormDataSP(prev => ({...prev, giaBan: g > 0 ? Math.floor(g*(1-p/100)) : 0})); }, [formDataSP.giaGoc, formDataSP.phanTramGiam]);
   
-  // [FIX] Bổ sung validation & ngày tạo
   const validateSP = () => {
     if (!formDataSP.ten.trim()) { toast.warning("Vui lòng nhập tên sản phẩm!"); return false; }
     if (formDataSP.giaGoc <= 0 && formDataSP.giaBan <= 0) { toast.warning("Vui lòng nhập giá sản phẩm!"); return false; }
@@ -131,10 +129,8 @@ function Admin() {
 
   const onSaveSP = async () => { 
     if (!validateSP()) return;
-
     const data = { ...formDataSP, slug: toSlug(formDataSP.ten) };
-    if (!editData.sp || !editData.sp.ngayTao) data.ngayTao = serverTimestamp(); // Fix ngày tạo
-    
+    if (!editData.sp || !editData.sp.ngayTao) data.ngayTao = serverTimestamp();
     try {
         if(editData.sp) await updateDoc(doc(db, "sanPham", editData.sp.id), data);
         else await addDoc(collection(db, "sanPham"), data);
@@ -159,8 +155,20 @@ function Admin() {
   const savePostContent = () => { if (postEditor.type === 'policy') { setShopConfig(prev => ({ ...prev, policyContent: postEditor.content })); } else { setShopConfig(prev => ({ ...prev, guideContent: postEditor.content })); } setModal({...modal, post: false}); };
   const onSaveNews = async () => { const data = { ...formTinTuc, slug: toSlug(formTinTuc.tieuDe), ngayDang: serverTimestamp() }; if (editData.news) { await updateDoc(doc(db, "tinTuc", editData.news.id), data); } else { await addDoc(collection(db, "tinTuc"), data); } setModal({...modal, news: false}); };
 
+  // [FIX] LOGIC LỌC MỚI: TÌM CẢ CON CỦA DANH MỤC
   const filteredProducts = dsSanPham
-    .filter(sp => filterCategory ? sp.phanLoai === filterCategory : true)
+    .filter(sp => {
+        if (filterCategory) {
+            // Lấy tất cả ID của danh mục con thuộc về danh mục đang chọn
+            const subCats = dsDanhMuc.filter(d => d.parent === filterCategory).map(d => d.id);
+            // Danh sách ID hợp lệ bao gồm: Chính nó + Các con của nó
+            const validCats = [filterCategory, ...subCats];
+            
+            // Nếu sản phẩm không nằm trong list này thì loại
+            if (!validCats.includes(sp.phanLoai)) return false; 
+        }
+        return true;
+    })
     .filter(sp => {
         if (!filterStatus) return true;
         if (filterStatus === 'new') return sp.isMoi;
