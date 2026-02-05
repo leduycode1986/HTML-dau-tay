@@ -148,7 +148,7 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
   useEffect(() => {
     setAllProducts([]); 
     setFlashSales([]); setBestSellers([]); setNewArrivals([]);
-    setVisibleCount(12);
+    setVisibleCount(15);
     fetchAllProducts(); 
   }, [slug, searchQuery, dsDanhMuc]);
 
@@ -197,7 +197,7 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
               {/* Nút Xem thêm */}
               {allProducts.length > displayProducts.length && (
                   <div className="text-center mt-4">
-                      <Button variant="outline-success" className="rounded-pill px-5 fw-bold" onClick={() => setVisibleCount(prev => prev + 12)}>
+                      <Button variant="outline-success" className="rounded-pill px-5 fw-bold" onClick={() => setVisibleCount(prev => prev + 15)}>
                           Xem thêm <i className="fa-solid fa-chevron-down ms-1"></i>
                       </Button>
                   </div>
