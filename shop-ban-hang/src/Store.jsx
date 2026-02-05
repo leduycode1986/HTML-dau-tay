@@ -52,6 +52,19 @@ function Store() {
   useEffect(() => { AOS.init({ duration: 800, once: false }); }, []);
   useEffect(() => { window.scrollTo(0, 0); }, [location]);
 
+  // TỰ ĐỘNG XÓA LỚP MỜ ĐEN (BACKDROP) BỊ KẸT
+  useEffect(() => {
+    // 1. Tìm tất cả các lớp phủ đen đang hiện
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    if (backdrops.length > 0) {
+        backdrops.forEach(backdrop => {
+            backdrop.remove(); // Xóa sổ nó ngay lập tức
+        });
+        document.body.classList.remove('modal-open'); // Cho phép cuộn trang lại
+        document.body.style = ''; // Reset style của body
+    }
+  }, [location.pathname]); // Chạy mỗi khi chuyển tran
+
   // --- TẢI DỮ LIỆU TỪ FIREBASE ---
   useEffect(() => {
     const unsubDM = onSnapshot(collection(db, "danhMuc"), sn => { 
