@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Button, Badge } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import Product from './Product';
+import { collection, query, where, getDocs } from 'firebase/firestore'; 
+import { db } from './firebase';
 
 function FlashSale({themVaoGio, shopConfig }) {
   const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 });
