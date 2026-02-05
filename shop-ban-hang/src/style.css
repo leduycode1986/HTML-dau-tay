@@ -1440,3 +1440,15 @@ img { max-width: 100%; height: auto; }
     display: none !important;
   }
 }
+/* --- FIX LỖI MÀN HÌNH ĐEN (BACKDROP) --- */
+/* Ẩn lớp phủ đen đi nếu nó bị kẹt */
+.modal-backdrop {
+    display: none !important;
+    z-index: -1 !important;
+}
+
+/* Đảm bảo trang web vẫn cuộn được */
+.modal-open {
+    overflow: auto !important;
+    padding-right: 0 !important;
+}
