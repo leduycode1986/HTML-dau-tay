@@ -86,7 +86,7 @@ img { max-width: 100%; height: auto; }
   background: linear-gradient(to right, #198754, #20c997); 
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  
+  background-clip: text; /* Thuộc tính chuẩn cho tương lai */
   /* Bóng đổ nhẹ bên dưới giúp chữ nổi khối 3D */
   filter: drop-shadow(0px 2px 0px rgba(0,0,0,0.1));
 }
@@ -264,6 +264,21 @@ img { max-width: 100%; height: auto; }
   overflow-x: auto !important;
   padding: 10px 5px 25px 5px;
   scrollbar-width: thin;
+.recent-list-scroll::-webkit-scrollbar,
+.product-slider-scroll::-webkit-scrollbar {
+  height: 6px; /* Chiều cao thanh cuộn ngang */
+}
+
+.recent-list-scroll::-webkit-scrollbar-thumb,
+.product-slider-scroll::-webkit-scrollbar-thumb {
+  background-color: #ccc; /* Màu thanh cuộn */
+  border-radius: 10px;    /* Bo tròn */
+}
+
+.recent-list-scroll::-webkit-scrollbar-track,
+.product-slider-scroll::-webkit-scrollbar-track {
+  background: transparent; /* Nền trong suốt */
+}
 }
 
 /* --- QUAN TRỌNG: STYLE THẺ SẢN PHẨM (FIX LỖI ẢNH TO) --- */
@@ -382,7 +397,9 @@ img { max-width: 100%; height: auto; }
   font-size: 14px !important;
   border-width: 2px !important;     /* Viền dày dặn */
   white-space: nowrap !important; /* QUAN TRỌNG: Cấm chữ xuống dòng */
-  min-width: fit-content !important; /* Đảm bảo nút co giãn theo nội dung */
+  min-width: -webkit-fit-content !important;
+  min-width: -moz-fit-content !important;
+  min-width: fit-content !important;
 }
 
 /* 1. Nút Tra Đơn (Viền Xanh Lá - Tinh tế) */
@@ -1084,6 +1101,7 @@ img { max-width: 100%; height: auto; }
   display: -webkit-box;
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
+  line-clamp: 2;
   overflow: hidden;
 }
 
@@ -1217,6 +1235,7 @@ img { max-width: 100%; height: auto; }
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 18px;
+  -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px); /* Hiệu ứng kính mờ nếu đè lên ảnh */
 }
 
@@ -1248,7 +1267,22 @@ img { max-width: 100%; height: auto; }
   overflow-x: auto !important;
   padding-bottom: 10px !important;
   scroll-behavior: smooth !important;
-  scrollbar-width: thin; /* Firefox */
+  scrollbar-width: thin; /* Firefox */ 
+.recent-list-scroll::-webkit-scrollbar,
+.product-slider-scroll::-webkit-scrollbar {
+  height: 6px; /* Chiều cao thanh cuộn ngang */
+}
+
+.recent-list-scroll::-webkit-scrollbar-thumb,
+.product-slider-scroll::-webkit-scrollbar-thumb {
+  background-color: #ccc; /* Màu thanh cuộn */
+  border-radius: 10px;    /* Bo tròn */
+}
+
+.recent-list-scroll::-webkit-scrollbar-track,
+.product-slider-scroll::-webkit-scrollbar-track {
+  background: transparent; /* Nền trong suốt */
+}
 }
 
 /* Ẩn thanh cuộn trên Chrome/Safari cho đẹp */
