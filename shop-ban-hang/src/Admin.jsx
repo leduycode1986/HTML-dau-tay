@@ -7,6 +7,7 @@ import { doc, setDoc, collection, onSnapshot, deleteDoc, updateDoc, addDoc, serv
 import { db } from './firebase'; 
 import { toSlug } from './utils';
 import { toast } from 'react-toastify';
+import * as XLSX from 'xlsx';
 
 const ICON_LIST = ['🏠','📦','🥩','🥦','🍎','🍞','🥫','❄️','🍬','🍫','🍪','🍦','🍺','🥤','🥛','🧃','🧺','🛋️','🍳','🧹','🧽','🧼','🧴','🪥','💄','🔖','⚡','🔥','🎉','🎁'];
 const NO_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg";
@@ -154,6 +155,61 @@ function Admin() {
   const openPostEditor = (type) => { if (type === 'policy') { setPostEditor({ type: 'policy', title: 'Chính Sách Đổi Trả', content: shopConfig.policyContent || '' }); } else { setPostEditor({ type: 'guide', title: 'Hướng Dẫn Mua Hàng', content: shopConfig.guideContent || '' }); } setModal({...modal, post: true}); };
   const savePostContent = () => { if (postEditor.type === 'policy') { setShopConfig(prev => ({ ...prev, policyContent: postEditor.content })); } else { setShopConfig(prev => ({ ...prev, guideContent: postEditor.content })); } setModal({...modal, post: false}); };
   const onSaveNews = async () => { const data = { ...formTinTuc, slug: toSlug(formTinTuc.tieuDe), ngayDang: serverTimestamp() }; if (editData.news) { await updateDoc(doc(db, "tinTuc", editData.news.id), data); } else { await addDoc(collection(db, "tinTuc"), data); } setModal({...modal, news: false}); };
+// --- CHỨC NĂNG EXCEL (CẬP NHẬT GIÁ & KHO) ---
+  
+  // 1. Xuất file Excel
+  const handleExportExcel = () => {
+    const dataToExport = dsSanPham.map(sp => ({
+      "ID (Không sửa)": sp.id,
+      "Tên sản phẩm": sp.ten,
+      "Giá gốc": sp.giaGoc,
+      "Phần trăm giảm": sp.phanTramGiam,
+      "Kho": sp.soLuong,
+      "Đơn vị": sp.donVi,
+      "Danh mục ID": sp.phanLoai
+    }));
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    ws['!cols'] = [{wch:25}, {wch:30}, {wch:15}, {wch:15}, {wch:10}, {wch:10}, {wch:25}];
+    XLSX.utils.book_append_sheet(wb, ws, "DanhSachSanPham");
+    XLSX.writeFile(wb, "Danh_Sach_San_Pham_Update.xlsx");
+  };
+
+  // 2. Nhập file Excel
+  const handleImportExcel = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(ws);
+        
+        if (data.length === 0) { alert("File rỗng!"); return; }
+        if (!confirm(`Tìm thấy ${data.length} sản phẩm. Cập nhật ngay?`)) return;
+
+        const updates = data.map(async (row) => {
+            const id = row["ID (Không sửa)"];
+            if (!id) return; 
+            const giaGoc = parseInt(row["Giá gốc"]) || 0;
+            const phanTram = parseInt(row["Phần trăm giảm"]) || 0;
+            const giaBan = giaGoc > 0 ? Math.floor(giaGoc * (1 - phanTram / 100)) : 0;
+            const khoMoi = parseInt(row["Kho"]); 
+            
+            const updateData = { giaGoc, phanTramGiam: phanTram, giaBan, ten: row["Tên sản phẩm"] };
+            if (!isNaN(khoMoi)) updateData.soLuong = khoMoi;
+
+            await updateDoc(doc(db, "sanPham", id), updateData);
+        });
+        await Promise.all(updates);
+        toast.success("✅ Đã cập nhật xong!");
+        e.target.value = null; 
+      } catch (error) { console.error(error); toast.error("Lỗi đọc file!"); }
+    };
+    reader.readAsBinaryString(file);
+  };
 
   // [FIX] LOGIC LỌC MỚI: TÌM CẢ CON CỦA DANH MỤC
   const filteredProducts = dsSanPham
@@ -362,26 +418,49 @@ function Admin() {
           <Tab eventKey="products" title="📦 SẢN PHẨM">
             <div className="bg-white p-3 rounded shadow-sm">
               <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                <Button variant="success" className="fw-bold" onClick={()=>{setEditData({...editData, sp:null}); setFormDataSP({ ten:'', giaGoc:'', phanTramGiam:0, giaBan:'', donVi:'Cái', soLuong:100, moTa:'', anh:'', phanLoai:'', isMoi:false, isKhuyenMai:false, isBanChay:false, isFlashSale:false }); setModal({...modal, sp:true})}}>+ THÊM MỚI</Button>
-                <div className="d-flex gap-2">
-                  <Form.Select size="sm" style={{width:180}} value={filterCategory} onChange={e=>setFilterCategory(e.target.value)}>
-                    <option value="">-- Tất cả danh mục --</option>
-                    {dsDanhMuc.map(d => <option key={d.id} value={d.id}>{d.ten}</option>)}
-                  </Form.Select>
-                  <Form.Select size="sm" style={{width:160}} value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}>
-                    <option value="">-- Tình trạng --</option>
-                    <option value="new">✨ Mới</option>
-                    <option value="best">🔥 Bán chạy</option>
-                    <option value="flash">⚡ Flash Sale</option>
-                    <option value="discount">🏷️ Giảm giá</option>
-                    <option value="stock_out">🚫 Hết hàng</option>
-                  </Form.Select>
-                  <Form.Select size="sm" style={{width:150}} value={sortPrice} onChange={e=>setSortPrice(e.target.value)}>
-                    <option value="newest">✨ Mới nhất</option>
-                    <option value="asc">Giá thấp đến cao</option>
-                    <option value="desc">Giá cao đến thấp</option>
-                  </Form.Select>
-                </div>
+                  {/* CỤM NÚT THAO TÁC (Đã thêm nút Excel) */}
+                  <div className="d-flex gap-2">
+                      <Button variant="success" className="fw-bold" onClick={()=>{setEditData({...editData, sp:null}); setFormDataSP({ ten:'', giaGoc:'', phanTramGiam:0, giaBan:'', donVi:'Cái', soLuong:100, moTa:'', anh:'', phanLoai:'', isMoi:false, isKhuyenMai:false, isBanChay:false, isFlashSale:false }); setModal({...modal, sp:true})}}>+ THÊM MỚI</Button>
+                      
+                      {/* Nút Xuất Excel */}
+                      <Button variant="outline-success" onClick={handleExportExcel}>
+                          <i className="fa-solid fa-file-excel me-2"></i> Xuất Excel
+                      </Button>
+                      
+                      {/* Nút Nhập Excel (Có input ẩn đè lên) */}
+                      <div className="position-relative">
+                          <Button variant="outline-primary">
+                              <i className="fa-solid fa-file-import me-2"></i> Nhập giá & Kho
+                          </Button>
+                          <input 
+                              type="file" 
+                              accept=".xlsx, .xls" 
+                              onChange={handleImportExcel}
+                              style={{position:'absolute', top:0, left:0, width:'100%', height:'100%', opacity:0, cursor:'pointer'}} 
+                          />
+                      </div>
+                  </div>
+
+                  {/* GIỮ NGUYÊN PHẦN BỘ LỌC CŨ CỦA BẠN Ở ĐÂY */}
+                  <div className="d-flex gap-2">
+                    <Form.Select size="sm" style={{width:180}} value={filterCategory} onChange={e=>setFilterCategory(e.target.value)}>
+                      <option value="">-- Tất cả danh mục --</option>
+                      {dsDanhMuc.map(d => <option key={d.id} value={d.id}>{d.ten}</option>)}
+                    </Form.Select>
+                    <Form.Select size="sm" style={{width:160}} value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}>
+                      <option value="">-- Tình trạng --</option>
+                      <option value="new">✨ Mới</option>
+                      <option value="best">🔥 Bán chạy</option>
+                      <option value="flash">⚡ Flash Sale</option>
+                      <option value="discount">🏷️ Giảm giá</option>
+                      <option value="stock_out">🚫 Hết hàng</option>
+                    </Form.Select>
+                    <Form.Select size="sm" style={{width:150}} value={sortPrice} onChange={e=>setSortPrice(e.target.value)}>
+                      <option value="newest">✨ Mới nhất</option>
+                      <option value="asc">Giá thấp đến cao</option>
+                      <option value="desc">Giá cao đến thấp</option>
+                    </Form.Select>
+                  </div>
               </div>
               <div className="table-responsive mb-3">
                 <Table hover bordered className="align-middle">
