@@ -264,6 +264,7 @@ img { max-width: 100%; height: auto; }
   overflow-x: auto !important;
   padding: 10px 5px 25px 5px;
   scrollbar-width: thin;
+}
 .recent-list-scroll::-webkit-scrollbar,
 .product-slider-scroll::-webkit-scrollbar {
   height: 6px; /* Chiều cao thanh cuộn ngang */
@@ -278,7 +279,6 @@ img { max-width: 100%; height: auto; }
 .recent-list-scroll::-webkit-scrollbar-track,
 .product-slider-scroll::-webkit-scrollbar-track {
   background: transparent; /* Nền trong suốt */
-}
 }
 
 /* --- QUAN TRỌNG: STYLE THẺ SẢN PHẨM (FIX LỖI ẢNH TO) --- */
