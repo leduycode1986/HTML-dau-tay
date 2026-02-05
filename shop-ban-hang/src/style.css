@@ -119,8 +119,6 @@ img { max-width: 100%; height: auto; }
 
 /* Khung chứa Hotline */
 .header-hotline-box {
-  /*display: flex !important;*/
-  display: none;
   flex-direction: row !important;
   align-items: center!important; /* Canh giữa */
   padding-right: 15px !important;
@@ -138,7 +136,7 @@ img { max-width: 100%; height: auto; }
     align-items: center !important;
     justify-content: center !important;
     
-    font-size: 0.8rem !important;  /* Kích thước icon vừa phải */
+    font-size: 0.7rem !important;  /* Kích thước icon vừa phải */
     box-shadow: 0 4px 10px rgba(211, 47, 47, 0.3) !important; /* Đổ bóng nhẹ cho sang */
     animation: phone-ring 2s infinite; /* Vẫn giữ hiệu ứng rung */
 }
@@ -155,7 +153,7 @@ img { max-width: 100%; height: auto; }
 
 /* Số điện thoại (Đã chỉnh về 1.5rem cho đẹp) */
 .hotline-number {
-  font-size: 1.2rem !important;    /* To hơn một xíu nữa */
+  font-size: 1.1rem !important;    /* To hơn một xíu nữa */
   font-weight: 900 !important;
   color: #d32f2f !important;
   line-height: 1 !important;
