@@ -1316,3 +1316,15 @@ img { max-width: 100%; height: auto; }
 .h-item-flash { color: #d32f2f !important; } /* Đỏ */
 .h-item-new { color: #0dcaf0 !important; }   /* Xanh dương */
 .h-item-sale { color: #ffc107 !important; }  /* Vàng */
+/* Ghi đè màu của nút viền xanh (Bootstrap) thành màu đỏ */
+.btn-outline-success {
+    color: white !important;       /* Chữ màu trắng */
+    background-color: #dc3545 !important; /* Nền màu đỏ */
+    border-color: #dc3545 !important;     /* Viền màu đỏ */
+}
+
+/* Khi di chuột vào thì chuyển sang đỏ đậm hơn */
+.btn-outline-success:hover {
+    background-color: #bb2d3b !important;
+    border-color: #b02a37 !important;
+}

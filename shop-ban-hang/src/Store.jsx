@@ -30,11 +30,11 @@ function Store() {
   const location = useLocation();
   const isAdminPage = location.pathname.startsWith('/admin');
   
+  // --- KHAI BÁO STATE (QUAN TRỌNG: Không được xóa) ---
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [banners, setBanners] = useState([]); 
-  
-  // [FIX]: Thêm state này để tránh lỗi ReferenceError (Màn hình trắng)
-  const [openMenuId, setOpenMenuId] = useState(null); 
+  const [dsSanPham, setDsSanPham] = useState([]); // [FIX]: Thêm state dsSanPham để dùng chung
+  const [openMenuId, setOpenMenuId] = useState(null); // [FIX]: State mở menu con
 
   const [gioHang, setGioHang] = useState(() => {
     try { return JSON.parse(localStorage.getItem('cart')) || []; } catch { return []; }
@@ -54,12 +54,18 @@ function Store() {
   useEffect(() => { AOS.init({ duration: 800, once: false }); }, []);
   useEffect(() => { window.scrollTo(0, 0); }, [location]);
 
+  // --- TẢI DỮ LIỆU TỪ FIREBASE ---
   useEffect(() => {
     const unsubDM = onSnapshot(collection(db, "danhMuc"), sn => { 
         const d=sn.docs.map(x=>({id:x.id,...x.data()})); 
         d.sort((a,b)=>parseFloat(a.order||0)-parseFloat(b.order||0)); 
         setDsDanhMuc(d); 
     });
+    // [FIX]: Tải thêm danh sách sản phẩm ở đây để truyền cho FlashSale
+    const unsubSP = onSnapshot(collection(db, "sanPham"), sn => {
+        setDsSanPham(sn.docs.map(d => ({id:d.id, ...d.data()})));
+    });
+
     const unsubBanner = onSnapshot(collection(db, "banners"), sn => setBanners(sn.docs.map(d=>({id:d.id,...d.data()}))));
     const unsubConfig = onSnapshot(doc(db, "cauHinh", "thongTinChung"), d => { if(d.exists()) setShopConfig(d.data()); });
     
@@ -72,7 +78,7 @@ function Store() {
     });
     
     const scrollH = () => setShowTopBtn(window.scrollY > 300); window.addEventListener('scroll', scrollH);
-    return () => { unsubDM(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
+    return () => { unsubDM(); unsubSP(); unsubBanner(); unsubConfig(); unsubAuth(); window.removeEventListener('scroll', scrollH); };
   }, []);
 
   useEffect(() => localStorage.setItem('cart', JSON.stringify(gioHang)), [gioHang]);
@@ -198,12 +204,9 @@ function Store() {
               </Navbar.Collapse>
             </Container>
           </Navbar>
-        </>
-      )}
 
-            {/* --- [MỚI] THÊM MENU NGANG Ở ĐÂY --- */}
+          {/* --- MENU NGANG (Đã thêm) --- */}
           <div className="horizontal-menu-section sticky-top" style={{top: '88px', zIndex: 99}}> 
-            {/* top: 88px để nằm ngay dưới Navbar khi cuộn chuột (cần chỉnh tùy theo chiều cao Navbar thực tế) */}
             <Container>
               <div className="horizontal-menu-list">
                 <Link to="/flash-sale" className={`h-menu-item h-item-flash ${location.pathname === '/flash-sale' ? 'active' : ''}`}>
@@ -224,6 +227,8 @@ function Store() {
               </div>
             </Container>
           </div>
+        </>
+      )}
                  
       <div className="flex-grow-1 py-3" style={{background: '#f4f6f9'}}>
         <Container>
@@ -232,13 +237,9 @@ function Store() {
               <Col lg={3} className="d-none d-lg-block mb-4">
                 <div className="sidebar-main">
                   <div className="sidebar-header"><i className="fa-solid fa-bars me-2"></i> DANH MỤC</div>
-                                  
+                  
                   <div className="category-list">
-                    <div className={`category-item fw-bold text-danger ${location.pathname.includes('khuyen-mai-soc') ? 'active' : ''}`} onClick={() => navigate('/danh-muc/khuyen-mai-soc')}><span>🔥 KHUYẾN MÃI SỐC</span><i className="fa-solid fa-chevron-right small"></i></div>
-                    <div className={`category-item fw-bold text-info ${location.pathname.includes('san-pham-moi') ? 'active' : ''}`} onClick={() => navigate('/danh-muc/san-pham-moi')}><span>✨ SẢN PHẨM MỚI</span><i className="fa-solid fa-chevron-right small"></i></div>
-                    <div className={`category-item fw-bold text-warning ${location.pathname.includes('san-pham-ban-chay') ? 'active' : ''}`} onClick={() => navigate('/danh-muc/san-pham-ban-chay')}><span>🔥 BÁN CHẠY NHẤT</span><i className="fa-solid fa-chevron-right small"></i></div>
-                    <div className={`category-item fw-bold text-success ${location.pathname.includes('/tin-tuc') ? 'active' : ''}`} onClick={() => navigate('/tin-tuc')}><span><i className="fa-solid fa-utensils me-2"></i> GÓC ẨM THỰC</span><i className="fa-solid fa-chevron-right small"></i></div>
-
+                    {/* Các mục Hot đã chuyển lên menu ngang, giờ chỉ còn danh mục thường */}
                     {dsDanhMuc.filter(d => !d.parent).map(parent => {
                       const hasChild = dsDanhMuc.some(c => c.parent === parent.id);
                       const isOpen = openMenuId === parent.id;
@@ -257,7 +258,6 @@ function Store() {
             )}
 
             <Col lg={!isAdminPage ? 9 : 12}>
-              {/* Truyền banners sang Home */}
               <Routes>
                 <Route path="/" element={<Home dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} banners={banners} />} />
                 <Route path="/danh-muc/:slug" element={<Home dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} banners={banners} />} />
@@ -266,14 +266,16 @@ function Store() {
                 <Route path="/checkout" element={<Checkout gioHang={gioHang} setGioHang={setGioHang} userData={userData} />} />
                 <Route path="/member" element={<Member themVaoGio={themVaoGio} />} />
                 <Route path="/tra-cuu" element={<OrderLookup />} />
-                <Route path="/flash-sale" element={<FlashSale themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
+                
+                {/* [FIX]: Truyền thêm dsSanPham vào đây để tránh lỗi trắng trang khi vào Flash Sale */}
+                <Route path="/flash-sale" element={<FlashSale dsSanPham={dsSanPham} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
+                
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/chinh-sach" element={<PostPage title="Chính sách đổi trả" content={shopConfig.policyContent} />} />
                 <Route path="/huong-dan" element={<PostPage title="Hướng dẫn mua hàng" content={shopConfig.guideContent} />} />
                 <Route path="/tin-tuc" element={<News />} />
                 <Route path="/tin-tuc/:slug" element={<NewsDetail />} />
                 
-                {/* Lazy Load Admin */}
                 <Route path="/admin" element={
                   <Suspense fallback={<div className="p-5 text-center">Đang tải trang quản trị...</div>}>
                     <Admin />
