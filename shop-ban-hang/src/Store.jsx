@@ -7,6 +7,7 @@ import { Button, Form, Container, Navbar, Nav, Dropdown, Row, Col } from 'react-
 import { ToastContainer, toast } from 'react-toastify'; 
 import 'react-toastify/dist/ReactToastify.css'; 
 import AOS from 'aos'; import 'aos/dist/aos.css';
+import { toSlug } from './utils';
 
 // Import các component
 import Home from './Home';
