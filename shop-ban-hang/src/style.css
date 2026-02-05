@@ -1268,3 +1268,51 @@ img { max-width: 100%; height: auto; }
   max-width: 180px !important;
   flex: 0 0 auto !important;
 }
+/* --- 6. MENU NGANG (HORIZONTAL MENU) --- */
+.horizontal-menu-section {
+  background: white;
+  border-bottom: 1px solid #e5e5e5;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  margin-bottom: 2px; /* Tạo khoảng cách nhỏ với phần thân */
+}
+
+/* Danh sách menu (Flexbox để nằm ngang) */
+.horizontal-menu-list {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto; /* Cho phép cuộn ngang trên điện thoại */
+  scrollbar-width: none; /* Ẩn thanh cuộn (Firefox) */
+}
+.horizontal-menu-list::-webkit-scrollbar {
+  display: none; /* Ẩn thanh cuộn (Chrome/Safari) */
+}
+
+/* Từng mục menu */
+.h-menu-item {
+  display: block;
+  padding: 12px 15px;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  color: #555;
+  white-space: nowrap; /* Không xuống dòng */
+  border-bottom: 3px solid transparent; /* Viền dưới ẩn */
+  transition: all 0.3s;
+}
+
+/* Hiệu ứng khi di chuột hoặc đang chọn */
+.h-menu-item:hover, .h-menu-item.active {
+  color: #198754;
+  background-color: #f8f9fa;
+  border-bottom-color: #198754; /* Hiện viền xanh */
+}
+
+/* Màu riêng cho từng mục để nổi bật (Tùy chọn) */
+.h-item-flash { color: #d32f2f !important; } /* Đỏ */
+.h-item-new { color: #0dcaf0 !important; }   /* Xanh dương */
+.h-item-sale { color: #ffc107 !important; }  /* Vàng */

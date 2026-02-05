@@ -201,6 +201,30 @@ function Store() {
         </>
       )}
 
+            {/* --- [MỚI] THÊM MENU NGANG Ở ĐÂY --- */}
+          <div className="horizontal-menu-section sticky-top" style={{top: '88px', zIndex: 99}}> 
+            {/* top: 88px để nằm ngay dưới Navbar khi cuộn chuột (cần chỉnh tùy theo chiều cao Navbar thực tế) */}
+            <Container>
+              <div className="horizontal-menu-list">
+                <Link to="/flash-sale" className={`h-menu-item h-item-flash ${location.pathname === '/flash-sale' ? 'active' : ''}`}>
+                  <i className="fa-solid fa-bolt me-2"></i> Flash Sale
+                </Link>
+                <Link to="/danh-muc/khuyen-mai-soc" className={`h-menu-item h-item-sale ${location.pathname.includes('khuyen-mai-soc') ? 'active' : ''}`}>
+                  <i className="fa-solid fa-tags me-2"></i> Khuyến mãi sốc
+                </Link>
+                <Link to="/danh-muc/san-pham-moi" className={`h-menu-item h-item-new ${location.pathname.includes('san-pham-moi') ? 'active' : ''}`}>
+                  <i className="fa-solid fa-sparkles me-2"></i> Sản phẩm mới
+                </Link>
+                <Link to="/danh-muc/san-pham-ban-chay" className={`h-menu-item ${location.pathname.includes('san-pham-ban-chay') ? 'active' : ''}`}>
+                  <i className="fa-solid fa-fire me-2 text-danger"></i> Bán chạy nhất
+                </Link>
+                <Link to="/tin-tuc" className={`h-menu-item ${location.pathname.includes('/tin-tuc') ? 'active' : ''}`}>
+                  <i className="fa-solid fa-utensils me-2 text-success"></i> Món ngon mỗi ngày
+                </Link>
+              </div>
+            </Container>
+          </div>
+                 
       <div className="flex-grow-1 py-3" style={{background: '#f4f6f9'}}>
         <Container>
           <Row>
@@ -208,8 +232,7 @@ function Store() {
               <Col lg={3} className="d-none d-lg-block mb-4">
                 <div className="sidebar-main">
                   <div className="sidebar-header"><i className="fa-solid fa-bars me-2"></i> DANH MỤC</div>
-                  {shopConfig.flashSaleEnd && new Date(shopConfig.flashSaleEnd) > new Date() && <Link to="/flash-sale" className="d-block p-2 bg-danger text-white fw-bold text-center text-decoration-none">⚡ FLASH SALE ĐANG DIỄN RA</Link>}
-                  
+                                  
                   <div className="category-list">
                     <div className={`category-item fw-bold text-danger ${location.pathname.includes('khuyen-mai-soc') ? 'active' : ''}`} onClick={() => navigate('/danh-muc/khuyen-mai-soc')}><span>🔥 KHUYẾN MÃI SỐC</span><i className="fa-solid fa-chevron-right small"></i></div>
                     <div className={`category-item fw-bold text-info ${location.pathname.includes('san-pham-moi') ? 'active' : ''}`} onClick={() => navigate('/danh-muc/san-pham-moi')}><span>✨ SẢN PHẨM MỚI</span><i className="fa-solid fa-chevron-right small"></i></div>
