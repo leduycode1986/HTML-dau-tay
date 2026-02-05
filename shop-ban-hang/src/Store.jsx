@@ -159,7 +159,7 @@ function Store() {
                     
                     <div className="header-cart-wrapper">
                       <Link to="/cart" className="btn-header-action btn-cart-header px-4">
-                        <i className="fa-solid fa-cart-shopping"></i> Giỏ <span className="cart-badge">{gioHang.reduce((a,b)=>a+b.soLuong,0)}</span>
+                        <i className="fa-solid fa-cart-shopping"></i><span className="cart-badge">{gioHang.reduce((a,b)=>a+b.soLuong,0)}</span>
                       </Link>
                       <div className="mini-cart-box">
                         {gioHang.length === 0 ? (
