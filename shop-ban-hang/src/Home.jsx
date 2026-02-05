@@ -135,7 +135,7 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
       }
 
       setAllProducts(finalProds);
-      setVisibleCount(12); 
+      setVisibleCount(15); 
 
     } catch (err) { console.error(err); }
     setLoading(false);
