@@ -1,44 +1,41 @@
-import React from 'react';
+import React, { useEffect } from 'react'; // Nhớ thêm { useEffect }
 import ReactDOM from 'react-dom/client';
 import Store from './Store'; 
 import { BrowserRouter } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './style.css'; 
 
-// --- [QUAN TRỌNG] THÊM COMPONENT NÀY ĐỂ CƯỠNG CHẾ XÓA MÀN HÌNH ĐEN ---
-const FixBlackScreen = () => (
-  <style>
-    {`
-      /* Ép ẩn backdrop với độ ưu tiên cao nhất */
-      .modal-backdrop, .modal-backdrop.show, .modal-backdrop.fade {
-          display: none !important; 
-          opacity: 0 !important;
-          z-index: -9999 !important;
-          pointer-events: none !important;
-          width: 0 !important;
-          height: 0 !important;
+// --- COMPONENT XÓA LỚP MỜ (PHIÊN BẢN NÂNG CẤP) ---
+const FixBlackScreen = () => {
+  useEffect(() => {
+    // Hàm xóa backdrop
+    const removeBackdrop = () => {
+      const backdrops = document.querySelectorAll('.modal-backdrop');
+      if (backdrops.length > 0) {
+        backdrops.forEach(backdrop => backdrop.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = 'auto';
+        document.body.style.paddingRight = '0px';
       }
+    };
 
-      /* Ép body cho phép cuộn trang lại */
-      .modal-open {
-          overflow: auto !important;
-          padding-right: 0 !important;
-      }
+    // 1. Xóa ngay lập tức khi load
+    removeBackdrop();
 
-      body {
-          overflow: visible !important; 
-          padding-right: 0 !important;
-      }
-    `}
-  </style>
-);
+    // 2. Chạy định kỳ mỗi 500ms để canh chừng
+    const intervalId = setInterval(removeBackdrop, 500);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  return null; // Không cần render gì cả
+};
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      {/* CHÈN CÁI FIX NÀY VÀO ĐẦU TIÊN */}
-      <FixBlackScreen /> 
-      
+      {/* Đặt FixBlackScreen ở đây để nó luôn chạy */}
+      <FixBlackScreen />
       <Store />
     </BrowserRouter>
   </React.StrictMode>
