@@ -1268,54 +1268,60 @@ img { max-width: 100%; height: auto; }
   max-width: 180px !important;
   flex: 0 0 auto !important;
 }
-/* --- 6. MENU NGANG (HORIZONTAL MENU) --- */
+/* --- 6. MENU NGANG (HORIZONTAL MENU) - ĐÃ NÂNG CẤP --- */
 .horizontal-menu-section {
   background: white;
-  border-bottom: 1px solid #e5e5e5;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-  margin-bottom: 2px; /* Tạo khoảng cách nhỏ với phần thân */
+  border-bottom: 1px solid #f1f1f1;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.03); /* Bóng mờ nhẹ hơn */
+  margin-bottom: 5px;
+  padding: 5px 0; /* Thêm chút khoảng cách trên dưới */
 }
 
-/* Danh sách menu (Flexbox để nằm ngang) */
+/* Danh sách menu */
 .horizontal-menu-list {
   display: flex !important;
   align-items: center;
-  gap: 10px;
+  justify-content: center; /* [QUAN TRỌNG] Căn giữa menu */
+  gap: 15px; /* Tăng khoảng cách giữa các mục */
   margin: 0;
   padding: 0;
   list-style: none;
-  overflow-x: auto; /* Cho phép cuộn ngang trên điện thoại */
-  scrollbar-width: none; /* Ẩn thanh cuộn (Firefox) */
+  overflow-x: auto;
+  scrollbar-width: none;
 }
-.horizontal-menu-list::-webkit-scrollbar {
-  display: none; /* Ẩn thanh cuộn (Chrome/Safari) */
-}
+.horizontal-menu-list::-webkit-scrollbar { display: none; }
 
 /* Từng mục menu */
 .h-menu-item {
-  display: block;
-  padding: 12px 15px;
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
   font-family: 'Montserrat', sans-serif;
   font-weight: 700;
   font-size: 13px;
   text-transform: uppercase;
   color: #555;
-  white-space: nowrap; /* Không xuống dòng */
-  border-bottom: 3px solid transparent; /* Viền dưới ẩn */
-  transition: all 0.3s;
+  white-space: nowrap;
+  border: 1px solid transparent; /* Chuẩn bị sẵn viền */
+  border-radius: 50px; /* [MỚI] Bo tròn hình viên thuốc */
+  transition: all 0.3s ease;
+  background-color: #f8f9fa; /* Nền xám nhẹ mặc định */
 }
 
 /* Hiệu ứng khi di chuột hoặc đang chọn */
 .h-menu-item:hover, .h-menu-item.active {
   color: #198754;
-  background-color: #f8f9fa;
-  border-bottom-color: #198754; /* Hiện viền xanh */
+  background-color: #e8f5e9; /* Nền xanh nhạt */
+  border-color: #198754; /* Viền xanh */
+  transform: translateY(-2px); /* Nảy lên nhẹ */
+  box-shadow: 0 4px 8px rgba(25, 135, 84, 0.15);
 }
 
-/* Màu riêng cho từng mục để nổi bật (Tùy chọn) */
-.h-item-flash { color: #d32f2f !important; } /* Đỏ */
-.h-item-new { color: #0dcaf0 !important; }   /* Xanh dương */
-.h-item-sale { color: #ffc107 !important; }  /* Vàng */
+/* Màu riêng cho từng mục để nổi bật (Giữ nguyên logic cũ) */
+.h-item-flash:hover, .h-item-flash.active { color: #d32f2f !important; background-color: #ffebee !important; border-color: #d32f2f !important; }
+.h-item-new:hover, .h-item-new.active   { color: #0dcaf0 !important; background-color: #e0f7fa !important; border-color: #0dcaf0 !important; }
+.h-item-sale:hover, .h-item-sale.active  { color: #ffc107 !important; background-color: #fff8e1 !important; border-color: #ffc107 !important; }
+
 /* Ghi đè màu của nút viền xanh (Bootstrap) thành màu đỏ */
 .btn-outline-success {
     color: white !important;       /* Chữ màu trắng */
@@ -1327,4 +1333,37 @@ img { max-width: 100%; height: auto; }
 .btn-outline-success:hover {
     background-color: #bb2d3b !important;
     border-color: #b02a37 !important;
+}
+/* --- FLASH SALE BANNER (STYLE MỚI) --- */
+.flash-sale-banner {
+  background: linear-gradient(135deg, #b71c1c 0%, #ff5252 100%); /* Màu gradient đỏ */
+  border-bottom: 5px solid #ffc107; /* Viền vàng */
+  position: relative;
+  overflow: hidden;
+  padding: 3rem 0;      /* Tương đương py-5 */
+  margin-bottom: 1.5rem; /* Tương đương mb-4 */
+  box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); /* Tương đương shadow-sm */
+}
+
+/* Các icon trang trí nền (Tia sét & Đồng hồ) */
+.fs-bg-icon {
+  position: absolute;
+  color: white;
+  pointer-events: none; /* Để không chắn chuột bấm vào nút */
+  z-index: 1;
+}
+
+.fs-icon-bolt {
+  top: -20px;
+  right: -20px;
+  font-size: 150px;
+  opacity: 0.1;
+  transform: rotate(-15deg);
+}
+
+.fs-icon-clock {
+  bottom: -30px;
+  left: 10%;
+  font-size: 100px;
+  opacity: 0.05;
 }
