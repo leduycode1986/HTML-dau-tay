@@ -1268,6 +1268,7 @@ img { max-width: 100%; height: auto; }
   padding-bottom: 10px !important;
   scroll-behavior: smooth !important;
   scrollbar-width: thin; /* Firefox */ 
+}
 .recent-list-scroll::-webkit-scrollbar,
 .product-slider-scroll::-webkit-scrollbar {
   height: 6px; /* Chiều cao thanh cuộn ngang */
@@ -1282,7 +1283,6 @@ img { max-width: 100%; height: auto; }
 .recent-list-scroll::-webkit-scrollbar-track,
 .product-slider-scroll::-webkit-scrollbar-track {
   background: transparent; /* Nền trong suốt */
-}
 }
 
 /* Ẩn thanh cuộn trên Chrome/Safari cho đẹp */
