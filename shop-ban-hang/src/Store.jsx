@@ -238,12 +238,42 @@ function Store() {
                       const hasChild = dsDanhMuc.some(c => c.parent === parent.id);
                       const isOpen = openMenuId === parent.id;
                       return (
-                        <div key={parent.id}>
-                          <div className={`category-item ${location.pathname.includes(parent.slug || toSlug(parent.ten)) ? 'active' : ''}`} onClick={() => { if(hasChild) setOpenMenuId(isOpen ? null : parent.id); else navigate(`/danh-muc/${parent.slug || toSlug(parent.ten)}`); }}>
-                            <span>{parent.icon} {parent.ten}</span>{hasChild && <i className={`fa-solid fa-chevron-${isOpen?'down':'right'} small`}></i>}
+                          <div key={parent.id}>
+                            {/* [BẮT ĐẦU PHẦN THAY THẾ] */}
+                            <div 
+                              className={`category-item ${location.pathname.includes(parent.slug || toSlug(parent.ten)) ? 'active' : ''}`} 
+                              /* Logic mới: Vừa chuyển trang, vừa mở menu */
+                              onClick={() => { 
+                                navigate(`/danh-muc/${parent.slug || toSlug(parent.ten)}`);
+                                if (hasChild && !isOpen) setOpenMenuId(parent.id); 
+                              }}
+                            >
+                              <span>{parent.icon} {parent.ten}</span>
+                              
+                              {/* Mũi tên: Xử lý sự kiện riêng (stopPropagation) để chỉ đóng/mở menu mà không bị xung đột */}
+                              {hasChild && (
+                                <i 
+                                  className={`fa-solid fa-chevron-${isOpen?'down':'right'} small p-2`} 
+                                  onClick={(e) => {
+                                    e.stopPropagation(); 
+                                    setOpenMenuId(isOpen ? null : parent.id);
+                                  }}
+                                ></i>
+                              )}
+                            </div>
+                            {/* [KẾT THÚC PHẦN THAY THẾ] */}
+
+                            {/* [GIỮ NGUYÊN] Phần hiển thị menu con */}
+                            {hasChild && isOpen && (
+                              <div className="submenu">
+                                {dsDanhMuc.filter(c => c.parent === parent.id).map(child => (
+                                  <Link key={child.id} to={`/danh-muc/${child.slug || toSlug(child.ten)}`}>
+                                    {child.ten}
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                          {hasChild && isOpen && <div className="submenu">{dsDanhMuc.filter(c=>c.parent===parent.id).map(child=><Link key={child.id} to={`/danh-muc/${child.slug || toSlug(child.ten)}`}>{child.ten}</Link>)}</div>}
-                        </div>
                       )
                     })}
                   </div>
