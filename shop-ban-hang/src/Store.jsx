@@ -282,29 +282,25 @@ function Store() {
             )}
 
             <Col lg={!isAdminPage ? 9 : 12}>
-              <Routes>
-                <Route path="/" element={<Home dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} banners={banners} />} />
-                <Route path="/danh-muc/:slug" element={<Home dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} banners={banners} />} />
-                <Route path="/san-pham/:slug" element={<ProductDetail themVaoGio={themVaoGio} />} />
-                <Route path="/cart" element={<Cart gioHang={gioHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} currentUser={currentUser} />} />
-                <Route path="/checkout" element={<Checkout gioHang={gioHang} setGioHang={setGioHang} userData={userData} />} />
-                <Route path="/member" element={<Member themVaoGio={themVaoGio} />} />
-                <Route path="/tra-cuu" element={<OrderLookup />} />
-                
-                {/* [FIX]: Truyền thêm dsSanPham vào đây để tránh lỗi trắng trang khi vào Flash Sale */}
-                <Route path="/flash-sale" element={<FlashSale themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/chinh-sach" element={<PostPage title="Chính sách đổi trả" content={shopConfig.policyContent} />} />
-                <Route path="/huong-dan" element={<PostPage title="Hướng dẫn mua hàng" content={shopConfig.guideContent} />} />
-                <Route path="/tin-tuc" element={<News />} />
-                <Route path="/tin-tuc/:slug" element={<NewsDetail />} />
-                
-                <Route path="/admin" element={
-                  <Suspense fallback={<div className="p-5 text-center">Đang tải trang quản trị...</div>}>
-                    <Admin />
-                  </Suspense>
-                } />
-              </Routes>
+              <Suspense fallback={<div className="text-center py-5"><div className="spinner-border text-success"></div><p>Đang tải...</p></div>}>
+                <Routes>
+                  <Route path="/" element={<Home dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} banners={banners} />} />
+                  <Route path="/danh-muc/:slug" element={<Home dsDanhMuc={dsDanhMuc} themVaoGio={themVaoGio} shopConfig={shopConfig} banners={banners} />} />
+                  <Route path="/san-pham/:slug" element={<ProductDetail themVaoGio={themVaoGio} />} />
+                  <Route path="/cart" element={<Cart gioHang={gioHang} chinhSuaSoLuong={chinhSuaSoLuong} xoaSanPham={xoaSanPham} currentUser={currentUser} />} />
+                  <Route path="/checkout" element={<Checkout gioHang={gioHang} setGioHang={setGioHang} userData={userData} />} />
+                  <Route path="/member" element={<Member themVaoGio={themVaoGio} />} />
+                  <Route path="/tra-cuu" element={<OrderLookup />} />
+                  <Route path="/flash-sale" element={<FlashSale themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/chinh-sach" element={<PostPage title="Chính sách đổi trả" content={shopConfig.policyContent} />} />
+                  <Route path="/huong-dan" element={<PostPage title="Hướng dẫn mua hàng" content={shopConfig.guideContent} />} />
+                  <Route path="/tin-tuc" element={<News />} />
+                  <Route path="/tin-tuc/:slug" element={<NewsDetail />} />                  
+                  {/* Route Admin giữ nguyên hoặc bỏ Suspense bên trong cũng được vì đã có Suspense bao ngoài */}
+                  <Route path="/admin" element={<Admin />} />
+                </Routes>
+              </Suspense>
             </Col>
           </Row>
         </Container>
