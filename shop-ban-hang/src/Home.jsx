@@ -176,11 +176,20 @@ function Home({ dsDanhMuc, themVaoGio, shopConfig, banners }) {
         
         {loading && allProducts.length === 0 ? <div className="text-center py-5"><Spinner animation="border" variant="success" /><p className="mt-2 text-muted">Đang tải...</p></div> : (
           <>
-            {!slug && !searchQuery && (
-              <><ProductSlider title="⚡ SẢN PHẨM FLASH SALE" icon="⚡" products={flashSales} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} /><ProductSlider title="🔥 SẢN PHẨM BÁN CHẠY" icon="🔥" products={bestSellers} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} /><ProductSlider title="✨ SẢN PHẨM MỚI VỀ" icon="✨" products={newArrivals} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} /></>
-            )}
-            
-            {/* [CSS]: Sử dụng class main-product-grid */}
+            {/* Tìm đoạn kiểm tra trang chủ này và thay thế nguyên khối */}
+          {!slug && !searchQuery && (
+            <>
+              {/* 1. Slider Flash Sale (Chỉ hiện khi còn giờ) */}
+              {isFlashSaleActive && (
+                <ProductSlider title="⚡ SẢN PHẨM FLASH SALE" icon="⚡" products={flashSales} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />
+              )}
+              
+              {/* 2. Các Slider khác (Bạn đang bị thiếu phần này) */}
+              <ProductSlider title="🔥 SẢN PHẨM BÁN CHẠY" icon="🔥" products={bestSellers} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />
+              <ProductSlider title="✨ SẢN PHẨM MỚI VỀ" icon="✨" products={newArrivals} themVaoGio={themVaoGio} setQuickViewSP={setQuickViewSP} />
+            </>
+          )} 
+          {/* [CSS]: Sử dụng class main-product-grid */}
             <div className="bg-white p-3 rounded shadow-sm mt-3 main-product-grid"> 
               <div className="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2"><h5 className="fw-bold text-success m-0"><i className="fa-solid fa-list me-2"></i> {searchQuery ? `Tìm kiếm: "${searchQuery}"` : slug === 'san-pham-moi' ? '✨ SẢN PHẨM MỚI' : slug === 'san-pham-ban-chay' ? '🔥 SẢN PHẨM BÁN CHẠY' : slug === 'khuyen-mai-soc' ? '⚡ KHUYẾN MÃI SỐC' : slug ? 'DANH SÁCH SẢN PHẨM' : 'GỢI Ý CHO BẠN'} </h5></div>
               
