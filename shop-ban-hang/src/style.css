@@ -1365,3 +1365,44 @@ img { max-width: 100%; height: auto; }
   font-size: 100px;
   opacity: 0.05;
 }
+/* ------ MOBILE RESPONSIVE FIXES -----*/
+@media (max-width: 768px) {
+  
+  /* --- FIX LỖI 1: Logo & Tên Shop quá to --- */
+  .brand-logo-img {
+    width: 60px !important;       /* Giảm kích thước logo */
+    height: 60px !important;
+    min-width: 60px !important;
+    min-height: 60px !important;
+    padding: 2px !important;
+  }
+  
+  .shop-name {
+    font-size: 1.1rem !important; /* Giảm cỡ chữ tên Shop */
+    letter-spacing: -0.5px !important;
+  }
+  
+  .shop-slogan {
+    display: none !important;     /* Ẩn luôn slogan cho gọn (tùy chọn) */
+  }
+  
+  /* Căn chỉnh lại khung chứa logo cho cân đối */
+  .brand-group {
+    gap: 10px !important;
+  }
+
+  /* --- FIX LỖI 2: Banner bị cắt/quá cao --- */
+  .banner-img-fixed {
+    height: 160px !important;     /* Giảm chiều cao banner xuống */
+    object-fit: cover;            /* Giữ ảnh full khung (hoặc đổi thành 'contain' nếu muốn thấy hết chữ) */
+  }
+  
+  .banner-slider-box {
+    height: 160px !important;     /* Giảm chiều cao khung chứa */
+  }
+  
+  /* Ẩn bớt các phần không cần thiết trên mobile để đỡ rối */
+  .flash-sale-side-box {
+    display: none !important;
+  }
+}
