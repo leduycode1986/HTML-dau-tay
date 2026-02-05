@@ -11,18 +11,16 @@ import AOS from 'aos'; import 'aos/dist/aos.css';
 // Import các component
 import Home from './Home';
 import ProductDetail from './ProductDetail';
-import Cart from './Cart';
-import Auth from './Auth';
-import Member from './Member';
-import OrderLookup from './OrderLookup';
-import FlashSale from './FlashSale'; 
-import Checkout from './Checkout'; 
-import { toSlug } from './utils';
-import PostPage from './PostPage';
-import News from './News';
-import NewsDetail from './NewsDetail';
 
-// Lazy Load Admin
+const Cart = React.lazy(() => import('./Cart'));
+const Checkout = React.lazy(() => import('./Checkout'));
+const FlashSale = React.lazy(() => import('./FlashSale'));
+const Member = React.lazy(() => import('./Member'));
+const OrderLookup = React.lazy(() => import('./OrderLookup'));
+const PostPage = React.lazy(() => import('./PostPage'));
+const News = React.lazy(() => import('./News'));
+const NewsDetail = React.lazy(() => import('./NewsDetail'));
+const Auth = React.lazy(() => import('./Auth'));
 const Admin = React.lazy(() => import('./Admin'));
 
 function Store() {
@@ -33,7 +31,6 @@ function Store() {
   // --- KHAI BÁO STATE (QUAN TRỌNG: Không được xóa) ---
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [banners, setBanners] = useState([]); 
-  const [dsSanPham, setDsSanPham] = useState([]); // [FIX]: Thêm state dsSanPham để dùng chung
   const [openMenuId, setOpenMenuId] = useState(null); // [FIX]: State mở menu con
 
   const [gioHang, setGioHang] = useState(() => {
@@ -61,11 +58,7 @@ function Store() {
         d.sort((a,b)=>parseFloat(a.order||0)-parseFloat(b.order||0)); 
         setDsDanhMuc(d); 
     });
-    // [FIX]: Tải thêm danh sách sản phẩm ở đây để truyền cho FlashSale
-    const unsubSP = onSnapshot(collection(db, "sanPham"), sn => {
-        setDsSanPham(sn.docs.map(d => ({id:d.id, ...d.data()})));
-    });
-
+   
     const unsubBanner = onSnapshot(collection(db, "banners"), sn => setBanners(sn.docs.map(d=>({id:d.id,...d.data()}))));
     const unsubConfig = onSnapshot(doc(db, "cauHinh", "thongTinChung"), d => { if(d.exists()) setShopConfig(d.data()); });
     
@@ -268,8 +261,7 @@ function Store() {
                 <Route path="/tra-cuu" element={<OrderLookup />} />
                 
                 {/* [FIX]: Truyền thêm dsSanPham vào đây để tránh lỗi trắng trang khi vào Flash Sale */}
-                <Route path="/flash-sale" element={<FlashSale dsSanPham={dsSanPham} themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
-                
+                <Route path="/flash-sale" element={<FlashSale themVaoGio={themVaoGio} shopConfig={shopConfig} />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/chinh-sach" element={<PostPage title="Chính sách đổi trả" content={shopConfig.policyContent} />} />
                 <Route path="/huong-dan" element={<PostPage title="Hướng dẫn mua hàng" content={shopConfig.guideContent} />} />

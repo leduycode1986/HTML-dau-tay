@@ -3,10 +3,28 @@ import { Container, Row, Col, Button, Badge } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import Product from './Product';
 
-function FlashSale({ dsSanPham, themVaoGio, shopConfig }) {
+function FlashSale({themVaoGio, shopConfig }) {
   const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 });
   const [isExpired, setIsExpired] = useState(false); // Trạng thái hết giờ
-
+  const [flashProducts, setFlashProducts] = useState([]); // State chứa sản phẩm
+  const [loading, setLoading] = useState(true); // State loading
+  // 1. Tải sản phẩm Flash Sale từ Firebase
+  useEffect(() => {
+    const fetchFlashSale = async () => {
+      try {
+        const q = query(collection(db, "sanPham"), where("isFlashSale", "==", true));
+        const snapshot = await getDocs(q);
+        const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setFlashProducts(products);
+      } catch (error) {
+        console.error("Lỗi tải Flash Sale:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFlashSale();
+  }, []);
+// 2. Logic đồng hồ
   useEffect(() => {
     if (!shopConfig?.flashSaleEnd) return;
 
@@ -33,9 +51,6 @@ function FlashSale({ dsSanPham, themVaoGio, shopConfig }) {
     const timer = setInterval(checkTime, 1000);
     return () => clearInterval(timer);
   }, [shopConfig]);
-
-  // Lọc sản phẩm Flash Sale
-  const flashProducts = dsSanPham.filter(sp => sp.isFlashSale);
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8f9fa' }}>
