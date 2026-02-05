@@ -25,6 +25,28 @@ function Member({ themVaoGio }) {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
+  // [FIX QUAN TRỌNG] TỰ ĐỘNG XÓA LỚP MỜ KHI VÀO TRANG THÀNH VIÊN
+  useEffect(() => {
+    const cleanUpBackdrop = () => {
+        // 1. Xóa class khóa cuộn trang của body
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = 'auto';
+        document.body.style.paddingRight = '0px';
+
+        // 2. Tìm và xóa tất cả các thẻ backdrop đen
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => backdrop.remove());
+    };
+
+    // Chạy ngay lập tức
+    cleanUpBackdrop();
+
+    // Chạy lại sau 0.5 giây để đảm bảo sạch sẽ nếu máy chậm
+    const timer = setTimeout(cleanUpBackdrop, 500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   // 1. Kiểm tra đăng nhập và lấy dữ liệu
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -46,7 +68,7 @@ function Member({ themVaoGio }) {
         }
 
         // Lấy danh sách đơn hàng của user
-        const q = query(collection(db, "donHang"), where("userId", "==", currentUser.uid)); // orderBy cần index, tạm thời sort client
+        const q = query(collection(db, "donHang"), where("userId", "==", currentUser.uid)); 
         const orderSnap = await getDocs(q);
         const orderList = orderSnap.docs.map(d => ({ id: d.id, ...d.data() }));
         
