@@ -447,55 +447,166 @@ const handleImportExcel = (e) => {
 
           {/* TAB SYSTEM: CẤU HÌNH SHOP - TÁCH BIỆT THANH TOÁN */}
           <Tab eventKey="system" title="⚙️ HỆ THỐNG & CẤU HÌNH">
-            <div className="p-3">
-              <Row className="mb-4 g-4">
-                <Col md={6}><Card className="p-3 shadow-sm h-100"><h6 className="fw-bold text-primary border-bottom pb-2">QUẢN LÝ QUYỀN ADMIN</h6><InputGroup className="mb-3"><Form.Control placeholder="Nhập email admin..." value={newAdminEmail} onChange={e=>setNewAdminEmail(e.target.value)}/><Button variant="success" onClick={handleAddAdmin}>+ Thêm</Button></InputGroup><Table size="sm" bordered hover><thead className="bg-light"><tr><th>Email Admin</th><th>Xử lý</th></tr></thead><tbody>{adminWhitelist.map((email, i)=>(<tr key={i}><td>{email}</td><td className="text-center"><Button variant="link" className="text-danger p-0" onClick={()=>handleRemoveAdmin(email)}>🗑️</Button></td></tr>))}</tbody></Table></Card></Col>
-                <Col md={6}><Card className="p-3 shadow-sm h-100"><h6 className="fw-bold text-warning border-bottom pb-2">ĐỔI MẬT KHẨU</h6><Form onSubmit={handleUpdatePassword}><Form.Group className="mb-3"><Form.Label className="small fw-bold">Mật khẩu mới</Form.Label><Form.Control type="password" value={passData.newPass} onChange={e=>setPassData({...passData, newPass:e.target.value})} required /></Form.Group><Form.Group className="mb-3"><Form.Label className="small fw-bold">Xác nhận</Form.Label><Form.Control type="password" value={passData.confirmPass} onChange={e=>setPassData({...passData, confirmPass:e.target.value})} required /></Form.Group><Button type="submit" variant="warning" className="w-100 fw-bold">CẬP NHẬT NGAY</Button></Form></Card></Col>
-              </Row>
-
-              {/* KHỐI 1: THÔNG TIN CHUNG CỬA HÀNG */}
-              <div className="bg-white p-4 border rounded shadow-sm mb-4">
-                <h6 className="text-success fw-bold border-bottom pb-2 mb-3"><i className="fa-solid fa-shop me-2"></i> THÔNG TIN CỬA HÀNG</h6>
-                <Row className="g-3 mb-4">
-                  <Col md={6}><Form.Group><Form.Label className="fw-bold">Tên Shop</Form.Label><Form.Control value={shopConfig.tenShop} onChange={e=>setShopConfig({...shopConfig, tenShop:e.target.value})}/></Form.Group></Col>
-                  <Col md={6}><Form.Group><Form.Label className="fw-bold">Slogan</Form.Label><Form.Control value={shopConfig.slogan} onChange={e=>setShopConfig({...shopConfig, slogan:e.target.value})}/></Form.Group></Col>
-                  
-                  {/* [ĐÃ THÊM] TRƯỜNG THIẾU: THÔNG BÁO HEADER */}
-                  <Col md={12}><Form.Group><Form.Label className="fw-bold">Thông báo chạy (Header / Miễn phí ship)</Form.Label><Form.Control value={shopConfig.topBarText} onChange={e=>setShopConfig({...shopConfig, topBarText:e.target.value})}/></Form.Group></Col>
-                  
-                  <Col md={6}><Form.Group><Form.Label className="fw-bold">Hotline</Form.Label><Form.Control value={shopConfig.sdt} onChange={e=>setShopConfig({...shopConfig, sdt:e.target.value})}/></Form.Group></Col>
-                  {/* [ĐÃ THÊM] TRƯỜNG THIẾU: GIỜ MỞ CỬA */}
-                  <Col md={6}><Form.Group><Form.Label className="fw-bold">Giờ mở cửa</Form.Label><Form.Control value={shopConfig.openingHours} onChange={e=>setShopConfig({...shopConfig, openingHours:e.target.value})}/></Form.Group></Col>
-                  
-                  <Col md={12}><Form.Group><Form.Label className="fw-bold">Địa chỉ</Form.Label><Form.Control value={shopConfig.diaChi} onChange={e=>setShopConfig({...shopConfig, diaChi:e.target.value})}/></Form.Group></Col>
-                  <Col md={6}><Form.Group><Form.Label className="fw-bold">Logo</Form.Label><Form.Control type="file" onChange={e=>handleUpload(e,'LOGO')}/></Form.Group></Col>
-                </Row>
-
-                {/* KHỐI 2: THÔNG TIN THANH TOÁN (TÁCH RIÊNG) */}
-                <h6 className="text-primary fw-bold border-bottom pb-2 mb-3"><i className="fa-solid fa-credit-card me-2"></i> THÔNG TIN THANH TOÁN (NGÂN HÀNG)</h6>
-                <Row className="g-3">
-                  <Col md={4}><Form.Group><Form.Label className="fw-bold">Tên Ngân hàng</Form.Label><Form.Control value={shopConfig.bankInfo?.bankName} onChange={e=>setShopConfig({...shopConfig, bankInfo:{...shopConfig.bankInfo, bankName:e.target.value}})}/></Form.Group></Col>
-                  <Col md={4}><Form.Group><Form.Label className="fw-bold">Số Tài Khoản</Form.Label><Form.Control value={shopConfig.bankInfo?.accountNum} onChange={e=>setShopConfig({...shopConfig, bankInfo:{...shopConfig.bankInfo, accountNum:e.target.value}})}/></Form.Group></Col>
-                  <Col md={4}><Form.Group><Form.Label className="fw-bold">Chủ Tài Khoản</Form.Label><Form.Control value={shopConfig.bankInfo?.accountName} onChange={e=>setShopConfig({...shopConfig, bankInfo:{...shopConfig.bankInfo, accountName:e.target.value}})}/></Form.Group></Col>
-                  <Col md={6}><Form.Group><Form.Label className="fw-bold">Ảnh Mã QR</Form.Label><Form.Control type="file" onChange={e=>handleUpload(e,'QR')}/></Form.Group></Col>
-                  <Col md={6} className="text-center">
-                       {shopConfig.bankInfo?.qrImage && <img src={shopConfig.bankInfo.qrImage} alt="QR" style={{maxHeight:'100px'}} />}
-                  </Col>
-                </Row>
-
-                <div className="mt-4 pt-3 border-top d-flex gap-2 justify-content-end">
-                    <Button variant="outline-primary" onClick={() => openPostEditor('policy')}>Soạn Chính Sách</Button>
-                    <Button variant="outline-primary" onClick={() => openPostEditor('guide')}>Soạn Hướng Dẫn</Button>
-                    <Button variant="success" className="px-5 fw-bold" onClick={luuCauHinh}>LƯU CẤU HÌNH</Button>
-                </div>
-              </div>
-
+          <div className="p-3">
+            <Tab.Container defaultActiveKey="general_info">
               <Row>
-                <Col md={7}><div className="bg-white p-3 rounded shadow-sm h-100"><h6 className="fw-bold text-primary border-bottom pb-2">DANH SÁCH THÀNH VIÊN</h6><div className="table-responsive"><Table size="sm" hover><thead><tr><th>Tên</th><th>Email</th><th>Điểm</th><th>Thao tác</th></tr></thead><tbody>{dsUser.map(u=><tr key={u.id}><td>{u.ten}</td><td>{u.email}</td><td className="text-warning fw-bold">{u.diemTichLuy}</td><td><Button size="sm" onClick={()=>{setEditData({...editData, user:u}); setUserPoint(u.diemTichLuy); setModal({...modal, user:true})}}>Sửa</Button></td></tr>)}</tbody></Table></div></div></Col>
-                <Col md={5}><div className="bg-white p-3 rounded shadow-sm h-100"><h6 className="fw-bold text-warning border-bottom pb-2">ĐÁNH GIÁ MỚI</h6><div style={{maxHeight:400,overflowY:'auto'}}>{dsReview.map(r=><div key={r.id} className="border-bottom py-2"><div className="d-flex justify-content-between"><strong>{r.userName}</strong><small className="text-muted">{r.ngay?.toDate().toLocaleDateString()}</small></div><div className="text-warning small">{'⭐'.repeat(r.rating)}</div><p className="mb-1 small text-secondary">{r.comment}</p><Button size="sm" variant="outline-danger" style={{fontSize:10}} onClick={()=>del('reviews', r.id)}>Xóa</Button></div>)}</div></div></Col>
+                {/* --- CỘT TRÁI: MENU CÀI ĐẶT --- */}
+                <Col md={3} className="mb-4">
+                  <Card className="shadow-sm border-0">
+                    <Card.Header className="bg-success text-white fw-bold">
+                      <i className="fa-solid fa-gears me-2"></i> CÀI ĐẶT
+                    </Card.Header>
+                    <Card.Body className="p-0">
+                      <Nav variant="pills" className="flex-column admin-setting-nav">
+                        <Nav.Item>
+                          <Nav.Link eventKey="general_info" className="rounded-0 border-bottom py-3">
+                            <i className="fa-solid fa-shop me-2"></i> Thông tin cửa hàng
+                          </Nav.Link>
+                        </Nav.Item>
+                        <Nav.Item>
+                          <Nav.Link eventKey="payment_info" className="rounded-0 border-bottom py-3">
+                            <i className="fa-solid fa-credit-card me-2"></i> Ngân hàng & QR
+                          </Nav.Link>
+                        </Nav.Item>
+                        <Nav.Item>
+                          <Nav.Link eventKey="admin_manage" className="rounded-0 border-bottom py-3">
+                            <i className="fa-solid fa-users-gear me-2"></i> Phân quyền Admin
+                          </Nav.Link>
+                        </Nav.Item>
+                        <Nav.Item>
+                          <Nav.Link eventKey="my_account" className="rounded-0 py-3">
+                            <i className="fa-solid fa-user-lock me-2"></i> Tài khoản của tôi
+                          </Nav.Link>
+                        </Nav.Item>
+                      </Nav>
+                    </Card.Body>
+                  </Card>
+                </Col>
+
+                {/* --- CỘT PHẢI: NỘI DUNG CHI TIẾT --- */}
+                <Col md={9}>
+                  <Tab.Content>
+                    
+                    {/* 1. THÔNG TIN CỬA HÀNG */}
+                    <Tab.Pane eventKey="general_info">
+                      <div className="bg-white p-4 rounded shadow-sm border">
+                        <h6 className="text-success fw-bold border-bottom pb-2 mb-3">THÔNG TIN CHUNG</h6>
+                        <Row className="g-3">
+                          <Col md={8}>
+                            <Row className="g-3">
+                              <Col md={6}><Form.Group><Form.Label className="fw-bold small">Tên Shop</Form.Label><Form.Control value={shopConfig.tenShop} onChange={e=>setShopConfig({...shopConfig, tenShop:e.target.value})}/></Form.Group></Col>
+                              <Col md={6}><Form.Group><Form.Label className="fw-bold small">Hotline</Form.Label><Form.Control value={shopConfig.sdt} onChange={e=>setShopConfig({...shopConfig, sdt:e.target.value})}/></Form.Group></Col>
+                              <Col md={12}><Form.Group><Form.Label className="fw-bold small">Slogan</Form.Label><Form.Control value={shopConfig.slogan} onChange={e=>setShopConfig({...shopConfig, slogan:e.target.value})}/></Form.Group></Col>
+                              <Col md={12}><Form.Group><Form.Label className="fw-bold small">Thông báo chạy (Header)</Form.Label><Form.Control value={shopConfig.topBarText} onChange={e=>setShopConfig({...shopConfig, topBarText:e.target.value})}/></Form.Group></Col>
+                              <Col md={6}><Form.Group><Form.Label className="fw-bold small">Giờ mở cửa</Form.Label><Form.Control value={shopConfig.openingHours} onChange={e=>setShopConfig({...shopConfig, openingHours:e.target.value})}/></Form.Group></Col>
+                              <Col md={6}><Form.Group><Form.Label className="fw-bold small">Địa chỉ</Form.Label><Form.Control value={shopConfig.diaChi} onChange={e=>setShopConfig({...shopConfig, diaChi:e.target.value})}/></Form.Group></Col>
+                            </Row>
+                          </Col>
+                          <Col md={4} className="text-center">
+                            <Form.Label className="fw-bold small d-block">Logo Shop</Form.Label>
+                            <div className="border rounded p-2 mb-2 d-flex align-items-center justify-content-center" style={{height:'150px', background:'#f8f9fa'}}>
+                              <img src={shopConfig.logo || NO_IMAGE} style={{maxHeight:'100%', maxWidth:'100%'}} />
+                            </div>
+                            <Form.Control type="file" size="sm" onChange={e=>handleUpload(e,'LOGO')}/>
+                          </Col>
+                        </Row>
+                        <div className="mt-4 text-end">
+                          <Button variant="success" className="fw-bold px-4" onClick={luuCauHinh}>LƯU THÔNG TIN</Button>
+                        </div>
+                      </div>
+                    </Tab.Pane>
+
+                    {/* 2. NGÂN HÀNG & QR */}
+                    <Tab.Pane eventKey="payment_info">
+                      <div className="bg-white p-4 rounded shadow-sm border">
+                        <h6 className="text-primary fw-bold border-bottom pb-2 mb-3">THÔNG TIN CHUYỂN KHOẢN</h6>
+                        <Row className="g-3">
+                          <Col md={6}>
+                            <Form.Group className="mb-3"><Form.Label className="fw-bold small">Tên Ngân hàng</Form.Label><Form.Control value={shopConfig.bankInfo?.bankName} onChange={e=>setShopConfig({...shopConfig, bankInfo:{...shopConfig.bankInfo, bankName:e.target.value}})}/></Form.Group>
+                            <Form.Group className="mb-3"><Form.Label className="fw-bold small">Số Tài Khoản</Form.Label><Form.Control value={shopConfig.bankInfo?.accountNum} onChange={e=>setShopConfig({...shopConfig, bankInfo:{...shopConfig.bankInfo, accountNum:e.target.value}})}/></Form.Group>
+                            <Form.Group className="mb-3"><Form.Label className="fw-bold small">Chủ Tài Khoản</Form.Label><Form.Control value={shopConfig.bankInfo?.accountName} onChange={e=>setShopConfig({...shopConfig, bankInfo:{...shopConfig.bankInfo, accountName:e.target.value}})}/></Form.Group>
+                          </Col>
+                          <Col md={6} className="text-center">
+                            <Form.Label className="fw-bold small">Ảnh mã QR</Form.Label>
+                            <div className="border rounded p-2 mb-2 d-flex align-items-center justify-content-center" style={{height:'200px', background:'#f8f9fa'}}>
+                              {shopConfig.bankInfo?.qrImage ? <img src={shopConfig.bankInfo.qrImage} style={{maxHeight:'100%'}} /> : <span className="text-muted small">Chưa có QR</span>}
+                            </div>
+                            <Form.Control type="file" size="sm" onChange={e=>handleUpload(e,'QR')}/>
+                          </Col>
+                        </Row>
+                        <div className="mt-4 text-end">
+                          <Button variant="success" className="fw-bold px-4" onClick={luuCauHinh}>LƯU NGÂN HÀNG</Button>
+                        </div>
+                      </div>
+                    </Tab.Pane>
+
+                    {/* 3. PHÂN QUYỀN ADMIN (LOGIC HIỂN THỊ TRƯỚC) */}
+                    <Tab.Pane eventKey="admin_manage">
+                      <div className="bg-white p-4 rounded shadow-sm border">
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                          <h6 className="text-danger fw-bold m-0">DANH SÁCH QUẢN TRỊ VIÊN</h6>
+                          {/* Tạm thời dùng Modal hoặc Form inline để thêm Admin có phân quyền sau */}
+                        </div>
+                        
+                        {/* Form thêm nhanh Admin (Giữ logic cũ tạm thời, sẽ nâng cấp sau) */}
+                        <InputGroup className="mb-4">
+                          <Form.Control placeholder="Nhập email nhân viên muốn cấp quyền..." value={newAdminEmail} onChange={e=>setNewAdminEmail(e.target.value)}/>
+                          <Button variant="danger" onClick={handleAddAdmin}>+ Cấp quyền</Button>
+                        </InputGroup>
+
+                        <Table hover responsive bordered className="align-middle">
+                          <thead className="bg-light"><tr><th>Email Admin</th><th>Quyền hạn</th><th>Thao tác</th></tr></thead>
+                          <tbody>
+                            {adminWhitelist.map((email, i)=>(
+                              <tr key={i}>
+                                <td className="fw-bold text-dark">{email}</td>
+                                <td><Badge bg="success">Toàn quyền</Badge></td> {/* Sau này sẽ hiện chi tiết quyền ở đây */}
+                                <td className="text-center">
+                                  {email !== auth.currentUser?.email && (
+                                    <Button size="sm" variant="outline-danger" onClick={()=>handleRemoveAdmin(email)} title="Xóa quyền"><i className="fa-solid fa-trash"></i></Button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                        <Alert variant="info" className="small mt-3">
+                          <i className="fa-solid fa-circle-info me-2"></i> 
+                          Người có trong danh sách này có thể đăng nhập vào trang Admin. Hiện tại đang cấp quyền "Toàn quyền" (Full Access).
+                        </Alert>
+                      </div>
+                    </Tab.Pane>
+
+                    {/* 4. TÀI KHOẢN CỦA TÔI */}
+                    <Tab.Pane eventKey="my_account">
+                      <div className="bg-white p-4 rounded shadow-sm border" style={{maxWidth:'600px'}}>
+                        <h6 className="text-dark fw-bold border-bottom pb-2 mb-4">ĐỔI MẬT KHẨU CÁ NHÂN</h6>
+                        <Form onSubmit={handleUpdatePassword}>
+                          <Form.Group className="mb-3">
+                            <Form.Label className="fw-bold small">Email đăng nhập</Form.Label>
+                            <Form.Control type="email" value={auth.currentUser?.email || ''} disabled className="bg-light" />
+                          </Form.Group>
+                          <Form.Group className="mb-3">
+                            <Form.Label className="fw-bold small">Mật khẩu mới <span className="text-danger">*</span></Form.Label>
+                            <Form.Control type="password" value={passData.newPass} onChange={e=>setPassData({...passData, newPass:e.target.value})} placeholder="Nhập mật khẩu mới..." required />
+                          </Form.Group>
+                          <Form.Group className="mb-4">
+                            <Form.Label className="fw-bold small">Xác nhận mật khẩu <span className="text-danger">*</span></Form.Label>
+                            <Form.Control type="password" value={passData.confirmPass} onChange={e=>setPassData({...passData, confirmPass:e.target.value})} placeholder="Nhập lại mật khẩu..." required />
+                          </Form.Group>
+                          <Button type="submit" variant="warning" className="w-100 fw-bold text-white shadow-sm">
+                            <i className="fa-solid fa-key me-2"></i> CẬP NHẬT MẬT KHẨU
+                          </Button>
+                        </Form>
+                      </div>
+                    </Tab.Pane>
+
+                  </Tab.Content>
+                </Col>
               </Row>
-            </div>
-          </Tab>
+            </Tab.Container>
+          </div>
+        </Tab>
 
         </Tabs>
       </Container>

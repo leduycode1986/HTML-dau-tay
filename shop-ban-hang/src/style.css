@@ -1440,3 +1440,7 @@ img { max-width: 100%; height: auto; }
     display: none !important;
   }
 }
+/* Bạn có thể paste vào style.css */
+.admin-setting-nav .nav-link { color: #555; font-weight: 600; transition: 0.2s; }
+.admin-setting-nav .nav-link:hover { background-color: #f8f9fa; color: #198754; padding-left: 20px !important; }
+.admin-setting-nav .nav-link.active { background-color: #e8f5e9 !important; color: #198754 !important; border-left: 4px solid #198754; }
