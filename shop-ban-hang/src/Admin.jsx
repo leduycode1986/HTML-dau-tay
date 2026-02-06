@@ -826,7 +826,7 @@ function Admin() {
                                         <i className="fa-solid fa-pen-to-square"></i>
                                       </Button>
                                       {/* Tùy chọn: Nút xóa thành viên nếu cần */}
-                                      {/* <Button variant="outline-danger" size="sm" onClick={()=>del('users', u.id)}><i className="fa-solid fa-trash"></i></Button> */}
+                                       <Button variant="outline-danger" size="sm" onClick={()=>del('users', u.id)}><i className="fa-solid fa-trash"></i></Button>
                                     </td>
                                   </tr>
                                 )) : (
