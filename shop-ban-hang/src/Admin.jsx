@@ -592,32 +592,62 @@ function Admin() {
                     <Tab.Content>
                       
                       {/* 1. THÔNG TIN CỬA HÀNG */}
-                      <Tab.Pane eventKey="general_info">
-                        <div className="bg-white p-4 rounded shadow-sm border">
-                          <h6 className="text-success fw-bold border-bottom pb-2 mb-3">THÔNG TIN CHUNG</h6>
-                          <Row className="g-3">
-                            <Col md={8}>
-                              <Row className="g-3">
-                                <Col md={6}><Form.Group><Form.Label className="fw-bold small">Tên Shop</Form.Label><Form.Control value={shopConfig.tenShop} onChange={e=>setShopConfig({...shopConfig, tenShop:e.target.value})}/></Form.Group></Col>
-                                <Col md={6}><Form.Group><Form.Label className="fw-bold small">Hotline</Form.Label><Form.Control value={shopConfig.sdt} onChange={e=>setShopConfig({...shopConfig, sdt:e.target.value})}/></Form.Group></Col>
-                                <Col md={12}><Form.Group><Form.Label className="fw-bold small">Slogan</Form.Label><Form.Control value={shopConfig.slogan} onChange={e=>setShopConfig({...shopConfig, slogan:e.target.value})}/></Form.Group></Col>
-                                <Col md={12}><Form.Group><Form.Label className="fw-bold small">Thông báo chạy (Header)</Form.Label><Form.Control value={shopConfig.topBarText} onChange={e=>setShopConfig({...shopConfig, topBarText:e.target.value})}/></Form.Group></Col>
-                                <Col md={6}><Form.Group><Form.Label className="fw-bold small">Giờ mở cửa</Form.Label><Form.Control value={shopConfig.openingHours} onChange={e=>setShopConfig({...shopConfig, openingHours:e.target.value})}/></Form.Group></Col>
-                                <Col md={6}><Form.Group><Form.Label className="fw-bold small">Địa chỉ</Form.Label><Form.Control value={shopConfig.diaChi} onChange={e=>setShopConfig({...shopConfig, diaChi:e.target.value})}/></Form.Group></Col>
-                              </Row>
-                            </Col>
-                            <Col md={4} className="text-center">
-                              <Form.Label className="fw-bold small d-block">Logo Shop</Form.Label>
-                              <div className="border rounded p-2 mb-2 d-flex align-items-center justify-content-center" style={{height:'150px', background:'#f8f9fa'}}>
-                                <img src={shopConfig.logo || NO_IMAGE} style={{maxHeight:'100%', maxWidth:'100%'}} />
-                              </div>
-                              <Form.Control type="file" size="sm" onChange={e=>handleUpload(e,'LOGO')}/>
-                            </Col>
-                          </Row>
-                          <div className="mt-4 text-end">
-                             <Button variant="success" className="fw-bold px-4" onClick={luuCauHinh}>LƯU THÔNG TIN</Button>
-                          </div>
+                      <Tab.Pane eventKey="general_info">               
+
+                      <div className="bg-white p-4 rounded shadow-sm border">
+                        <h6 className="text-success fw-bold border-bottom pb-2 mb-3">THÔNG TIN CHUNG & CẤU HÌNH</h6>
+                        <Row className="g-3">
+                          <Col md={8}>
+                            <Row className="g-3">
+                              <Col md={6}><Form.Group><Form.Label className="fw-bold small">Tên Shop</Form.Label><Form.Control value={shopConfig.tenShop} onChange={e=>setShopConfig({...shopConfig, tenShop:e.target.value})}/></Form.Group></Col>
+                              <Col md={6}><Form.Group><Form.Label className="fw-bold small">Hotline</Form.Label><Form.Control value={shopConfig.sdt} onChange={e=>setShopConfig({...shopConfig, sdt:e.target.value})}/></Form.Group></Col>
+                              <Col md={12}><Form.Group><Form.Label className="fw-bold small">Slogan</Form.Label><Form.Control value={shopConfig.slogan} onChange={e=>setShopConfig({...shopConfig, slogan:e.target.value})}/></Form.Group></Col>
+                              <Col md={12}><Form.Group><Form.Label className="fw-bold small">Thông báo chạy (Header)</Form.Label><Form.Control value={shopConfig.topBarText} onChange={e=>setShopConfig({...shopConfig, topBarText:e.target.value})}/></Form.Group></Col>
+                              
+                              <Col md={6}><Form.Group><Form.Label className="fw-bold small">Giờ mở cửa</Form.Label><Form.Control value={shopConfig.openingHours} onChange={e=>setShopConfig({...shopConfig, openingHours:e.target.value})}/></Form.Group></Col>
+                              <Col md={6}><Form.Group><Form.Label className="fw-bold small">Địa chỉ</Form.Label><Form.Control value={shopConfig.diaChi} onChange={e=>setShopConfig({...shopConfig, diaChi:e.target.value})}/></Form.Group></Col>
+
+                              {/* [MỚI] CẤU HÌNH TÍCH ĐIỂM */}
+                              <Col md={12}>
+                                <div className="p-3 bg-light rounded border mt-2">
+                                  <h6 className="fw-bold text-warning small mb-3"><i className="fa-solid fa-coins me-1"></i> CẤU HÌNH TÍCH ĐIỂM THÀNH VIÊN</h6>
+                                  <Row className="align-items-center">
+                                    <Col md={8}>
+                                      <Form.Label className="small text-muted mb-0">
+                                        Khách hàng mua bao nhiêu <strong>Yên (¥)</strong> thì được tặng <strong>1 điểm</strong>?
+                                        <br/>
+                                        <span className="fst-italic">(Ví dụ: Nhập 1000 thì khách mua 2.000¥ được 2 điểm)</span>
+                                      </Form.Label>
+                                    </Col>
+                                    <Col md={4}>
+                                      <InputGroup size="sm">
+                                        <Form.Control 
+                                          type="number" 
+                                          className="fw-bold text-primary text-end"
+                                          value={shopConfig.tyLeDiem || 1000} 
+                                          onChange={e=>setShopConfig({...shopConfig, tyLeDiem: parseInt(e.target.value) || 0})}
+                                        />
+                                        <InputGroup.Text className="fw-bold">¥ = 1 điểm</InputGroup.Text>
+                                      </InputGroup>
+                                    </Col>
+                                  </Row>
+                                </div>
+                              </Col>
+
+                            </Row>
+                          </Col>
+                          <Col md={4} className="text-center">
+                            <Form.Label className="fw-bold small d-block">Logo Shop</Form.Label>
+                            <div className="border rounded p-2 mb-2 d-flex align-items-center justify-content-center" style={{height:'150px', background:'#f8f9fa'}}>
+                              <img src={shopConfig.logo || NO_IMAGE} style={{maxHeight:'100%', maxWidth:'100%'}} />
+                            </div>
+                            <Form.Control type="file" size="sm" onChange={e=>handleUpload(e,'LOGO')}/>
+                          </Col>
+                        </Row>
+                        <div className="mt-4 text-end">
+                            <Button variant="success" className="fw-bold px-4" onClick={luuCauHinh}>LƯU THÔNG TIN</Button>
                         </div>
+                      </div>
                       </Tab.Pane>
 
                       {/* 2. NGÂN HÀNG & QR */}
