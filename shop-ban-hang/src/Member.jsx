@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Form, Button, Tab, Nav, Table, Badge, Modal, Alert, Spinner } from 'react-bootstrap';
 import { auth, db } from './firebase';
 import { onAuthStateChanged, updateProfile, updatePassword } from 'firebase/auth';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore'; // Đã bỏ orderBy vì có thể gây lỗi nếu chưa đánh index
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
-function Member({ themVaoGio }) {
+function Member() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
@@ -21,18 +21,22 @@ function Member({ themVaoGio }) {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  // --- [FIX 1] DỌN DẸP LỚP MỜ (BACKDROP) ---
+  // --- [FIX 1] DỌN DẸP LỚP MỜ (BACKDROP) SIÊU MẠNH ---
   useEffect(() => {
-    // Xóa ngay lập tức mọi backdrop tồn tại khi vào trang
     const cleanUp = () => {
-        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-        document.body.classList.remove('modal-open');
+        // Tìm và tiêu diệt mọi loại backdrop (Modal, Menu Mobile, v.v.)
+        const backdrops = document.querySelectorAll('.modal-backdrop, .offcanvas-backdrop, div[class*="backdrop"]');
+        backdrops.forEach(el => el.remove());
+        
+        // Mở khóa cuộn trang
+        document.body.classList.remove('modal-open', 'offcanvas-open');
         document.body.style.overflow = 'auto';
         document.body.style.paddingRight = '0px';
     };
+
     cleanUp();
-    // Chạy lại sau 1 chút để chắc chắn
-    const timer = setTimeout(cleanUp, 300);
+    // Chạy lại sau 0.5s để đảm bảo sạch sẽ 100%
+    const timer = setTimeout(cleanUp, 500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -41,32 +45,37 @@ function Member({ themVaoGio }) {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (!currentUser) {
         navigate('/auth'); 
-        // [QUAN TRỌNG] Không setLoading(false) ở đây để tránh render giao diện bên dưới
         return;
       }
       
       setUser(currentUser);
-      setName(currentUser.displayName || '');
-
+      
       try {
+        // 1. Lấy thông tin chi tiết từ Firestore (Ưu tiên tên này hơn tên Google)
         const userDoc = await getDoc(doc(db, "users", currentUser.uid));
         if (userDoc.exists()) {
            const data = userDoc.data();
            setUserData(data);
+           setName(data.ten || currentUser.displayName || ''); // [FIX] Lấy tên từ DB trước
            setPhone(data.sdt || '');
            setAddress(data.diaChi || '');
+        } else {
+           setName(currentUser.displayName || '');
         }
 
+        // 2. Lấy lịch sử đơn hàng
         const q = query(collection(db, "donHang"), where("userId", "==", currentUser.uid)); 
         const orderSnap = await getDocs(q);
         const orderList = orderSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        // Sắp xếp đơn hàng mới nhất lên đầu (xử lý ở client để tránh lỗi Index Firestore)
         orderList.sort((a,b) => (b.ngayDat?.seconds || 0) - (a.ngayDat?.seconds || 0));
         setOrders(orderList);
 
       } catch (err) {
-        console.error("Lỗi:", err);
+        console.error("Lỗi tải dữ liệu:", err);
       } finally {
-        setLoading(false); // Chỉ tắt loading khi đã có user
+        setLoading(false);
       }
     });
     return () => unsubscribe();
@@ -75,8 +84,10 @@ function Member({ themVaoGio }) {
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     try {
-      await updateProfile(user, { displayName: name });
+      if(user) await updateProfile(user, { displayName: name });
       await updateDoc(doc(db, "users", user.uid), { ten: name, sdt: phone, diaChi: address });
+      // Cập nhật lại state để giao diện đổi ngay lập tức
+      setUserData(prev => ({...prev, ten: name, sdt: phone, diaChi: address}));
       toast.success("Cập nhật thành công!");
     } catch (error) { toast.error("Lỗi: " + error.message); }
   };
@@ -100,8 +111,6 @@ function Member({ themVaoGio }) {
   }
 
   if (loading) return <div className="text-center py-5"><Spinner animation="border" variant="success" /></div>;
-
-  // [FIX 2] CHẶN RENDER KHI USER NULL (NGUYÊN NHÂN GÂY LỖI TRẮNG TRANG/LỚP MỜ)
   if (!user) return null; 
 
   return (
@@ -110,12 +119,14 @@ function Member({ themVaoGio }) {
         <Col lg={4} className="mb-4">
           <Card className="member-sidebar-card p-4 text-center">
              <div className="member-avatar-box">
-                {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
+                {/* [FIX] Hiển thị chữ cái đầu của tên User (lấy từ userData trước) */}
+                {(userData?.ten || user.displayName || 'U').charAt(0).toUpperCase()}
              </div>
-             <h5 className="fw-bold m-0">{user.displayName || 'Thành viên'}</h5>
+             {/* [FIX] Hiển thị tên từ Firestore để tránh hiện chữ 'Admin' nếu dùng chung acc */}
+             <h5 className="fw-bold m-0">{userData?.ten || user.displayName || 'Khách hàng'}</h5>
              <p className="text-muted small">{user.email}</p>
              <div className="mt-2">
-                <span className="member-rank-badge"><i className="fa-solid fa-crown me-1"></i> {userData?.diemTichLuy > 1000 ? 'KHÁCH VIP' : 'THÀNH VIÊN'}</span>
+                <span className="member-rank-badge"><i className="fa-solid fa-crown me-1"></i> {userData?.diemTichLuy >= 1000 ? 'KHÁCH VIP' : 'THÀNH VIÊN'}</span>
              </div>
              <div className="mt-4 border-top pt-3 d-flex justify-content-between px-3">
                 <div className="text-center"><h5 className="fw-bold text-success m-0">{orders.length}</h5><small className="text-muted">Đơn hàng</small></div>
