@@ -67,7 +67,6 @@ function Admin() {
 
   // --- 1. LOGIC AUTH ---
   useEffect(() => {
-    // Chỉ lấy whitelist, KHÔNG can thiệp DOM
     const unsubWhitelist = onSnapshot(doc(db, "cauHinh", "phanquyen"), (d) => {
       if (d.exists()) setAdminWhitelist(d.data().adminEmails || []);
     });
