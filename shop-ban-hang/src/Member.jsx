@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Form, Button, Tab, Nav, Table, Badge, Modal, Spinner } from 'react-bootstrap';
 import { auth, db } from './firebase';
 import { onAuthStateChanged, updateProfile, updatePassword } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, collection, query, where, onSnapshot } from 'firebase/firestore'; // [SỬA]: Bỏ getDoc, getDocs -> dùng onSnapshot
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
@@ -21,7 +21,7 @@ function Member() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  // --- [FIX] DỌN DẸP BACKDROP KHI VÀO TRANG ---
+  // --- [FIX] DỌN DẸP BACKDROP ---
   useEffect(() => {
     const cleanUp = () => {
         document.querySelectorAll('.modal-backdrop, .offcanvas-backdrop').forEach(el => el.remove());
@@ -29,12 +29,12 @@ function Member() {
         document.body.style = '';
     };
     cleanUp();
-    setTimeout(cleanUp, 500); // Chạy lại lần 2 cho chắc
+    setTimeout(cleanUp, 500); 
   }, []);
 
-  // --- LOGIC AUTH & DATA ---
+  // --- LOGIC AUTH & DATA (REAL-TIME) ---
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser) {
         navigate('/auth'); 
         return;
@@ -42,46 +42,50 @@ function Member() {
       
       setUser(currentUser);
       
-      try {
-        // 1. Kiểm tra User trong Firestore
-        const userRef = doc(db, "users", currentUser.uid);
-        const userDoc = await getDoc(userRef);
-
-        if (userDoc.exists()) {
-           const data = userDoc.data();
+      // 1. [NÂNG CẤP] Lắng nghe dữ liệu User Real-time (onSnapshot)
+      const userRef = doc(db, "users", currentUser.uid);
+      const unsubUser = onSnapshot(userRef, (docSnap) => {
+        if (docSnap.exists()) {
+           const data = docSnap.data();
            setUserData(data);
-           // Logic hiển thị tên: Tên DB -> Tên Google -> Email -> 'Thành viên'
+           
+           // Logic hiển thị tên:
            const displayName = data.ten || currentUser.displayName || currentUser.email.split('@')[0];
            setName(displayName);
            setPhone(data.sdt || '');
            setAddress(data.diaChi || '');
         } else {
-           // Nếu chưa có hồ sơ (Ví dụ Admin tạo tay), tự tạo hồ sơ rỗng để không bị lỗi
+           // Nếu chưa có hồ sơ thì tạo mới
            const newProfile = {
              email: currentUser.email,
-             ten: currentUser.displayName || currentUser.email.split('@')[0], // Lấy phần đầu email làm tên tạm
+             ten: currentUser.displayName || currentUser.email.split('@')[0],
              role: 'member',
              ngayTao: new Date().toISOString()
            };
-           await setDoc(userRef, newProfile);
-           setUserData(newProfile);
-           setName(newProfile.ten);
+           setDoc(userRef, newProfile); // Tạo xong thì onSnapshot sẽ tự chạy lại dòng trên
         }
+        setLoading(false);
+      }, (error) => {
+        console.error("Lỗi tải user:", error);
+        setLoading(false);
+      });
 
-        // 2. Lấy đơn hàng
-        const q = query(collection(db, "donHang"), where("userId", "==", currentUser.uid)); 
-        const orderSnap = await getDocs(q);
-        const orderList = orderSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // 2. [NÂNG CẤP] Lắng nghe Đơn hàng Real-time (onSnapshot)
+      const qOrder = query(collection(db, "donHang"), where("userId", "==", currentUser.uid)); 
+      const unsubOrders = onSnapshot(qOrder, (snap) => {
+        const orderList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         orderList.sort((a,b) => (b.ngayDat?.seconds || 0) - (a.ngayDat?.seconds || 0));
         setOrders(orderList);
+      });
 
-      } catch (err) {
-        console.error("Lỗi:", err);
-      } finally {
-        setLoading(false);
-      }
+      // Cleanup function: Hủy lắng nghe khi thoát trang
+      return () => {
+        unsubUser();
+        unsubOrders();
+      };
     });
-    return () => unsubscribe();
+
+    return () => unsubscribeAuth();
   }, [navigate]);
 
   const handleUpdateProfile = async (e) => {
@@ -89,7 +93,7 @@ function Member() {
     try {
       if(user) await updateProfile(user, { displayName: name });
       await updateDoc(doc(db, "users", user.uid), { ten: name, sdt: phone, diaChi: address });
-      setUserData(prev => ({...prev, ten: name, sdt: phone, diaChi: address})); // Cập nhật ngay lập tức
+      // Không cần setUserData ở đây nữa vì onSnapshot sẽ tự cập nhật!
       toast.success("Đã cập nhật thông tin!");
     } catch (error) { toast.error("Lỗi: " + error.message); }
   };
@@ -115,7 +119,6 @@ function Member() {
   if (loading) return <div className="text-center py-5"><Spinner animation="border" variant="success" /></div>;
   if (!user) return null; 
 
-  // Xác định tên hiển thị chuẩn nhất
   const displayName = userData?.ten || user.displayName || user.email?.split('@')[0] || 'Thành viên';
 
   return (

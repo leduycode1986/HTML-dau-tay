@@ -3,9 +3,9 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Button, Badge, Form } from 'react-bootstrap';
 import { toSlug } from './utils';
 import { collection, addDoc, onSnapshot, query, where, serverTimestamp, getDocs, limit } from 'firebase/firestore'; 
-import { db } from './firebase';
+import { db, auth } from './firebase'; // [MỚI] Import thêm auth để check đăng nhập
 
-function ProductDetail({ themVaoGio }) { // Bỏ dsSanPham ở đây
+function ProductDetail({ themVaoGio }) {
   const { slug } = useParams();
   const navigate = useNavigate();
   
@@ -13,23 +13,32 @@ function ProductDetail({ themVaoGio }) { // Bỏ dsSanPham ở đây
   const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState([]);
   const [newReview, setNewReview] = useState({ name: '', rating: 5, comment: '' });
-  const [relatedProducts, setRelatedProducts] = useState([]); // Sản phẩm liên quan
+  const [relatedProducts, setRelatedProducts] = useState([]); 
 
-  // 1. Tự tải sản phẩm theo Slug
+  // [MỚI] Effect tự động điền tên nếu người dùng đã đăng nhập
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (user) {
+        // Ưu tiên lấy tên hiển thị, nếu không có thì lấy phần đầu email
+        const autoName = user.displayName || user.email?.split('@')[0] || '';
+        if (autoName) {
+            setNewReview(prev => ({ ...prev, name: autoName }));
+        }
+    }
+  }, []); // Chỉ chạy 1 lần khi vào trang
+
+  // 1. Tải sản phẩm (Giữ nguyên logic cũ vì cần xử lý Slug fallback phức tạp)
   useEffect(() => {
     const fetchProduct = async () => {
       setLoading(true);
       try {
         const productRef = collection(db, "sanPham");
         
-        // Tìm theo slug trước
         let q = query(productRef, where("slug", "==", slug));
         let snapshot = await getDocs(q);
 
-        // Nếu không tìm thấy theo slug, thử tìm theo ID (đề phòng link cũ)
         if (snapshot.empty) {
-           // Lưu ý: Tìm theo ID trực tiếp bằng doc() nhanh hơn, nhưng ở đây dùng logic tìm trong list để an toàn
-           const allDocs = await getDocs(productRef); // Cách này hơi chậm nếu SP nhiều, nhưng an toàn cho slug ảo
+           const allDocs = await getDocs(productRef); 
            const found = allDocs.docs.find(d => d.id === slug || toSlug(d.data().ten) === slug);
            if (found) {
              setSanPham({ id: found.id, ...found.data() });
@@ -49,28 +58,25 @@ function ProductDetail({ themVaoGio }) { // Bỏ dsSanPham ở đây
     fetchProduct();
   }, [slug]);
 
-  // 2. Tải Review & Sản phẩm liên quan (Chỉ chạy khi đã có sanPham)
+  // 2. Tải Review & Sản phẩm liên quan
   useEffect(() => {
     if (sanPham) {
-      // Lưu lịch sử xem
       const recent = JSON.parse(localStorage.getItem('recent') || '[]');
       const newRecent = [sanPham.id, ...recent.filter(id => id !== sanPham.id)].slice(0, 10);
       localStorage.setItem('recent', JSON.stringify(newRecent));
 
-      // Tải đánh giá
+      // [QUAN TRỌNG] Phần này đã dùng onSnapshot từ trước -> Rất tốt!
       const qReview = query(collection(db, "reviews"), where("productId", "==", sanPham.id));
       const unsubReview = onSnapshot(qReview, sn => setReviews(sn.docs.map(d=>d.data())));
 
-      // Tải sản phẩm liên quan (Cùng danh mục)
       const fetchRelated = async () => {
         try {
             const qRelated = query(
                 collection(db, "sanPham"), 
                 where("phanLoai", "==", sanPham.phanLoai), 
-                limit(5) // Lấy 5 bài
+                limit(5)
             );
             const sn = await getDocs(qRelated);
-            // Lọc bỏ chính sản phẩm đang xem
             setRelatedProducts(sn.docs.map(d=>({id:d.id, ...d.data()})).filter(p => p.id !== sanPham.id));
         } catch (e) { console.log(e) }
       }
@@ -83,7 +89,8 @@ function ProductDetail({ themVaoGio }) { // Bỏ dsSanPham ở đây
   const submitReview = async () => {
     if(!newReview.name || !newReview.comment) return alert("Vui lòng nhập tên và nội dung!");
     await addDoc(collection(db, "reviews"), { ...newReview, productId: sanPham.id, ngay: serverTimestamp() });
-    setNewReview({ name: '', rating: 5, comment: '' });
+    // [SỬA NHẸ] Sau khi gửi, nếu có tên rồi thì giữ lại tên, chỉ xóa comment
+    setNewReview(prev => ({ ...prev, rating: 5, comment: '' })); 
     alert("Cảm ơn đánh giá của bạn!");
   };
 
@@ -147,7 +154,6 @@ function ProductDetail({ themVaoGio }) { // Bỏ dsSanPham ở đây
         </Col>
       </Row>
 
-      {/* PHẦN ĐÁNH GIÁ & SẢN PHẨM LIÊN QUAN */}
       <div className="mt-5 bg-white p-4 rounded shadow-sm">
         <h4 className="border-bottom pb-2 mb-4">Đánh giá sản phẩm ({reviews.length})</h4>
         <Row>
@@ -164,7 +170,13 @@ function ProductDetail({ themVaoGio }) { // Bỏ dsSanPham ở đây
           </Col>
           <Col md={6} className="bg-light p-3 rounded">
             <h6>Viết đánh giá của bạn</h6>
-            <Form.Control className="mb-2" placeholder="Tên của bạn" value={newReview.name} onChange={e=>setNewReview({...newReview, name:e.target.value})}/>
+            {/* [SỬA]: Thêm style cho ô tên nếu đã tự điền */}
+            <Form.Control 
+                className={`mb-2 ${newReview.name && auth.currentUser ? 'bg-white fw-bold text-success' : ''}`} 
+                placeholder="Tên của bạn" 
+                value={newReview.name} 
+                onChange={e=>setNewReview({...newReview, name:e.target.value})}
+            />
             <Form.Select className="mb-2" value={newReview.rating} onChange={e=>setNewReview({...newReview, rating:parseInt(e.target.value)})}>
               <option value="5">⭐⭐⭐⭐⭐ (Tuyệt vời)</option>
               <option value="4">⭐⭐⭐⭐ (Tốt)</option>
