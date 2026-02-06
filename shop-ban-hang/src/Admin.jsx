@@ -177,14 +177,48 @@ function Admin() {
   
   const onSaveNews = async () => { const data = { ...formTinTuc, slug: toSlug(formTinTuc.tieuDe), ngayDang: serverTimestamp() }; if (editData.news) await updateDoc(doc(db, "tinTuc", editData.news.id), data); else await addDoc(collection(db, "tinTuc"), data); setModal({...modal, news: false}); toast.success("Đã đăng bài!"); };
 
-  // XUẤT NHẬP EXCEL
+  // XUẤT EXCEL (ĐÃ NÂNG CẤP: LỌC THEO DANH MỤC)
   const handleExportExcel = () => {
-    const dataExport = dsSanPham.map(sp => ({
-      "ID (Không sửa)": sp.id, "Tên sản phẩm": sp.ten, "Giá gốc": sp.giaGoc, "% Giảm": sp.phanTramGiam, "Kho": sp.soLuong, "Đơn vị": sp.donVi, "Mô tả": sp.moTa, "Danh mục ID": sp.phanLoai 
+    // 1. Xác định danh sách cần xuất
+    let listToExport = dsSanPham;
+
+    // 2. Nếu đang chọn danh mục ở bộ lọc, thì chỉ xuất danh mục đó
+    if (filterCategory) {
+      // Lấy danh sách ID của danh mục hiện tại và các danh mục con của nó
+      const subCats = dsDanhMuc.filter(d => d.parent === filterCategory).map(d => d.id);
+      const validCats = [filterCategory, ...subCats];
+      
+      // Lọc sản phẩm
+      listToExport = dsSanPham.filter(sp => validCats.includes(sp.phanLoai));
+    }
+
+    // 3. Kiểm tra nếu không có dữ liệu
+    if (listToExport.length === 0) {
+      return toast.warning("Không có sản phẩm nào để xuất!");
+    }
+
+    // 4. Tạo dữ liệu Excel (Giữ nguyên cấu trúc cũ)
+    const dataExport = listToExport.map(sp => ({
+      "ID (Không sửa)": sp.id, 
+      "Tên sản phẩm": sp.ten, 
+      "Giá gốc": sp.giaGoc, 
+      "% Giảm": sp.phanTramGiam, 
+      "Kho": sp.soLuong, 
+      "Đơn vị": sp.donVi, 
+      "Mô tả": sp.moTa, 
+      "Danh mục ID": sp.phanLoai 
     }));
+
     const ws = XLSX.utils.json_to_sheet(dataExport);
     ws['!cols'] = [{wch: 25}, {wch: 40}, {wch: 15}, {wch: 10}, {wch: 10}, {wch: 10}, {wch: 30}, {wch: 20}];
-    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "DanhSachSP"); XLSX.writeFile(wb, "DanhSach_SanPham_MaiVang.xlsx");
+    const wb = XLSX.utils.book_new();
+    
+    // Đặt tên file theo danh mục cho dễ nhớ
+    const catName = filterCategory ? dsDanhMuc.find(d => d.id === filterCategory)?.ten : "Tat_Ca";
+    XLSX.utils.book_append_sheet(wb, ws, "DanhSachSP");
+    XLSX.writeFile(wb, `San_Pham_${toSlug(catName)}.xlsx`);
+    
+    toast.success(`Đã xuất ${listToExport.length} sản phẩm thuộc mục: ${catName}`);
   };
 
   const handleImportExcel = (e) => {
