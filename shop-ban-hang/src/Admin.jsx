@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Form, Modal, Badge, Tab, Tabs, Row, Col, Container, InputGroup, Card, Pagination, Spinner, Alert, Nav } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { doc, setDoc, collection, onSnapshot, deleteDoc, updateDoc, addDoc, serverTimestamp, getDoc } from 'firebase/firestore'; 
@@ -21,7 +20,11 @@ function Admin() {
   const [showPass, setShowPass] = useState(false);
   const [adminWhitelist, setAdminWhitelist] = useState([]);
   const [newAdminEmail, setNewAdminEmail] = useState('');
+  
+  // [MỚI] State hiển thị mật khẩu khi đổi pass
   const [passData, setPassData] = useState({ newPass: '', confirmPass: '' });
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
 
   // --- B. STATE DỮ LIỆU ---
   const [isUploading, setIsUploading] = useState(false);
@@ -46,7 +49,7 @@ function Admin() {
   });
 
   const [modal, setModal] = useState({ sp: false, dm: false, order: false, user: false, post: false, news: false });
-  const [postEditor, setPostEditor] = useState({ type: '', title: '', content: '' });
+  const [postEditor, setPostEditor] = useState({ type: '', title: '', content: '' }); // (Có thể không dùng nữa vì đã đưa vào Settings)
   const [editData, setEditData] = useState({ sp: null, dm: null, user: null, order: null, news: null });
   
   const [formDataSP, setFormDataSP] = useState({ ten:'', giaGoc:'', phanTramGiam:0, giaBan:'', donVi:'Cái', soLuong:100, moTa:'', anh:'', phanLoai:'', isMoi:false, isKhuyenMai:false, isBanChay:false, isFlashSale:false });
@@ -65,9 +68,9 @@ function Admin() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(30);
 
-  // [MỚI] State phân trang cho Bài viết
+  // State phân trang cho Bài viết
   const [currentNewsPage, setCurrentNewsPage] = useState(1);
-  const [newsPerPage] = useState(10); // Số bài viết mỗi trang
+  const [newsPerPage] = useState(10); 
 
   // --- 1. LOGIC AUTH ---
   useEffect(() => {
@@ -151,6 +154,14 @@ function Admin() {
   
   const add = async (col, d) => await addDoc(collection(db, col), d); const del = async (col, id) => confirm('Xóa?') && await deleteDoc(doc(db, col, id));
   
+  // [MỚI] Hàm thêm Banner
+  const handleAddBanner = async () => {
+    if(!formBanner.img) return toast.warning("Chưa có ảnh banner!");
+    await addDoc(collection(db, "banners"), formBanner);
+    setFormBanner({ img:'', link:'' });
+    toast.success("Đã thêm banner!");
+  };
+
   useEffect(() => { const g = parseInt(formDataSP.giaGoc)||0; const p = parseInt(formDataSP.phanTramGiam)||0; setFormDataSP(prev => ({...prev, giaBan: g > 0 ? Math.floor(g*(1-p/100)) : 0})); }, [formDataSP.giaGoc, formDataSP.phanTramGiam]);
   
   const onSaveSP = async () => { 
@@ -163,8 +174,7 @@ function Admin() {
   const onSaveDM = async () => { const data = {...formDM, slug: toSlug(formDM.ten)}; if(editData.dm) await updateDoc(doc(db, "danhMuc", editData.dm.id), data); else await addDoc(collection(db, "danhMuc"), data); setModal({...modal,dm:false}); };
   const handleUpdateStatusOrder = async (id, status) => { await updateDoc(doc(db, "donHang", id), {trangThai: status}); };
   const handleDeleteOrder = async (id) => { if(confirm("Xóa đơn hàng?")) await deleteDoc(doc(db, "donHang", id)); };
-  const openPostEditor = (type) => { if (type === 'policy') setPostEditor({ type: 'policy', title: 'Chính Sách Đổi Trả', content: shopConfig.policyContent || '' }); else setPostEditor({ type: 'guide', title: 'Hướng Dẫn Mua Hàng', content: shopConfig.guideContent || '' }); setModal({...modal, post: true}); };
-  const savePostContent = () => { if (postEditor.type === 'policy') setShopConfig(prev => ({ ...prev, policyContent: postEditor.content })); else setShopConfig(prev => ({ ...prev, guideContent: postEditor.content })); setModal({...modal, post: false}); };
+  
   const onSaveNews = async () => { const data = { ...formTinTuc, slug: toSlug(formTinTuc.tieuDe), ngayDang: serverTimestamp() }; if (editData.news) await updateDoc(doc(db, "tinTuc", editData.news.id), data); else await addDoc(collection(db, "tinTuc"), data); setModal({...modal, news: false}); toast.success("Đã đăng bài!"); };
 
   // XUẤT NHẬP EXCEL
@@ -223,10 +233,9 @@ function Admin() {
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  // --- [MỚI] LOGIC PHÂN TRANG BÀI VIẾT (TIN TỨC) ---
+  // --- LOGIC PHÂN TRANG BÀI VIẾT (TIN TỨC) ---
   const indexOfLastNews = currentNewsPage * newsPerPage;
   const indexOfFirstNews = indexOfLastNews - newsPerPage;
-  // Sắp xếp bài viết mới nhất lên đầu trước khi cắt trang
   const sortedNews = [...dsTinTuc].sort((a, b) => (b.ngayDang?.seconds || 0) - (a.ngayDang?.seconds || 0));
   const currentNews = sortedNews.slice(indexOfFirstNews, indexOfLastNews);
   const totalNewsPages = Math.ceil(dsTinTuc.length / newsPerPage);
@@ -324,10 +333,7 @@ function Admin() {
 
           <Tab eventKey="marketing" title="📣 MARKETING & BÀI VIẾT">
             <div className="p-3">
-              {/* [ĐÃ SỬA] CHIA TAB CON CHO MARKETING */}
               <Tabs defaultActiveKey="articles" id="marketing-tabs" className="mb-3 custom-sub-tabs" fill variant="pills">
-                
-                {/* 1. QUẢN LÝ BÀI VIẾT (CÓ PHÂN TRANG) */}
                 <Tab eventKey="articles" title={<span className="fw-bold"><i className="fa-solid fa-newspaper me-2"></i> QUẢN LÝ BÀI VIẾT</span>}>
                   <div className="bg-white p-3 rounded shadow-sm border">
                     <div className="d-flex justify-content-between align-items-center mb-3">
@@ -349,8 +355,6 @@ function Admin() {
                         )) : <tr><td colSpan="5" className="text-center py-4 text-muted">Chưa có bài viết nào</td></tr>}
                       </tbody>
                     </Table>
-
-                    {/* [ĐÃ THÊM] PHÂN TRANG CHO BÀI VIẾT */}
                     {dsTinTuc.length > newsPerPage && (
                       <Pagination className="justify-content-center mt-3">
                         <Pagination.Prev onClick={() => paginateNews(currentNewsPage - 1)} disabled={currentNewsPage === 1} />
@@ -362,8 +366,6 @@ function Admin() {
                     )}
                   </div>
                 </Tab>
-
-                {/* 2. KHUYẾN MÃI & VẬN CHUYỂN */}
                 <Tab eventKey="promotions" title={<span className="fw-bold"><i className="fa-solid fa-tags me-2"></i> KHUYẾN MÃI & SHIP</span>}>
                   <Row>
                     <Col md={6} className="mb-4 mb-md-0">
@@ -423,6 +425,25 @@ function Admin() {
                               <i className="fa-solid fa-credit-card me-2"></i> Ngân hàng & QR
                             </Nav.Link>
                           </Nav.Item>
+                          {/* [MỚI] THÊM MỤC QUẢN LÝ BANNER */}
+                          <Nav.Item>
+                            <Nav.Link eventKey="banner_manage" className="rounded-0 border-bottom py-3">
+                              <i className="fa-regular fa-images me-2"></i> Quản lý Banner
+                            </Nav.Link>
+                          </Nav.Item>
+                           {/* [MỚI] HƯỚNG DẪN MUA HÀNG */}
+                           <Nav.Item>
+                            <Nav.Link eventKey="guide_manage" className="rounded-0 border-bottom py-3">
+                              <i className="fa-solid fa-book-open me-2"></i> Hướng dẫn mua hàng
+                            </Nav.Link>
+                          </Nav.Item>
+                           {/* [MỚI] CHÍNH SÁCH ĐỔI TRẢ */}
+                           <Nav.Item>
+                            <Nav.Link eventKey="policy_manage" className="rounded-0 border-bottom py-3">
+                              <i className="fa-solid fa-shield-halved me-2"></i> Chính sách đổi trả
+                            </Nav.Link>
+                          </Nav.Item>
+
                           <Nav.Item>
                             <Nav.Link eventKey="admin_manage" className="rounded-0 border-bottom py-3">
                               <i className="fa-solid fa-users-gear me-2"></i> Phân quyền Admin
@@ -495,27 +516,86 @@ function Admin() {
                         </div>
                       </Tab.Pane>
 
-                      {/* 3. PHÂN QUYỀN ADMIN (LOGIC HIỂN THỊ TRƯỚC) */}
+                      {/* [MỚI] 3. QUẢN LÝ BANNER */}
+                      <Tab.Pane eventKey="banner_manage">
+                        <div className="bg-white p-4 rounded shadow-sm border">
+                          <h6 className="text-warning fw-bold border-bottom pb-2 mb-3">QUẢN LÝ BANNER SLIDER</h6>
+                          <div className="mb-4 p-3 bg-light rounded border">
+                            <h6 className="small fw-bold text-muted">Thêm Banner Mới</h6>
+                            <Row className="g-3 align-items-end">
+                              <Col md={4}>
+                                <Form.Label className="small">Ảnh Banner</Form.Label>
+                                <Form.Control type="file" size="sm" onChange={e=>handleUpload(e,'BANNER')}/>
+                              </Col>
+                              <Col md={5}>
+                                <Form.Label className="small">Link liên kết (Tùy chọn)</Form.Label>
+                                <Form.Control size="sm" placeholder="VD: /khuyen-mai" value={formBanner.link} onChange={e=>setFormBanner({...formBanner, link:e.target.value})}/>
+                              </Col>
+                              <Col md={3}>
+                                <Button variant="warning" size="sm" className="w-100 fw-bold text-white" onClick={handleAddBanner} disabled={isUploading}>
+                                  {isUploading ? 'Đang tải...' : '+ THÊM BANNER'}
+                                </Button>
+                              </Col>
+                            </Row>
+                            {formBanner.img && <div className="mt-2"><img src={formBanner.img} height="60" className="rounded border"/></div>}
+                          </div>
+
+                          <Table hover bordered className="align-middle text-center">
+                             <thead className="bg-light"><tr><th>Hình ảnh</th><th>Link dẫn</th><th>Thao tác</th></tr></thead>
+                             <tbody>
+                               {dsBanner.map(b => (
+                                 <tr key={b.id}>
+                                   <td><img src={b.img} style={{height:'60px', objectFit:'cover', borderRadius:'4px'}} /></td>
+                                   <td className="text-start small text-muted">{b.link || 'Không có link'}</td>
+                                   <td><Button variant="outline-danger" size="sm" onClick={()=>del('banners', b.id)}><i className="fa-solid fa-trash"></i></Button></td>
+                                 </tr>
+                               ))}
+                               {dsBanner.length === 0 && <tr><td colSpan="3" className="text-muted py-3">Chưa có banner nào</td></tr>}
+                             </tbody>
+                          </Table>
+                        </div>
+                      </Tab.Pane>
+                      
+                      {/* [MỚI] 4. HƯỚNG DẪN MUA HÀNG */}
+                      <Tab.Pane eventKey="guide_manage">
+                        <div className="bg-white p-4 rounded shadow-sm border">
+                          <h6 className="text-info fw-bold border-bottom pb-2 mb-3">BIÊN TẬP: HƯỚNG DẪN MUA HÀNG</h6>
+                          <ReactQuill theme="snow" value={shopConfig.guideContent} onChange={v=>setShopConfig({...shopConfig, guideContent:v})} style={{height:'350px', marginBottom:'50px'}}/>
+                          <div className="text-end mt-4">
+                             <Button variant="success" className="fw-bold px-4" onClick={luuCauHinh}>LƯU NỘI DUNG</Button>
+                          </div>
+                        </div>
+                      </Tab.Pane>
+
+                      {/* [MỚI] 5. CHÍNH SÁCH ĐỔI TRẢ */}
+                      <Tab.Pane eventKey="policy_manage">
+                        <div className="bg-white p-4 rounded shadow-sm border">
+                          <h6 className="text-info fw-bold border-bottom pb-2 mb-3">BIÊN TẬP: CHÍNH SÁCH ĐỔI TRẢ</h6>
+                          <ReactQuill theme="snow" value={shopConfig.policyContent} onChange={v=>setShopConfig({...shopConfig, policyContent:v})} style={{height:'350px', marginBottom:'50px'}}/>
+                          <div className="text-end mt-4">
+                             <Button variant="success" className="fw-bold px-4" onClick={luuCauHinh}>LƯU NỘI DUNG</Button>
+                          </div>
+                        </div>
+                      </Tab.Pane>
+
+
+                      {/* 6. PHÂN QUYỀN ADMIN */}
                       <Tab.Pane eventKey="admin_manage">
                         <div className="bg-white p-4 rounded shadow-sm border">
                           <div className="d-flex justify-content-between align-items-center mb-3">
                             <h6 className="text-danger fw-bold m-0">DANH SÁCH QUẢN TRỊ VIÊN</h6>
-                            {/* Tạm thời dùng Modal hoặc Form inline để thêm Admin có phân quyền sau */}
                           </div>
-                          
-                          {/* Form thêm nhanh Admin (Giữ logic cũ tạm thời, sẽ nâng cấp sau) */}
                           <InputGroup className="mb-4">
                             <Form.Control placeholder="Nhập email nhân viên muốn cấp quyền..." value={newAdminEmail} onChange={e=>setNewAdminEmail(e.target.value)}/>
                             <Button variant="danger" onClick={handleAddAdmin}>+ Cấp quyền</Button>
                           </InputGroup>
-
                           <Table hover responsive bordered className="align-middle">
                             <thead className="bg-light"><tr><th>Email Admin</th><th>Quyền hạn</th><th>Thao tác</th></tr></thead>
                             <tbody>
                               {adminWhitelist.map((email, i)=>(
                                 <tr key={i}>
                                   <td className="fw-bold text-dark">{email}</td>
-                                  <td><Badge bg="success">Toàn quyền</Badge></td> {/* Sau này sẽ hiện chi tiết quyền ở đây */}
+                                  <td><Badge bg="success">Toàn quyền</Badge></td>
                                   <td className="text-center">
                                      {email !== auth.currentUser?.email && (
                                        <Button size="sm" variant="outline-danger" onClick={()=>handleRemoveAdmin(email)} title="Xóa quyền"><i className="fa-solid fa-trash"></i></Button>
@@ -532,7 +612,7 @@ function Admin() {
                         </div>
                       </Tab.Pane>
 
-                      {/* 4. TÀI KHOẢN CỦA TÔI */}
+                      {/* 7. TÀI KHOẢN CỦA TÔI ([ĐÃ SỬA]: THÊM CON MẮT ĐỔI PASS) */}
                       <Tab.Pane eventKey="my_account">
                         <div className="bg-white p-4 rounded shadow-sm border" style={{maxWidth:'600px'}}>
                           <h6 className="text-dark fw-bold border-bottom pb-2 mb-4">ĐỔI MẬT KHẨU CÁ NHÂN</h6>
@@ -543,11 +623,21 @@ function Admin() {
                             </Form.Group>
                             <Form.Group className="mb-3">
                               <Form.Label className="fw-bold small">Mật khẩu mới <span className="text-danger">*</span></Form.Label>
-                              <Form.Control type="password" value={passData.newPass} onChange={e=>setPassData({...passData, newPass:e.target.value})} placeholder="Nhập mật khẩu mới..." required />
+                              <InputGroup>
+                                <Form.Control type={showNewPass ? "text" : "password"} value={passData.newPass} onChange={e=>setPassData({...passData, newPass:e.target.value})} placeholder="Nhập mật khẩu mới..." required />
+                                <Button variant="outline-secondary" onClick={()=>setShowNewPass(!showNewPass)}>
+                                    <i className={showNewPass ? "fa-solid fa-eye-slash" : "fa-solid fa-eye"}></i>
+                                </Button>
+                              </InputGroup>
                             </Form.Group>
                             <Form.Group className="mb-4">
                               <Form.Label className="fw-bold small">Xác nhận mật khẩu <span className="text-danger">*</span></Form.Label>
-                              <Form.Control type="password" value={passData.confirmPass} onChange={e=>setPassData({...passData, confirmPass:e.target.value})} placeholder="Nhập lại mật khẩu..." required />
+                              <InputGroup>
+                                <Form.Control type={showConfirmPass ? "text" : "password"} value={passData.confirmPass} onChange={e=>setPassData({...passData, confirmPass:e.target.value})} placeholder="Nhập lại mật khẩu..." required />
+                                <Button variant="outline-secondary" onClick={()=>setShowConfirmPass(!showConfirmPass)}>
+                                    <i className={showConfirmPass ? "fa-solid fa-eye-slash" : "fa-solid fa-eye"}></i>
+                                </Button>
+                              </InputGroup>
                             </Form.Group>
                             <Button type="submit" variant="warning" className="w-100 fw-bold text-white shadow-sm">
                               <i className="fa-solid fa-key me-2"></i> CẬP NHẬT MẬT KHẨU
