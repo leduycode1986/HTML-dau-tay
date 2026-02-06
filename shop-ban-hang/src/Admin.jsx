@@ -564,6 +564,16 @@ function Admin() {
                               <i className="fa-solid fa-user-lock me-2"></i> Tài khoản của tôi
                             </Nav.Link>
                           </Nav.Item>
+                          <Nav.Item>
+                            <Nav.Link eventKey="member_manage" className="rounded-0 border-bottom py-3">
+                              <i className="fa-solid fa-users me-2"></i> Quản lý Thành viên
+                            </Nav.Link>
+                          </Nav.Item>
+                          <Nav.Item>
+                            <Nav.Link eventKey="review_manage" className="rounded-0 border-bottom py-3">
+                              <i className="fa-solid fa-star-half-stroke me-2"></i> Quản lý Đánh giá
+                            </Nav.Link>
+                          </Nav.Item>
                         </Nav>
                       </Card.Body>
                     </Card>
@@ -753,6 +763,141 @@ function Admin() {
                               <i className="fa-solid fa-key me-2"></i> CẬP NHẬT MẬT KHẨU
                             </Button>
                           </Form>
+                        </div>
+                      </Tab.Pane>
+
+                      {/* [MỚI] 6. QUẢN LÝ THÀNH VIÊN */}
+                      <Tab.Pane eventKey="member_manage">
+                        <div className="bg-white p-4 rounded shadow-sm border">
+                          <div className="d-flex justify-content-between align-items-center mb-4">
+                            <h6 className="text-primary fw-bold m-0"><i className="fa-solid fa-users me-2"></i> DANH SÁCH THÀNH VIÊN ({dsUser.length})</h6>
+                            <div className="input-group" style={{maxWidth: '300px'}}>
+                              <span className="input-group-text bg-white"><i className="fa-solid fa-magnifying-glass text-muted"></i></span>
+                              <input type="text" className="form-control border-start-0 ps-0" placeholder="Tìm thành viên..." />
+                            </div>
+                          </div>
+
+                          <div className="table-responsive">
+                            <Table hover className="align-middle mb-0">
+                              <thead className="bg-light text-secondary small text-uppercase">
+                                <tr>
+                                  <th>Thành viên</th>
+                                  <th>Liên hệ</th>
+                                  <th>Hạng</th>
+                                  <th>Điểm tích lũy</th>
+                                  <th>Ngày tham gia</th>
+                                  <th>Tác vụ</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {dsUser.length > 0 ? dsUser.map(u => (
+                                  <tr key={u.id}>
+                                    <td>
+                                      <div className="d-flex align-items-center">
+                                        <div className="rounded-circle bg-light d-flex align-items-center justify-content-center text-primary fw-bold me-3" style={{width:'40px', height:'40px', border:'1px solid #dee2e6'}}>
+                                          {u.ten ? u.ten.charAt(0).toUpperCase() : 'U'}
+                                        </div>
+                                        <div>
+                                          <div className="fw-bold text-dark">{u.ten || 'Chưa đặt tên'}</div>
+                                          <small className="text-muted">ID: {u.id.slice(0,6)}...</small>
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td className="small">
+                                      <div className="text-dark"><i className="fa-regular fa-envelope me-1"></i> {u.email}</div>
+                                      {u.sdt && <div className="text-muted mt-1"><i className="fa-solid fa-phone me-1"></i> {u.sdt}</div>}
+                                    </td>
+                                    <td>
+                                      {u.diemTichLuy >= 1000 ? (
+                                        <Badge bg="warning" text="dark" className="border border-warning"><i className="fa-solid fa-crown me-1"></i> VIP</Badge>
+                                      ) : (
+                                        <Badge bg="light" text="dark" className="border fw-normal">Thành viên</Badge>
+                                      )}
+                                    </td>
+                                    <td>
+                                      <strong className="text-success fs-6">{u.diemTichLuy || 0}</strong> <small>điểm</small>
+                                    </td>
+                                    <td className="text-muted small">
+                                      {u.ngayTao ? new Date(u.ngayTao).toLocaleDateString('vi-VN') : '---'}
+                                    </td>
+                                    <td>
+                                      <Button variant="outline-primary" size="sm" className="me-1" title="Sửa điểm" 
+                                        onClick={()=>{ setEditData({...editData, user: u}); setUserPoint(u.diemTichLuy || 0); setModal({...modal, user: true}); }}>
+                                        <i className="fa-solid fa-pen-to-square"></i>
+                                      </Button>
+                                      {/* Tùy chọn: Nút xóa thành viên nếu cần */}
+                                      {/* <Button variant="outline-danger" size="sm" onClick={()=>del('users', u.id)}><i className="fa-solid fa-trash"></i></Button> */}
+                                    </td>
+                                  </tr>
+                                )) : (
+                                  <tr><td colSpan="6" className="text-center py-4 text-muted">Chưa có thành viên nào.</td></tr>
+                                )}
+                              </tbody>
+                            </Table>
+                          </div>
+                        </div>
+                      </Tab.Pane>
+
+                      {/* [MỚI] 7. QUẢN LÝ ĐÁNH GIÁ */}
+                      <Tab.Pane eventKey="review_manage">
+                        <div className="bg-white p-4 rounded shadow-sm border">
+                          <div className="d-flex justify-content-between align-items-center mb-4">
+                            <h6 className="text-warning fw-bold m-0"><i className="fa-solid fa-comments me-2"></i> ĐÁNH GIÁ TỪ KHÁCH HÀNG ({dsReview.length})</h6>
+                          </div>
+
+                          <div className="table-responsive">
+                            <Table hover className="align-middle">
+                              <thead className="bg-light text-secondary small text-uppercase">
+                                <tr>
+                                  <th style={{width:'30%'}}>Sản phẩm</th>
+                                  <th style={{width:'15%'}}>Khách hàng</th>
+                                  <th style={{width:'15%'}}>Đánh giá</th>
+                                  <th>Nội dung</th>
+                                  <th style={{width:'10%'}}>Xóa</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {dsReview.length > 0 ? dsReview.map(rv => {
+                                  // Logic tìm sản phẩm tương ứng để hiển thị ảnh
+                                  const sp = dsSanPham.find(p => p.id === rv.productId);
+                                  return (
+                                    <tr key={rv.id}>
+                                      <td>
+                                        <div className="d-flex align-items-center">
+                                          <img src={sp?.anh || NO_IMAGE} alt="" width="50" height="50" className="rounded border me-3" style={{objectFit:'cover'}} />
+                                          <div>
+                                            <div className="fw-bold text-dark text-truncate" style={{maxWidth:'200px'}}>{sp?.ten || 'Sản phẩm đã xóa'}</div>
+                                            <small className="text-muted">ID: {rv.productId.slice(0,6)}...</small>
+                                          </div>
+                                        </div>
+                                      </td>
+                                      <td className="fw-bold text-dark">{rv.name || 'Ẩn danh'}</td>
+                                      <td>
+                                        <div className="text-warning small">
+                                          {[...Array(5)].map((_, i) => (
+                                            <i key={i} className={`fa-solid fa-star ${i < rv.rating ? '' : 'text-muted opacity-25'}`}></i>
+                                          ))}
+                                        </div>
+                                      </td>
+                                      <td>
+                                        <div className="text-secondary fst-italic">"{rv.comment}"</div>
+                                        <small className="text-muted opacity-75 d-block mt-1">
+                                          {rv.ngay ? new Date(rv.ngay.seconds * 1000).toLocaleDateString('vi-VN') : 'Vừa xong'}
+                                        </small>
+                                      </td>
+                                      <td>
+                                        <Button variant="outline-danger" size="sm" onClick={() => del('reviews', rv.id)} title="Xóa đánh giá">
+                                          <i className="fa-solid fa-trash"></i>
+                                        </Button>
+                                      </td>
+                                    </tr>
+                                  );
+                                }) : (
+                                  <tr><td colSpan="5" className="text-center py-4 text-muted">Chưa có đánh giá nào.</td></tr>
+                                )}
+                              </tbody>
+                            </Table>
+                          </div>
                         </div>
                       </Tab.Pane>
 
