@@ -67,6 +67,8 @@ function Admin() {
   const [sortPrice, setSortPrice] = useState('newest'); 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(30);
+  // [MỚI] State quản lý Tab chính để có thể chuyển tab bằng code
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   // State phân trang cho Bài viết
   const [currentNewsPage, setCurrentNewsPage] = useState(1);
@@ -298,8 +300,7 @@ function Admin() {
     <div style={{background: '#f8f9fa', minHeight:'100vh'}}>
       <div className="admin-header"><h4 className="m-0 fw-bold text-uppercase">QUẢN TRỊ VIÊN</h4><div className="d-flex align-items-center gap-2"><span className="text-white-50 small d-none d-md-block">Xin chào, {auth.currentUser?.email}</span><Button variant="danger" size="sm" className="fw-bold px-3" onClick={handleLogout}>Thoát</Button></div></div>
       <Container fluid className="p-3">
-        <Tabs defaultActiveKey="dashboard" className="bg-white p-2 rounded border shadow-sm mb-3">
-          
+        <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)} className="bg-white p-2 rounded border shadow-sm mb-3">          
           <Tab eventKey="dashboard" title="📊 TỔNG QUAN">
             <div className="p-3">
               <Row className="g-3 mb-4"><Col md={3}><div className="p-3 bg-primary text-white rounded shadow-sm"><h5>Tổng đơn</h5><h2 className="fw-bold">{dsDonHang.length}</h2></div></Col><Col md={3}><div className="p-3 bg-success text-white rounded shadow-sm"><h5>Doanh thu</h5><h2 className="fw-bold">{totalRevenue.toLocaleString()} ¥</h2></div></Col><Col md={3}><div className="p-3 bg-warning text-dark rounded shadow-sm"><h5>Sản phẩm</h5><h2 className="fw-bold">{dsSanPham.length}</h2></div></Col><Col md={3}><div className="p-3 bg-info text-white rounded shadow-sm"><h5>Thành viên</h5><h2 className="fw-bold">{dsUser.length}</h2></div></Col></Row>
@@ -310,7 +311,14 @@ function Admin() {
                       <h6 className="fw-bold text-danger m-0">
                         <i className="fa-solid fa-triangle-exclamation me-2"></i>CẢNH BÁO KHO ({lowStockProducts.length})
                       </h6>
-                      <Button variant="outline-danger" size="sm" onClick={() => setFilterStatus('stock_out')}>
+                      <Button 
+                        variant="outline-danger" 
+                        size="sm" 
+                        onClick={() => {
+                          setFilterStatus('stock_out'); // 1. Đặt bộ lọc
+                          setActiveTab('products_cats'); // 2. Chuyển sang Tab sản phẩm ngay lập tức
+                        }}
+                      >
                         Xem tất cả
                       </Button>
                     </div>
