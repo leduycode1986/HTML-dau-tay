@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { doc, setDoc, collection, onSnapshot, deleteDoc, updateDoc, addDoc, serverTimestamp, getDoc } from 'firebase/firestore'; 
-// [QUAN TRỌNG] Dùng adminAuth và adminDb để tách biệt session
+// [QUAN TRỌNG] Dùng adminAuth và adminDb để tách biệt session với trang Member
 import { adminAuth as auth, adminDb as db } from './firebase'; 
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from 'firebase/auth';
 import { toSlug } from './utils';
@@ -15,7 +15,7 @@ const ICON_LIST = ['🏠','📦','🥩','🥦','🍎','🍞','🥫','❄️','�
 const NO_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg";
 
 function Admin() { 
-  // --- STATE QUẢN LÝ ĐĂNG NHẬP & QUYỀN ---
+  // --- A. STATES QUẢN LÝ ĐĂNG NHẬP & QUYỀN (MỚI) ---
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [loginInput, setLoginInput] = useState({ email: '', pass: '' });
@@ -24,8 +24,7 @@ function Admin() {
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [passData, setPassData] = useState({ newPass: '', confirmPass: '' });
 
-  // --- STATE DỮ LIỆU CŨ (GIỮ NGUYÊN) ---
-  const [isUploading, setIsUploading] = useState(false);
+  // --- B. STATES DỮ LIỆU CŨ (GIỮ NGUYÊN) ---
   const [dsSanPham, setDsSanPham] = useState([]);
   const [dsDonHang, setDsDonHang] = useState([]);
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
@@ -35,6 +34,7 @@ function Admin() {
   const [dsUser, setDsUser] = useState([]); 
   const [dsReview, setDsReview] = useState([]); 
   const [dsTinTuc, setDsTinTuc] = useState([]); 
+  const [isUploading, setIsUploading] = useState(false);
 
   const [shopConfig, setShopConfig] = useState({ 
     tenShop:'', slogan:'', logo:'', topBarText:'', copyright:'',
@@ -187,7 +187,7 @@ function Admin() {
   const handleRemoveAdmin = async (email) => { if (adminWhitelist.length <= 1) return toast.warning("Giữ lại 1 admin!"); if (confirm(`Xóa ${email}?`)) await updateDoc(doc(db, "cauHinh", "phanquyen"), { adminEmails: adminWhitelist.filter(e => e !== email) }); };
   const handleUpdatePassword = async (e) => { e.preventDefault(); if (passData.newPass !== passData.confirmPass) return toast.error("Không khớp!"); try { await updatePassword(auth.currentUser, passData.newPass); toast.success("Xong!"); } catch (e) { toast.error(e.message); } };
 
-  // --- [FIX] KHÔI PHỤC LẠI BIẾN filteredProducts ĐỂ TRÁNH LỖI ReferenceError ---
+  // --- [FIX TUYỆT ĐỐI] ĐỊNH NGHĨA filteredProducts TRƯỚC KHI DÙNG ---
   const filteredProducts = dsSanPham
     .filter(sp => {
         if (filterCategory) {
