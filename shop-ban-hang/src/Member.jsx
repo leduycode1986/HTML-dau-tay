@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Form, Button, Tab, Nav, Table, Badge, Modal, Alert, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, Tab, Nav, Table, Badge, Modal, Spinner } from 'react-bootstrap';
 import { auth, db } from './firebase';
 import { onAuthStateChanged, updateProfile, updatePassword } from 'firebase/auth';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore'; // Đã bỏ orderBy vì có thể gây lỗi nếu chưa đánh index
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
@@ -21,26 +21,18 @@ function Member() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  // --- [FIX 1] DỌN DẸP LỚP MỜ (BACKDROP) SIÊU MẠNH ---
+  // --- [FIX] DỌN DẸP BACKDROP KHI VÀO TRANG ---
   useEffect(() => {
     const cleanUp = () => {
-        // Tìm và tiêu diệt mọi loại backdrop (Modal, Menu Mobile, v.v.)
-        const backdrops = document.querySelectorAll('.modal-backdrop, .offcanvas-backdrop, div[class*="backdrop"]');
-        backdrops.forEach(el => el.remove());
-        
-        // Mở khóa cuộn trang
+        document.querySelectorAll('.modal-backdrop, .offcanvas-backdrop').forEach(el => el.remove());
         document.body.classList.remove('modal-open', 'offcanvas-open');
-        document.body.style.overflow = 'auto';
-        document.body.style.paddingRight = '0px';
+        document.body.style = '';
     };
-
     cleanUp();
-    // Chạy lại sau 0.5s để đảm bảo sạch sẽ 100%
-    const timer = setTimeout(cleanUp, 500);
-    return () => clearTimeout(timer);
+    setTimeout(cleanUp, 500); // Chạy lại lần 2 cho chắc
   }, []);
 
-  // --- LOGIC ĐĂNG NHẬP & TẢI DATA ---
+  // --- LOGIC AUTH & DATA ---
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (!currentUser) {
@@ -51,29 +43,40 @@ function Member() {
       setUser(currentUser);
       
       try {
-        // 1. Lấy thông tin chi tiết từ Firestore (Ưu tiên tên này hơn tên Google)
-        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+        // 1. Kiểm tra User trong Firestore
+        const userRef = doc(db, "users", currentUser.uid);
+        const userDoc = await getDoc(userRef);
+
         if (userDoc.exists()) {
            const data = userDoc.data();
            setUserData(data);
-           setName(data.ten || currentUser.displayName || ''); // [FIX] Lấy tên từ DB trước
+           // Logic hiển thị tên: Tên DB -> Tên Google -> Email -> 'Thành viên'
+           const displayName = data.ten || currentUser.displayName || currentUser.email.split('@')[0];
+           setName(displayName);
            setPhone(data.sdt || '');
            setAddress(data.diaChi || '');
         } else {
-           setName(currentUser.displayName || '');
+           // Nếu chưa có hồ sơ (Ví dụ Admin tạo tay), tự tạo hồ sơ rỗng để không bị lỗi
+           const newProfile = {
+             email: currentUser.email,
+             ten: currentUser.displayName || currentUser.email.split('@')[0], // Lấy phần đầu email làm tên tạm
+             role: 'member',
+             ngayTao: new Date().toISOString()
+           };
+           await setDoc(userRef, newProfile);
+           setUserData(newProfile);
+           setName(newProfile.ten);
         }
 
-        // 2. Lấy lịch sử đơn hàng
+        // 2. Lấy đơn hàng
         const q = query(collection(db, "donHang"), where("userId", "==", currentUser.uid)); 
         const orderSnap = await getDocs(q);
         const orderList = orderSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        
-        // Sắp xếp đơn hàng mới nhất lên đầu (xử lý ở client để tránh lỗi Index Firestore)
         orderList.sort((a,b) => (b.ngayDat?.seconds || 0) - (a.ngayDat?.seconds || 0));
         setOrders(orderList);
 
       } catch (err) {
-        console.error("Lỗi tải dữ liệu:", err);
+        console.error("Lỗi:", err);
       } finally {
         setLoading(false);
       }
@@ -86,9 +89,8 @@ function Member() {
     try {
       if(user) await updateProfile(user, { displayName: name });
       await updateDoc(doc(db, "users", user.uid), { ten: name, sdt: phone, diaChi: address });
-      // Cập nhật lại state để giao diện đổi ngay lập tức
-      setUserData(prev => ({...prev, ten: name, sdt: phone, diaChi: address}));
-      toast.success("Cập nhật thành công!");
+      setUserData(prev => ({...prev, ten: name, sdt: phone, diaChi: address})); // Cập nhật ngay lập tức
+      toast.success("Đã cập nhật thông tin!");
     } catch (error) { toast.error("Lỗi: " + error.message); }
   };
 
@@ -113,17 +115,18 @@ function Member() {
   if (loading) return <div className="text-center py-5"><Spinner animation="border" variant="success" /></div>;
   if (!user) return null; 
 
+  // Xác định tên hiển thị chuẩn nhất
+  const displayName = userData?.ten || user.displayName || user.email?.split('@')[0] || 'Thành viên';
+
   return (
     <Container className="py-5">
       <Row>
         <Col lg={4} className="mb-4">
           <Card className="member-sidebar-card p-4 text-center">
              <div className="member-avatar-box">
-                {/* [FIX] Hiển thị chữ cái đầu của tên User (lấy từ userData trước) */}
-                {(userData?.ten || user.displayName || 'U').charAt(0).toUpperCase()}
+                {displayName.charAt(0).toUpperCase()}
              </div>
-             {/* [FIX] Hiển thị tên từ Firestore để tránh hiện chữ 'Admin' nếu dùng chung acc */}
-             <h5 className="fw-bold m-0">{userData?.ten || user.displayName || 'Khách hàng'}</h5>
+             <h5 className="fw-bold m-0">{displayName}</h5>
              <p className="text-muted small">{user.email}</p>
              <div className="mt-2">
                 <span className="member-rank-badge"><i className="fa-solid fa-crown me-1"></i> {userData?.diemTichLuy >= 1000 ? 'KHÁCH VIP' : 'THÀNH VIÊN'}</span>
@@ -170,9 +173,9 @@ function Member() {
 
                 <Tab.Pane eventKey="profile">
                   <Form onSubmit={handleUpdateProfile} className="px-md-4 py-2">
-                    <Form.Group className="mb-3"><Form.Label className="fw-bold">Họ tên</Form.Label><Form.Control value={name} onChange={e=>setName(e.target.value)} /></Form.Group>
-                    <Form.Group className="mb-3"><Form.Label className="fw-bold">SĐT</Form.Label><Form.Control value={phone} onChange={e=>setPhone(e.target.value)} /></Form.Group>
-                    <Form.Group className="mb-4"><Form.Label className="fw-bold">Địa chỉ</Form.Label><Form.Control as="textarea" rows={2} value={address} onChange={e=>setAddress(e.target.value)} /></Form.Group>
+                    <Form.Group className="mb-3"><Form.Label className="fw-bold">Họ tên hiển thị</Form.Label><Form.Control value={name} onChange={e=>setName(e.target.value)} placeholder="Nhập tên của bạn" /></Form.Group>
+                    <Form.Group className="mb-3"><Form.Label className="fw-bold">Số điện thoại</Form.Label><Form.Control value={phone} onChange={e=>setPhone(e.target.value)} placeholder="090..." /></Form.Group>
+                    <Form.Group className="mb-4"><Form.Label className="fw-bold">Địa chỉ giao hàng mặc định</Form.Label><Form.Control as="textarea" rows={2} value={address} onChange={e=>setAddress(e.target.value)} /></Form.Group>
                     <div className="text-end"><Button type="submit" variant="success" className="px-4 fw-bold">LƯU THAY ĐỔI</Button></div>
                   </Form>
                 </Tab.Pane>
@@ -180,8 +183,8 @@ function Member() {
                 <Tab.Pane eventKey="password">
                    <Form onSubmit={handleChangePassword} className="px-md-5 py-3">
                       <Form.Group className="mb-3"><Form.Label className="fw-bold">Mật khẩu mới</Form.Label><Form.Control type="password" value={passData.newPass} onChange={e=>setPassData({...passData, newPass:e.target.value})} /></Form.Group>
-                      <Form.Group className="mb-4"><Form.Label className="fw-bold">Xác nhận</Form.Label><Form.Control type="password" value={passData.confirmPass} onChange={e=>setPassData({...passData, confirmPass:e.target.value})} /></Form.Group>
-                      <Button type="submit" variant="warning" className="w-100 fw-bold text-white">XÁC NHẬN</Button>
+                      <Form.Group className="mb-4"><Form.Label className="fw-bold">Xác nhận lại</Form.Label><Form.Control type="password" value={passData.confirmPass} onChange={e=>setPassData({...passData, confirmPass:e.target.value})} /></Form.Group>
+                      <Button type="submit" variant="warning" className="w-100 fw-bold text-white">XÁC NHẬN ĐỔI</Button>
                    </Form>
                 </Tab.Pane>
               </Tab.Content>
