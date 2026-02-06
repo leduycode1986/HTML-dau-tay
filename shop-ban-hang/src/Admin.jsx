@@ -276,7 +276,7 @@ function Admin() {
   const paginateNews = (num) => setCurrentNewsPage(num);
 
   const totalRevenue = dsDonHang.reduce((acc, order) => acc + (order.tongTien || 0), 0);
-  const lowStockProducts = dsSanPham.filter(sp => sp.soLuong <= 5).sort((a,b)=>a.soLuong-b.soLuong);
+  const lowStockProducts = dsSanPham.filter(sp => sp.soLuong <= 3).sort((a,b)=>a.soLuong-b.soLuong);
   
   // --- GIAO DIỆN ---
   if (loadingAuth) return <div className="text-center py-5"><Spinner animation="border" variant="success" /></div>;
