@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { doc, setDoc, collection, onSnapshot, deleteDoc, updateDoc, addDoc, serverTimestamp, getDoc } from 'firebase/firestore'; 
-// [QUAN TRỌNG] Dùng adminAuth và adminDb để tách biệt với Member
+// [QUAN TRỌNG] Dùng adminAuth và adminDb
 import { adminAuth as auth, adminDb as db } from './firebase'; 
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from 'firebase/auth';
 import { toSlug } from './utils';
@@ -15,18 +15,18 @@ const ICON_LIST = ['🏠','📦','🥩','🥦','🍎','🍞','🥫','❄️','�
 const NO_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg";
 
 function Admin() { 
-  // --- 1. STATE QUẢN LÝ ĐĂNG NHẬP & QUYỀN (MỚI) ---
+  // --- A. STATE QUẢN LÝ ĐĂNG NHẬP & QUYỀN (MỚI) ---
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [loginInput, setLoginInput] = useState({ email: '', pass: '' });
   const [showPass, setShowPass] = useState(false);
   
-  // State quản lý danh sách Admin & Đổi mật khẩu
+  // State quản lý quyền
   const [adminWhitelist, setAdminWhitelist] = useState([]);
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [passData, setPassData] = useState({ newPass: '', confirmPass: '' });
 
-  // --- 2. STATE DỮ LIỆU CŨ (GIỮ NGUYÊN 100%) ---
+  // --- B. STATE DỮ LIỆU CŨ (GIỮ NGUYÊN) ---
   const [isUploading, setIsUploading] = useState(false);
   const [dsSanPham, setDsSanPham] = useState([]);
   const [dsDonHang, setDsDonHang] = useState([]);
@@ -67,19 +67,17 @@ function Admin() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(30);
 
-  // --- 3. LOGIC AUTH (CHỈ THÊM PHẦN NÀY, KHÔNG CÓ CODE DỌN DẸP DOM) ---
+  // --- 1. LOGIC AUTH (ĐÃ XÓA ĐOẠN CODE GÂY LỖI REMOVECHILD) ---
   useEffect(() => {
-    // Lấy whitelist
+    // Chỉ lấy whitelist và check auth, KHÔNG can thiệp vào DOM nữa
     const unsubWhitelist = onSnapshot(doc(db, "cauHinh", "phanquyen"), (d) => {
       if (d.exists()) setAdminWhitelist(d.data().adminEmails || []);
     });
 
-    // Kiểm tra đăng nhập
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const docSnap = await getDoc(doc(db, "cauHinh", "phanquyen"));
         const whitelist = docSnap.data()?.adminEmails || [];
-        // Nếu whitelist rỗng hoặc có chứa email -> Cho vào
         if (whitelist.length === 0 || whitelist.includes(user.email)) {
           setIsLoggedIn(true);
         } else {
@@ -100,13 +98,13 @@ function Admin() {
     e.preventDefault(); 
     try {
       await signInWithEmailAndPassword(auth, loginInput.email, loginInput.pass);
-      toast.success("Đăng nhập thành công!");
+      toast.success("Chào mừng Admin!");
     } catch (error) { toast.error("Sai thông tin đăng nhập!"); }
   };
 
   const handleLogout = async () => { if(confirm("Đăng xuất Admin?")) { await signOut(auth); setIsLoggedIn(false); } };
 
-  // --- 4. TẢI DỮ LIỆU & HÀM CŨ (GIỮ NGUYÊN 100%) ---
+  // --- 2. TẢI DỮ LIỆU ---
   useEffect(() => {
     if (isLoggedIn) {
       const unsubs = [
@@ -125,6 +123,7 @@ function Admin() {
     }
   }, [isLoggedIn]);
 
+  // --- 3. HÀM XỬ LÝ (GIỮ NGUYÊN) ---
   const luuCauHinh = async () => { await setDoc(doc(db, "cauHinh", "thongTinChung"), shopConfig); toast.success("Đã lưu cấu hình!"); };
   
   const compressImage = (file) => {
@@ -180,12 +179,11 @@ function Admin() {
       };
   };
 
-  // --- 5. TÍNH NĂNG MỚI (QUYỀN & MẬT KHẨU) ---
   const handleAddAdmin = async () => { if (!newAdminEmail.includes('@')) return toast.error("Email sai!"); await updateDoc(doc(db, "cauHinh", "phanquyen"), { adminEmails: [...adminWhitelist, newAdminEmail] }); setNewAdminEmail(''); toast.success("Đã thêm!"); };
   const handleRemoveAdmin = async (email) => { if (adminWhitelist.length <= 1) return toast.warning("Giữ lại 1 admin!"); if (confirm(`Xóa ${email}?`)) await updateDoc(doc(db, "cauHinh", "phanquyen"), { adminEmails: adminWhitelist.filter(e => e !== email) }); };
   const handleUpdatePassword = async (e) => { e.preventDefault(); if (passData.newPass !== passData.confirmPass) return toast.error("Không khớp!"); try { await updatePassword(auth.currentUser, passData.newPass); toast.success("Xong!"); } catch (e) { toast.error(e.message); } };
 
-  // --- LOGIC HIỂN THỊ (SẮP XẾP filteredProducts TRƯỚC) ---
+  // --- LOGIC HIỂN THỊ ---
   const filteredProducts = dsSanPham
     .filter(sp => {
         if (filterCategory) {
@@ -377,7 +375,7 @@ function Admin() {
                         <div className="flex-grow-1"><Form.Control type="file" size="sm" onChange={e=>handleUpload(e,'BANNER')}/><Form.Text className="text-muted">Kích thước chuẩn: <strong>1200 x 400 px</strong></Form.Text></div>
                         <Form.Control size="sm" placeholder="Link..." value={formBanner.link} onChange={e=>setFormBanner({...formBanner,link:e.target.value})}/><Button size="sm" onClick={()=>{add('banners', formBanner); setFormBanner({img:'', link:''})}}>Thêm</Button>
                     </div>
-                    <div className="d-flex flex-wrap gap-3" style={{maxHeight:'250px', overflowY:'auto'}}>{dsBanner.map(b=> (<div key={b.id} className="position-relative border rounded p-1 bg-white shadow-sm" style={{width:'100%'}}><img src={b.img} className="w-100 rounded" /><ImageSize src={b.img} /><Button size="sm" variant="danger" className="position-absolute top-0 end-0 rounded-circle" style={{transform:'translate(30%,-30%)', padding:'2px 8px'}} onClick={()=>del('banners', b.id)}>x</Button></div>))}</div>
+                    <div className="d-flex flex-wrap gap-3" style={{maxHeight:'250px', overflowY:'auto'}}>{dsBanner.map(b=> (<div key={b.id} className="position-relative border rounded p-1 bg-white shadow-sm" style={{width:'100%'}}><img src={b.img} className="w-100 rounded" /><Button size="sm" variant="danger" className="position-absolute top-0 end-0 rounded-circle" style={{transform:'translate(30%,-30%)', padding:'2px 8px'}} onClick={()=>del('banners', b.id)}>x</Button></div>))}</div>
                   </div>
                   <h6 className="text-info fw-bold border-bottom pb-2 mb-3"><i className="fa-solid fa-link me-2"></i> LIÊN KẾT & BÀI VIẾT</h6>
                   <Row className="g-3 mb-4">
@@ -394,6 +392,34 @@ function Admin() {
                 </Col>
               </Row>
               <div className="mt-4 pt-3 border-top text-end"><Button variant="success" size="lg" className="fw-bold px-5 shadow" onClick={luuCauHinh}><i className="fa-solid fa-floppy-disk me-2"></i> LƯU CẤU HÌNH</Button></div>
+            </div>
+          </Tab>
+
+          {/* TAB 3: DANH MỤC (ĐÃ KHÔI PHỤC VỀ VỊ TRÍ CŨ) */}
+          <Tab eventKey="menu" title="📂 DANH MỤC">
+            <div className="bg-white p-3 rounded shadow-sm">
+                <Button variant="success" className="mb-3 fw-bold" onClick={()=>{setEditData({...editData, dm:null}); setFormDM({ten:'', icon:'', parent:'', order:''}); setModal({...modal, dm:true})}}>+ DANH MỤC MỚI</Button>
+                <div className="table-responsive">
+                    <Table hover bordered className="align-middle">
+                        <thead className="bg-light"><tr><th>STT</th><th>Tên danh mục</th><th>Icon</th><th>Cấp độ</th><th>Thao tác</th></tr></thead>
+                        <tbody>
+                            {dsDanhMuc.map(d=>(
+                                <tr key={d.id} className={d.parent ? 'bg-light' : 'fw-bold'}>
+                                    <td style={{width: '80px'}}>{d.order}</td>
+                                    <td>
+                                        {d.parent ? <span className="text-secondary ms-4"><i className="fa-solid fa-turn-up fa-rotate-90 me-2"></i>{d.ten}</span> : <span className="text-success">{d.ten}</span>}
+                                    </td>
+                                    <td className="fs-5">{d.icon}</td>
+                                    <td>{d.parent ? <Badge bg="secondary">Danh mục con</Badge> : <Badge bg="primary">Danh mục gốc</Badge>}</td>
+                                    <td style={{width: '120px'}}>
+                                        <Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditData({...editData, dm:d}); setFormDM(d); setModal({...modal, dm:true})}}>✏️</Button>
+                                        <Button size="sm" variant="danger" onClick={async()=>{if(confirm('Xóa?')) await deleteDoc(doc(db,"danhMuc",d.id))}}>🗑️</Button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Table>
+                </div>
             </div>
           </Tab>
 
