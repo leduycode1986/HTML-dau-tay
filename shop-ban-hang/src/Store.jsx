@@ -53,23 +53,18 @@ function Store() {
   useEffect(() => { window.scrollTo(0, 0); }, [location]);
 
   // [FIX] TỰ ĐỘNG XÓA TẤT CẢ LỚP MỜ (MODAL & OFFCANVAS)
-      useEffect(() => {
+     useEffect(() => {
+    // CHỈ CHẠY KHI KHÔNG PHẢI LÀ ADMIN
+    if (!location.pathname.startsWith('/admin')) { 
         const cleanBackdrops = () => {
-            // Tìm cả modal-backdrop và offcanvas-backdrop (menu mobile)
-            const backdrops = document.querySelectorAll('.modal-backdrop, .offcanvas-backdrop, div[class*="backdrop"]');
+            const backdrops = document.querySelectorAll('.modal-backdrop, .offcanvas-backdrop');
             backdrops.forEach(el => el.remove());
-            
-            // Mở khóa cuộn trang
             document.body.classList.remove('modal-open', 'offcanvas-open');
-            document.body.style.overflow = 'auto';
-            document.body.style.paddingRight = '0px';
+            document.body.style = '';
         };
-
         cleanBackdrops();
-        // Chạy lại sau 300ms để chắc chắn dọn sạch sau khi trang đã chuyển xong
-        const timer = setTimeout(cleanBackdrops, 300);
-        return () => clearTimeout(timer);
-      }, [location.pathname]);
+    }
+}, [location.pathname]);
 
   // --- TẢI DỮ LIỆU TỪ FIREBASE ---
   useEffect(() => {
