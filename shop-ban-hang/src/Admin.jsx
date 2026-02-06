@@ -163,17 +163,110 @@ function Admin() {
   const savePostContent = () => { if (postEditor.type === 'policy') setShopConfig(prev => ({ ...prev, policyContent: postEditor.content })); else setShopConfig(prev => ({ ...prev, guideContent: postEditor.content })); setModal({...modal, post: false}); };
   const onSaveNews = async () => { const data = { ...formTinTuc, slug: toSlug(formTinTuc.tieuDe), ngayDang: serverTimestamp() }; if (editData.news) await updateDoc(doc(db, "tinTuc", editData.news.id), data); else await addDoc(collection(db, "tinTuc"), data); setModal({...modal, news: false}); toast.success("Đã đăng bài!"); };
 
-  const handleExportExcel = () => { const ws = XLSX.utils.json_to_sheet(dsSanPham); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "SP"); XLSX.writeFile(wb, "DanhSachSP.xlsx"); };
-  const handleImportExcel = (e) => { 
-      const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.readAsBinaryString(file);
-      reader.onload = async (evt) => {
-          const wb = XLSX.read(evt.target.result, {type:'binary'}); const ws = wb.Sheets[wb.SheetNames[0]]; const data = XLSX.utils.sheet_to_json(ws);
-          if(!confirm(`Cập nhật ${data.length} SP?`)) return;
-          const ups = data.map(row => { const id = row["ID"] || row["ID (Không sửa)"]; if(!id) return null; return updateDoc(doc(db, "sanPham", id), { giaGoc: row["Giá gốc"], soLuong: row["Kho"], ten: row["Tên sản phẩm"] }); });
-          await Promise.all(ups.filter(x=>x)); toast.success("Xong!");
-      };
-  };
+  // Tìm hàm handleExportExcel và thay thế bằng code này:
+const handleExportExcel = () => {
+  // 1. Tạo dữ liệu form tiếng Việt dễ nhìn
+  const dataExport = dsSanPham.map(sp => ({
+    "ID (Không sửa)": sp.id, // ID để đối chiếu
+    "Tên sản phẩm": sp.ten,
+    "Giá gốc": sp.giaGoc,
+    "% Giảm": sp.phanTramGiam,
+    "Kho": sp.soLuong,
+    "Đơn vị": sp.donVi,
+    "Mô tả": sp.moTa,
+    "Danh mục ID": sp.phanLoai // Để user biết đường điền mã danh mục
+  }));
 
+  const ws = XLSX.utils.json_to_sheet(dataExport);
+  
+  // Tự động chỉnh độ rộng cột cho đẹp
+  const wscols = [
+    {wch: 25}, // ID
+    {wch: 40}, // Tên
+    {wch: 15}, // Giá
+    {wch: 10}, // Giảm
+    {wch: 10}, // Kho
+    {wch: 10}, // Đơn vị
+    {wch: 30}, // Mô tả
+    {wch: 20}  // Danh mục
+  ];
+  ws['!cols'] = wscols;
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "DanhSachSP");
+  XLSX.writeFile(wb, "DanhSach_SanPham_MaiVang.xlsx");
+};
+  // Tìm hàm handleImportExcel và thay thế bằng code này:
+const handleImportExcel = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.readAsBinaryString(file);
+
+  reader.onload = async (evt) => {
+    try {
+      const wb = XLSX.read(evt.target.result, { type: 'binary' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws);
+
+      if (data.length === 0) return toast.warning("File Excel rỗng!");
+      if (!confirm(`Tìm thấy ${data.length} dòng dữ liệu. Bạn có muốn xử lý không?`)) return;
+
+      let countUpdate = 0;
+      let countAdd = 0;
+
+      // Xử lý từng dòng một
+      const promises = data.map(async (row) => {
+        const id = row["ID (Không sửa)"];
+        
+        // Lấy dữ liệu từ Excel, nếu không có thì lấy mặc định
+        const productData = {
+          ten: row["Tên sản phẩm"] || "Sản phẩm mới",
+          giaGoc: parseInt(row["Giá gốc"]) || 0,
+          phanTramGiam: parseInt(row["% Giảm"]) || 0,
+          soLuong: parseInt(row["Kho"]) || 0,
+          donVi: row["Đơn vị"] || "Cái",
+          moTa: row["Mô tả"] || "",
+          phanLoai: row["Danh mục ID"] || "",
+          // Tính lại giá bán luôn
+          giaBan: (parseInt(row["Giá gốc"])||0) * (1 - (parseInt(row["% Giảm"])||0)/100),
+          slug: toSlug(row["Tên sản phẩm"] || "san-pham-moi")
+        };
+
+        if (id) {
+          // TRƯỜNG HỢP 1: CẬP NHẬT (Có ID)
+          countUpdate++;
+          return updateDoc(doc(db, "sanPham", id), productData);
+        } else {
+          // TRƯỜNG HỢP 2: THÊM MỚI (Không có ID)
+          // Thêm các trường bắt buộc cho SP mới
+          const newProduct = {
+            ...productData,
+            anh: NO_IMAGE, // Mặc định chưa có ảnh
+            isMoi: true,
+            isKhuyenMai: false,
+            isBanChay: false,
+            isFlashSale: false,
+            ngayTao: serverTimestamp()
+          };
+          countAdd++;
+          return addDoc(collection(db, "sanPham"), newProduct);
+        }
+      });
+
+      await Promise.all(promises);
+      toast.success(`Xong! Đã cập nhật ${countUpdate} SP và thêm mới ${countAdd} SP.`);
+      
+      // Reset input file để chọn lại file khác được
+      e.target.value = null;
+
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi file Excel! Vui lòng kiểm tra lại định dạng.");
+    }
+  };
+};
   const handleAddAdmin = async () => { if (!newAdminEmail.includes('@')) return toast.error("Email sai!"); await updateDoc(doc(db, "cauHinh", "phanquyen"), { adminEmails: [...adminWhitelist, newAdminEmail] }); setNewAdminEmail(''); toast.success("Đã thêm!"); };
   const handleRemoveAdmin = async (email) => { if (adminWhitelist.length <= 1) return toast.warning("Giữ lại 1 admin!"); if (confirm(`Xóa ${email}?`)) await updateDoc(doc(db, "cauHinh", "phanquyen"), { adminEmails: adminWhitelist.filter(e => e !== email) }); };
   const handleUpdatePassword = async (e) => { e.preventDefault(); if (passData.newPass !== passData.confirmPass) return toast.error("Không khớp!"); try { await updatePassword(auth.currentUser, passData.newPass); toast.success("Xong!"); } catch (e) { toast.error(e.message); } };
@@ -245,44 +338,83 @@ function Admin() {
               </Row>
             </div>
           </Tab>
+        
+        <Tab eventKey="products_cats" title="📦 SẢN PHẨM & DANH MỤC">
+          <div className="p-3">
+            {/* BẮT ĐẦU: TABS CON TÁCH BIỆT */}
+            <Tabs defaultActiveKey="tab_sanpham" id="sub-tabs-admin" className="mb-3 custom-sub-tabs" fill variant="pills">
+              
+              {/* --- TAB 1: QUẢN LÝ SẢN PHẨM --- */}
+              <Tab eventKey="tab_sanpham" title={<span className="fw-bold"><i className="fa-solid fa-box me-2"></i> QUẢN LÝ SẢN PHẨM</span>}>
+                <div className="bg-white p-3 rounded shadow-sm mb-4 border">
+                  <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <div className="d-flex gap-2">
+                      <Button variant="success" className="fw-bold shadow-sm" onClick={() => { setEditData({ ...editData, sp: null }); setFormDataSP({ ten: '', giaGoc: '', phanTramGiam: 0, giaBan: '', donVi: 'Cái', soLuong: 100, moTa: '', anh: '', phanLoai: '', isMoi: false, isKhuyenMai: false, isBanChay: false, isFlashSale: false }); setModal({ ...modal, sp: true }) }}>
+                        <i className="fa-solid fa-plus me-1"></i> THÊM SP
+                      </Button>
+                      
+                      {/* Nút Xuất Excel */}
+                      <Button variant="outline-success" onClick={handleExportExcel} title="Tải file Excel về để sửa hoặc thêm mới">
+                        <i className="fa-solid fa-file-excel me-1"></i> Xuất Excel
+                      </Button>
 
-          <Tab eventKey="products_cats" title="📦 SẢN PHẨM & DANH MỤC">
-            <div className="p-3">
-              <h5 className="fw-bold text-success mb-3"><i className="fa-solid fa-box me-2"></i> QUẢN LÝ SẢN PHẨM</h5>
-              <div className="bg-white p-3 rounded shadow-sm mb-4">
-                <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                    <div className="d-flex gap-2">
-                        <Button variant="success" className="fw-bold" onClick={()=>{setEditData({...editData, sp:null}); setFormDataSP({ ten:'', giaGoc:'', phanTramGiam:0, giaBan:'', donVi:'Cái', soLuong:100, moTa:'', anh:'', phanLoai:'', isMoi:false, isKhuyenMai:false, isBanChay:false, isFlashSale:false }); setModal({...modal, sp:true})}}>+ THÊM SP</Button>
-                        <Button variant="outline-success" onClick={handleExportExcel}><i className="fa-solid fa-file-excel me-2"></i> Xuất Excel</Button>
-                        <div className="position-relative"><Button variant="outline-primary"><i className="fa-solid fa-file-import me-2"></i> Nhập Excel</Button><input type="file" accept=".xlsx, .xls" onChange={handleImportExcel} style={{position:'absolute', top:0, left:0, width:'100%', height:'100%', opacity:0, cursor:'pointer'}} /></div>
+                      {/* Nút Nhập Excel */}
+                      <div className="position-relative">
+                        <Button variant="outline-primary" title="Tải lên file Excel đã sửa">
+                          <i className="fa-solid fa-file-import me-1"></i> Nhập Excel
+                        </Button>
+                        <input 
+                          type="file" 
+                          accept=".xlsx, .xls" 
+                          onChange={handleImportExcel} 
+                          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} 
+                        />
+                      </div>
                     </div>
+
+                    {/* Bộ lọc giữ nguyên */}
                     <div className="d-flex gap-2">
-                      <Form.Select size="sm" style={{width:180}} value={filterCategory} onChange={e=>setFilterCategory(e.target.value)}><option value="">-- Danh mục --</option>{dsDanhMuc.map(d => <option key={d.id} value={d.id}>{d.ten}</option>)}</Form.Select>
-                      <Form.Select size="sm" style={{width:160}} value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}><option value="">-- Lọc --</option><option value="new">Mới</option><option value="best">Bán chạy</option><option value="flash">Sale</option><option value="stock_out">Hết hàng</option></Form.Select>
+                      <Form.Select size="sm" style={{ width: 180 }} value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
+                        <option value="">-- Tất cả danh mục --</option>
+                        {dsDanhMuc.map(d => <option key={d.id} value={d.id}>{d.ten}</option>)}
+                      </Form.Select>
+                      {/* ... (Giữ nguyên các select lọc khác) ... */}
+                      <Form.Select size="sm" style={{width:160}} value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}><option value="">-- Trạng thái --</option><option value="new">Mới</option><option value="best">Bán chạy</option><option value="flash">Sale</option><option value="stock_out">Hết hàng</option></Form.Select>
                       <Form.Select size="sm" style={{width:150}} value={sortPrice} onChange={e=>setSortPrice(e.target.value)}><option value="newest">Mới nhất</option><option value="asc">Giá tăng</option><option value="desc">Giá giảm</option></Form.Select>
                     </div>
-                </div>
-                <div className="table-responsive mb-3">
-                  <Table hover bordered className="align-middle">
-                    <thead className="bg-light"><tr><th>Ảnh</th><th>Tên</th><th>Đơn vị</th><th>Kho</th><th>Giá bán</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
-                    <tbody>{currentProducts.map(sp=>(<tr key={sp.id}><td><img src={sp.anh||NO_IMAGE} width="50" height="50" style={{objectFit:'cover', borderRadius:4}}/></td><td className="fw-bold">{sp.ten}</td><td>{sp.donVi}</td><td className={sp.soLuong<10?'text-danger fw-bold':''}>{sp.soLuong}</td><td className="text-danger fw-bold">{sp.giaBan?.toLocaleString()}¥</td><td>{sp.isFlashSale && <Badge bg="warning" text="dark" className="me-1">Sale</Badge>}{sp.isMoi && <Badge bg="success">New</Badge>}</td><td><Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditData({...editData, sp}); setFormDataSP(sp); setModal({...modal, sp:true})}}>✏️</Button><Button size="sm" variant="danger" onClick={async()=>{if(confirm('Xóa?')) await deleteDoc(doc(db,"sanPham",sp.id))}}>🗑️</Button></td></tr>))}</tbody>
-                  </Table>
-                </div>
-                <Pagination className="justify-content-center m-0"><Pagination.Prev onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} />{[...Array(totalPages)].map((_, i) => (<Pagination.Item key={i+1} active={i+1 === currentPage} onClick={() => paginate(i+1)}>{i+1}</Pagination.Item>))}<Pagination.Next onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} /></Pagination>
-              </div>
+                  </div>
 
-              <h5 className="fw-bold text-primary mb-3"><i className="fa-solid fa-folder me-2"></i> QUẢN LÝ DANH MỤC</h5>
-              <div className="bg-white p-3 rounded shadow-sm">
-                  <Button variant="primary" className="mb-3 fw-bold" onClick={()=>{setEditData({...editData, dm:null}); setFormDM({ten:'', icon:'', parent:'', order:''}); setModal({...modal, dm:true})}}>+ DANH MỤC MỚI</Button>
-                  <div className="table-responsive">
-                      <Table hover bordered className="align-middle">
-                          <thead className="bg-light"><tr><th>STT</th><th>Tên danh mục</th><th>Icon</th><th>Cấp độ</th><th>Thao tác</th></tr></thead>
-                          <tbody>{dsDanhMuc.map(d=>(<tr key={d.id} className={d.parent ? 'bg-light' : 'fw-bold'}><td style={{width: '80px'}}>{d.order}</td><td>{d.parent ? <span className="text-secondary ms-4"><i className="fa-solid fa-turn-up fa-rotate-90 me-2"></i>{d.ten}</span> : <span className="text-success">{d.ten}</span>}</td><td className="fs-5">{d.icon}</td><td>{d.parent ? <Badge bg="secondary">Con</Badge> : <Badge bg="primary">Gốc</Badge>}</td><td style={{width: '120px'}}><Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditData({...editData, dm:d}); setFormDM(d); setModal({...modal, dm:true})}}>✏️</Button><Button size="sm" variant="danger" onClick={async()=>{if(confirm('Xóa?')) await deleteDoc(doc(db,"danhMuc",d.id))}}>🗑️</Button></td></tr>))}</tbody>
+                  {/* Bảng sản phẩm (Code cũ) */}
+                  <div className="table-responsive mb-3">
+                    {/* Copy nguyên bảng Table sản phẩm cũ vào đây */}
+                    <Table hover bordered className="align-middle">
+                        <thead className="bg-light"><tr><th>Ảnh</th><th>Tên</th><th>Đơn vị</th><th>Kho</th><th>Giá bán</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+                        <tbody>{currentProducts.map(sp=>(<tr key={sp.id}><td><img src={sp.anh||NO_IMAGE} width="50" height="50" style={{objectFit:'cover', borderRadius:4}}/></td><td className="fw-bold">{sp.ten}</td><td>{sp.donVi}</td><td className={sp.soLuong<10?'text-danger fw-bold':''}>{sp.soLuong}</td><td className="text-danger fw-bold">{sp.giaBan?.toLocaleString()}¥</td><td>{sp.isFlashSale && <Badge bg="warning" text="dark" className="me-1">Sale</Badge>}{sp.isMoi && <Badge bg="success">New</Badge>}</td><td><Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditData({...editData, sp}); setFormDataSP(sp); setModal({...modal, sp:true})}}>✏️</Button><Button size="sm" variant="danger" onClick={async()=>{if(confirm('Xóa?')) await deleteDoc(doc(db,"sanPham",sp.id))}}>🗑️</Button></td></tr>))}</tbody>
                       </Table>
                   </div>
-              </div>
-            </div>
-          </Tab>
+                  {/* Pagination (Code cũ) */}
+                  <Pagination className="justify-content-center m-0"><Pagination.Prev onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} />{[...Array(totalPages)].map((_, i) => (<Pagination.Item key={i+1} active={i+1 === currentPage} onClick={() => paginate(i+1)}>{i+1}</Pagination.Item>))}<Pagination.Next onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} /></Pagination>
+                </div>
+              </Tab>
+
+              {/* --- TAB 2: QUẢN LÝ DANH MỤC --- */}
+              <Tab eventKey="tab_danhmuc" title={<span className="fw-bold"><i className="fa-solid fa-folder me-2"></i> QUẢN LÝ DANH MỤC</span>}>
+                <div className="bg-white p-3 rounded shadow-sm border">
+                  {/* Copy nguyên phần Quản lý danh mục cũ vào đây */}
+                    <Button variant="primary" className="mb-3 fw-bold shadow-sm" onClick={()=>{setEditData({...editData, dm:null}); setFormDM({ten:'', icon:'', parent:'', order:''}); setModal({...modal, dm:true})}}>+ DANH MỤC MỚI</Button>
+                    <div className="table-responsive">
+                        <Table hover bordered className="align-middle">
+                            <thead className="bg-light"><tr><th>STT</th><th>Tên danh mục</th><th>Icon</th><th>Cấp độ</th><th>Thao tác</th></tr></thead>
+                            <tbody>{dsDanhMuc.map(d=>(<tr key={d.id} className={d.parent ? 'bg-light' : 'fw-bold'}><td style={{width: '80px'}}>{d.order}</td><td>{d.parent ? <span className="text-secondary ms-4"><i className="fa-solid fa-turn-up fa-rotate-90 me-2"></i>{d.ten}</span> : <span className="text-success">{d.ten}</span>}</td><td className="fs-5">{d.icon}</td><td>{d.parent ? <Badge bg="secondary">Con</Badge> : <Badge bg="primary">Gốc</Badge>}</td><td style={{width: '120px'}}><Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditData({...editData, dm:d}); setFormDM(d); setModal({...modal, dm:true})}}>✏️</Button><Button size="sm" variant="danger" onClick={async()=>{if(confirm('Xóa?')) await deleteDoc(doc(db,"danhMuc",d.id))}}>🗑️</Button></td></tr>))}</tbody>
+                        </Table>
+                    </div>
+                </div>
+              </Tab>
+
+            </Tabs>
+            {/* KẾT THÚC: TABS CON */}
+          </div>
+        </Tab>
 
           <Tab eventKey="orders" title="📋 ĐƠN HÀNG">
             <div className="table-responsive bg-white rounded shadow-sm p-3">
