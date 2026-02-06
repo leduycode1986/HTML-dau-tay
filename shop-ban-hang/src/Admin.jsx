@@ -824,9 +824,15 @@ function Admin() {
                                       <Button variant="outline-primary" size="sm" className="me-1" title="Sửa điểm" 
                                         onClick={()=>{ setEditData({...editData, user: u}); setUserPoint(u.diemTichLuy || 0); setModal({...modal, user: true}); }}>
                                         <i className="fa-solid fa-pen-to-square"></i>
-                                      </Button>
-                                      {/* Tùy chọn: Nút xóa thành viên nếu cần */}
-                                       <Button variant="outline-danger" size="sm" onClick={()=>del('users', u.id)}><i className="fa-solid fa-trash"></i></Button>
+                                      </Button>                                     
+                                       {/* Logic: Nếu email của user nằm trong danh sách Admin thì KHÔNG hiện nút xóa */}
+                                          {adminWhitelist.includes(u.email) ? (
+                                              <span className="text-muted small ms-2"><i className="fa-solid fa-user-shield"></i> Admin</span>
+                                          ) : (
+                                              <Button variant="outline-danger" size="sm" onClick={()=>del('users', u.id)} title="Xóa thành viên">
+                                                  <i className="fa-solid fa-trash"></i>
+                                              </Button>
+                                          )}
                                     </td>
                                   </tr>
                                 )) : (
