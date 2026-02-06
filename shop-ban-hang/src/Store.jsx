@@ -52,18 +52,24 @@ function Store() {
   useEffect(() => { AOS.init({ duration: 800, once: false }); }, []);
   useEffect(() => { window.scrollTo(0, 0); }, [location]);
 
-  // TỰ ĐỘNG XÓA LỚP MỜ ĐEN (BACKDROP) BỊ KẸT
-  useEffect(() => {
-    // 1. Tìm tất cả các lớp phủ đen đang hiện
-    const backdrops = document.querySelectorAll('.modal-backdrop');
-    if (backdrops.length > 0) {
-        backdrops.forEach(backdrop => {
-            backdrop.remove(); // Xóa sổ nó ngay lập tức
-        });
-        document.body.classList.remove('modal-open'); // Cho phép cuộn trang lại
-        document.body.style = ''; // Reset style của body
-    }
-  }, [location.pathname]); // Chạy mỗi khi chuyển tran
+  // [FIX] TỰ ĐỘNG XÓA TẤT CẢ LỚP MỜ (MODAL & OFFCANVAS)
+      useEffect(() => {
+        const cleanBackdrops = () => {
+            // Tìm cả modal-backdrop và offcanvas-backdrop (menu mobile)
+            const backdrops = document.querySelectorAll('.modal-backdrop, .offcanvas-backdrop, div[class*="backdrop"]');
+            backdrops.forEach(el => el.remove());
+            
+            // Mở khóa cuộn trang
+            document.body.classList.remove('modal-open', 'offcanvas-open');
+            document.body.style.overflow = 'auto';
+            document.body.style.paddingRight = '0px';
+        };
+
+        cleanBackdrops();
+        // Chạy lại sau 300ms để chắc chắn dọn sạch sau khi trang đã chuyển xong
+        const timer = setTimeout(cleanBackdrops, 300);
+        return () => clearTimeout(timer);
+      }, [location.pathname]);
 
   // --- TẢI DỮ LIỆU TỪ FIREBASE ---
   useEffect(() => {
