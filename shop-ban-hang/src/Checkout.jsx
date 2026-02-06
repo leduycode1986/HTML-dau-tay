@@ -226,84 +226,140 @@ function Checkout({ gioHang, setGioHang, userData }) {
             </div>
 
             <div className="checkout-card">
-              <div className="checkout-card-header"><h5 className="checkout-title"><i className="fa-solid fa-wallet"></i> Thanh toán</h5></div>
+              <div className="checkout-card-header">
+                <h5 className="checkout-title"><i className="fa-solid fa-wallet"></i> Thanh toán</h5>
+              </div>
+              
               <div className="checkout-body">
-                <div className={`payment-method-item ${paymentMethod==='cod' ? 'active' : ''}`} onClick={()=>setPaymentMethod('cod')}>
-                  <img src="https://cdn-icons-png.flaticon.com/512/2331/2331941.png" className="payment-icon" alt="COD"/>
-                  <div><div className="fw-bold">Thanh toán khi nhận hàng (COD)</div><div className="small text-muted">Tiền mặt</div></div>
-                  {paymentMethod==='cod' && <i className="fa-solid fa-check-circle text-success ms-auto fs-4"></i>}
-                </div>
-                <div className={`payment-method-item ${paymentMethod==='qr' ? 'active' : ''}`} onClick={()=>setPaymentMethod('qr')}>
-                  <img src="https://cdn-icons-png.flaticon.com/512/161/161110.png" className="payment-icon" alt="QR"/>
-                  <div><div className="fw-bold">Chuyển khoản / Quét QR</div><div className="small text-muted">Ngân hàng</div></div>
-                  {paymentMethod==='qr' && <i className="fa-solid fa-check-circle text-success ms-auto fs-4"></i>}
-                </div>
-                
-                {/* [MỚI] Tùy chọn PayPal */}
-                <div className={`payment-method-item ${paymentMethod==='paypal' ? 'active' : ''}`} onClick={()=>setPaymentMethod('paypal')}>
-                  <img src="https://cdn-icons-png.flaticon.com/512/174/174861.png" className="payment-icon" alt="PayPal"/>
-                  <div><div className="fw-bold">Thanh toán qua PayPal</div><div className="small text-muted">Thẻ quốc tế</div></div>
-                  {paymentMethod==='paypal' && <i className="fa-solid fa-check-circle text-success ms-auto fs-4"></i>}
-                </div>
+                <Row>
+                  {/* --- CỘT TRÁI: CHỌN PHƯƠNG THỨC (Chiếm 4/12 phần) --- */}
+                  <Col md={4} className="border-end pe-md-4">
+                    <h6 className="fw-bold text-muted small mb-3">CHỌN PHƯƠNG THỨC:</h6>
+                    
+                    <div className="d-flex flex-column gap-2">
+                      {/* 1. COD */}
+                      <div 
+                        className={`payment-method-item d-flex align-items-center p-2 border rounded ${paymentMethod==='cod' ? 'active border-success bg-light' : ''}`} 
+                        style={{cursor:'pointer', transition:'0.2s'}}
+                        onClick={()=>setPaymentMethod('cod')}
+                      >
+                        <img src="https://cdn-icons-png.flaticon.com/512/2331/2331941.png" width="30" className="me-2" alt="COD"/>
+                        <div className="flex-grow-1">
+                          <div className="fw-bold" style={{fontSize:'13px'}}>Tiền mặt (COD)</div>
+                        </div>
+                        {paymentMethod==='cod' && <i className="fa-solid fa-circle-check text-success"></i>}
+                      </div>
 
-                {paymentMethod==='qr' && shopConfig?.bankInfo?.qrImage && (
-                  <div className="text-center p-3 mb-3 bg-light rounded border">
-                    <img src={shopConfig.bankInfo.qrImage} style={{maxWidth:'180px'}} className="rounded shadow-sm mb-2"/>
-                    <div className="small text-success fw-bold"><i className="fa-solid fa-qrcode me-1"></i> Quét mã để thanh toán</div>
-                  </div>
-                )}
+                      {/* 2. QR */}
+                      <div 
+                        className={`payment-method-item d-flex align-items-center p-2 border rounded ${paymentMethod==='qr' ? 'active border-success bg-light' : ''}`} 
+                        style={{cursor:'pointer', transition:'0.2s'}}
+                        onClick={()=>setPaymentMethod('qr')}
+                      >
+                        <img src="https://cdn-icons-png.flaticon.com/512/161/161110.png" width="30" className="me-2" alt="QR"/>
+                        <div className="flex-grow-1">
+                          <div className="fw-bold" style={{fontSize:'13px'}}>Chuyển khoản / QR</div>
+                        </div>
+                        {paymentMethod==='qr' && <i className="fa-solid fa-circle-check text-success"></i>}
+                      </div>
 
-                <div className="mt-4 mb-3">
-                  <Form.Label className="form-label-custom">Mã giảm giá</Form.Label>
-                  <InputGroup><Form.Control placeholder="Nhập mã coupon..." value={couponCode} onChange={e=>setCouponCode(e.target.value)} className="form-control-lg-custom"/><Button variant="outline-success" onClick={handleApplyCoupon}>Áp dụng</Button></InputGroup>
-                  {couponMsg && <div className={`small mt-2 ${discount>0?'text-success fw-bold':'text-danger'}`}>{couponMsg}</div>}
-                </div>
+                      {/* 3. PayPal */}
+                      <div 
+                        className={`payment-method-item d-flex align-items-center p-2 border rounded ${paymentMethod==='paypal' ? 'active border-success bg-light' : ''}`} 
+                        style={{cursor:'pointer', transition:'0.2s'}}
+                        onClick={()=>setPaymentMethod('paypal')}
+                      >
+                        <img src="https://cdn-icons-png.flaticon.com/512/174/174861.png" width="30" className="me-2" alt="PayPal"/>
+                        <div className="flex-grow-1">
+                          <div className="fw-bold" style={{fontSize:'13px'}}>PayPal / Thẻ</div>
+                        </div>
+                        {paymentMethod==='paypal' && <i className="fa-solid fa-circle-check text-success"></i>}
+                      </div>
+                    </div>
+                  </Col>
 
-                <div className="summary-section">
-                  <div className="summary-row"><span className="summary-label">Tạm tính:</span><span className="summary-value">{tamTinh.toLocaleString()} ¥</span></div>
-                  <div className="summary-row"><span className="summary-label">Phí vận chuyển:</span><span className="summary-value">{shippingFee > 0 ? `+${shippingFee.toLocaleString()} ¥` : '---'}</span></div>
-                  {discount > 0 && <div className="summary-row text-success"><span className="summary-label">Giảm giá:</span><span className="summary-value">-{discount.toLocaleString()} ¥</span></div>}
-                  <div className="summary-row total"><span className="summary-label fs-5 text-dark">TỔNG THANH TOÁN</span><span className="total-price">{tongCong.toLocaleString()} <small style={{fontSize:'1rem'}}>¥</small></span></div>
-                </div>
-
-                {/* LOGIC HIỂN THỊ NÚT THANH TOÁN */}
-                {paymentMethod === 'paypal' ? (
-                  <div className="mt-3">
-                    {shopConfig?.paypalClientId ? (
-                       <PayPalScriptProvider options={{ "client-id": shopConfig.paypalClientId, currency: "JPY" }}>
-                          <PayPalButtons 
-                             style={{ layout: "vertical", shape: "rect", label: "pay" }} 
-                             createOrder={(data, actions) => {
-                                // Validate lại trước khi mở popup PayPal
-                                if (!validateForm()) {
-                                    toast.warning("Vui lòng điền đủ thông tin giao hàng trước!");
-                                    return Promise.reject("Form invalid");
-                                }
-                                return actions.order.create({
-                                   purchase_units: [{ amount: { value: tongCong } }]
-                                });
-                             }}
-                             onApprove={async (data, actions) => {
-                                const details = await actions.order.capture();
-                                // Thanh toán thành công -> Gọi hàm tạo đơn với trạng thái "Đã thanh toán"
-                                processOrder(true);
-                             }}
-                             onError={(err) => {
-                                console.error(err);
-                                toast.error("Thanh toán PayPal thất bại!");
-                             }}
-                          />
-                       </PayPalScriptProvider>
-                    ) : (
-                      <Alert variant="danger">Admin chưa cấu hình PayPal Client ID!</Alert>
+                  {/* --- CỘT PHẢI: XỬ LÝ & NÚT MUA (Chiếm 8/12 phần) --- */}
+                  <Col md={8} className="ps-md-4">
+                    
+                    {/* Hiển thị QR Code nếu chọn */}
+                    {paymentMethod==='qr' && shopConfig?.bankInfo?.qrImage && (
+                      <div className="text-center p-2 mb-3 bg-light rounded border animate__animated animate__fadeIn">
+                        <img src={shopConfig.bankInfo.qrImage} style={{maxWidth:'120px'}} className="rounded shadow-sm mb-1"/>
+                        <div className="small text-success fw-bold"><i className="fa-solid fa-qrcode me-1"></i> Quét mã để thanh toán</div>
+                      </div>
                     )}
-                  </div>
-                ) : (
-                  <Button variant="success" size="lg" className="w-100 mt-3 py-3 fw-bold shadow text-uppercase" onClick={() => processOrder(false)}>
-                    <i className="fa-solid fa-paper-plane me-2"></i> ĐẶT HÀNG NGAY
-                  </Button>
-                )}
 
+                    {/* Mã giảm giá */}
+                    <div className="mb-3">
+                      <InputGroup size="sm">
+                        <Form.Control 
+                          placeholder="Mã giảm giá..." 
+                          value={couponCode} 
+                          onChange={e=>setCouponCode(e.target.value)} 
+                          className="form-control-custom"
+                        />
+                        <Button variant="outline-success" onClick={handleApplyCoupon}>Áp dụng</Button>
+                      </InputGroup>
+                      {couponMsg && <div className={`small mt-1 ${discount>0?'text-success fw-bold':'text-danger'}`}>{couponMsg}</div>}
+                    </div>
+
+                    {/* Tổng tiền */}
+                    <div className="summary-section bg-white border rounded p-2 mb-3">
+                      <div className="d-flex justify-content-between mb-1 small">
+                        <span className="text-muted">Tạm tính:</span>
+                        <span className="fw-bold">{tamTinh.toLocaleString()} ¥</span>
+                      </div>
+                      <div className="d-flex justify-content-between mb-1 small">
+                        <span className="text-muted">Phí ship:</span>
+                        <span>{shippingFee > 0 ? `+${shippingFee.toLocaleString()} ¥` : '---'}</span>
+                      </div>
+                      {discount > 0 && (
+                        <div className="d-flex justify-content-between mb-1 small text-success">
+                          <span>Giảm giá:</span>
+                          <span>-{discount.toLocaleString()} ¥</span>
+                        </div>
+                      )}
+                      <div className="d-flex justify-content-between border-top pt-2 mt-2 align-items-center">
+                        <span className="fw-bold text-dark">TỔNG CỘNG:</span>
+                        <span className="text-danger fw-bold fs-5">{tongCong.toLocaleString()} <small>¥</small></span>
+                      </div>
+                    </div>
+
+                    {/* Nút Hành động */}
+                    {paymentMethod === 'paypal' ? (
+                      <div style={{zIndex:0, position:'relative'}}>
+                        {shopConfig?.paypalClientId ? (
+                            <PayPalScriptProvider options={{ "client-id": shopConfig.paypalClientId, currency: "JPY" }}>
+                              <PayPalButtons 
+                                  style={{ layout: "horizontal", height: 45, tagline: false }} 
+                                  createOrder={(data, actions) => {
+                                    if (!validateForm()) {
+                                        toast.warning("Vui lòng điền đủ thông tin giao hàng trước!");
+                                        return Promise.reject("Form invalid");
+                                    }
+                                    return actions.order.create({ purchase_units: [{ amount: { value: tongCong } }] });
+                                  }}
+                                  onApprove={async (data, actions) => {
+                                    await actions.order.capture();
+                                    processOrder(true);
+                                  }}
+                                  onError={(err) => {
+                                    console.error(err);
+                                    toast.error("Thanh toán PayPal thất bại!");
+                                  }}
+                              />
+                            </PayPalScriptProvider>
+                        ) : (
+                          <Alert variant="danger" className="p-2 small mb-0">Admin chưa cấu hình PayPal!</Alert>
+                        )}
+                      </div>
+                    ) : (
+                      <Button variant="success" className="w-100 py-2 fw-bold shadow-sm text-uppercase" onClick={() => processOrder(false)}>
+                        <i className="fa-solid fa-paper-plane me-2"></i> ĐẶT HÀNG NGAY
+                      </Button>
+                    )}
+                  </Col>
+                </Row>
               </div>
             </div>
           </Col>
