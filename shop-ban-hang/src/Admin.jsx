@@ -304,7 +304,83 @@ function Admin() {
             <div className="p-3">
               <Row className="g-3 mb-4"><Col md={3}><div className="p-3 bg-primary text-white rounded shadow-sm"><h5>Tổng đơn</h5><h2 className="fw-bold">{dsDonHang.length}</h2></div></Col><Col md={3}><div className="p-3 bg-success text-white rounded shadow-sm"><h5>Doanh thu</h5><h2 className="fw-bold">{totalRevenue.toLocaleString()} ¥</h2></div></Col><Col md={3}><div className="p-3 bg-warning text-dark rounded shadow-sm"><h5>Sản phẩm</h5><h2 className="fw-bold">{dsSanPham.length}</h2></div></Col><Col md={3}><div className="p-3 bg-info text-white rounded shadow-sm"><h5>Thành viên</h5><h2 className="fw-bold">{dsUser.length}</h2></div></Col></Row>
               <Row>
-                <Col md={6}><div className="bg-white p-3 rounded shadow-sm border h-100"><h6 className="fw-bold text-danger border-bottom pb-2">⚠️ SẮP HẾT HÀNG (Kho &lt;= 5)</h6><div style={{maxHeight:'300px', overflowY:'auto'}}><Table size="sm" hover><thead><tr><th>Tên</th><th>Kho</th></tr></thead><tbody>{lowStockProducts.map(sp => (<tr key={sp.id}><td>{sp.ten}</td><td className="text-danger fw-bold">{sp.soLuong}</td></tr>))}</tbody></Table></div></div></Col>
+                <Col md={7}> {/* Tăng độ rộng lên md={7} hoặc md={8} để bảng thoáng hơn */}
+                  <div className="bg-white p-3 rounded shadow-sm border h-100">
+                    <div className="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                      <h6 className="fw-bold text-danger m-0">
+                        <i className="fa-solid fa-triangle-exclamation me-2"></i>CẢNH BÁO KHO ({lowStockProducts.length})
+                      </h6>
+                      <Button variant="outline-danger" size="sm" onClick={() => setFilterStatus('stock_out')}>
+                        Xem tất cả
+                      </Button>
+                    </div>
+                    
+                    <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                      <Table hover responsive className="align-middle mb-0">
+                        <thead className="bg-light text-secondary small">
+                          <tr>
+                            <th>Sản phẩm</th>
+                            <th>Danh mục</th>
+                            <th className="text-center">Tồn kho</th>
+                            <th>Trạng thái</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {lowStockProducts.length > 0 ? (
+                            lowStockProducts.map(sp => {
+                              // Logic tìm tên danh mục từ ID
+                              const catName = dsDanhMuc.find(d => d.id === sp.phanLoai)?.ten || 'Khác';
+                              
+                              return (
+                                <tr key={sp.id}>
+                                  <td>
+                                    <div className="d-flex align-items-center">
+                                      <img 
+                                        src={sp.anh || NO_IMAGE} 
+                                        alt="" 
+                                        width="40" height="40" 
+                                        className="rounded border me-2" 
+                                        style={{ objectFit: 'cover' }}
+                                      />
+                                      <div>
+                                        <div className="fw-bold small text-dark">{sp.ten}</div>
+                                        <small className="text-muted">{sp.donVi}</small>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <Badge bg="light" text="dark" className="border fw-normal">
+                                      {catName}
+                                    </Badge>
+                                  </td>
+                                  <td className="text-center">
+                                    <span className={`fw-bold ${sp.soLuong === 0 ? 'text-danger fs-5' : 'text-warning'}`}>
+                                      {sp.soLuong}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    {sp.soLuong === 0 ? (
+                                      <Badge bg="danger">Hết hàng</Badge>
+                                    ) : (
+                                      <Badge bg="warning" text="dark">Sắp hết</Badge>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          ) : (
+                            <tr>
+                              <td colSpan="4" className="text-center py-4 text-muted">
+                                <i className="fa-regular fa-circle-check fs-1 text-success mb-2"></i>
+                                <p className="m-0">Kho hàng đang ổn định!</p>
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </Table>
+                    </div>
+                  </div>
+                </Col>
                 <Col md={6}><div className="bg-white p-3 rounded shadow-sm border h-100"><h6 className="fw-bold text-primary border-bottom pb-2">📦 ĐƠN MỚI NHẤT</h6><div style={{maxHeight:'300px', overflowY:'auto'}}>{dsDonHang.sort((a,b)=>b.ngayDat-a.ngayDat).slice(0,5).map(dh => (<div key={dh.id} className="d-flex justify-content-between border-bottom py-2"><div><strong>{dh.maDonHang}</strong> - {dh.khachHang?.ten}</div><div className="text-success fw-bold">{dh.tongTien?.toLocaleString()} ¥</div></div>))}</div></div></Col>
               </Row>
             </div>
