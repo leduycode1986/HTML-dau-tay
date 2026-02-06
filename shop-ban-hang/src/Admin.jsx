@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Form, Modal, Badge, Tab, Tabs, Row, Col, Container, InputGroup, Card, Pagination, Spinner, Alert } from 'react-bootstrap';
+import { Table, Button, Form, Modal, Badge, Tab, Tabs, Row, Col, Container, InputGroup, Card, Pagination, Spinner, Alert, Nav } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { doc, setDoc, collection, onSnapshot, deleteDoc, updateDoc, addDoc, serverTimestamp, getDoc } from 'firebase/firestore'; 
-// Dùng adminAuth và adminDb để tách biệt session
 import { adminAuth as auth, adminDb as db } from './firebase'; 
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from 'firebase/auth';
 import { toSlug } from './utils';
@@ -59,11 +58,16 @@ function Admin() {
   const [userPoint, setUserPoint] = useState(0);
   const [selectedOrder, setSelectedOrder] = useState(null);
   
+  // --- STATE PHÂN TRANG & LỌC ---
   const [filterCategory, setFilterCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [sortPrice, setSortPrice] = useState('newest'); 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(30);
+
+  // [MỚI] State phân trang cho Bài viết
+  const [currentNewsPage, setCurrentNewsPage] = useState(1);
+  const [newsPerPage] = useState(10); // Số bài viết mỗi trang
 
   // --- 1. LOGIC AUTH ---
   useEffect(() => {
@@ -163,150 +167,74 @@ function Admin() {
   const savePostContent = () => { if (postEditor.type === 'policy') setShopConfig(prev => ({ ...prev, policyContent: postEditor.content })); else setShopConfig(prev => ({ ...prev, guideContent: postEditor.content })); setModal({...modal, post: false}); };
   const onSaveNews = async () => { const data = { ...formTinTuc, slug: toSlug(formTinTuc.tieuDe), ngayDang: serverTimestamp() }; if (editData.news) await updateDoc(doc(db, "tinTuc", editData.news.id), data); else await addDoc(collection(db, "tinTuc"), data); setModal({...modal, news: false}); toast.success("Đã đăng bài!"); };
 
-  // Tìm hàm handleExportExcel và thay thế bằng code này:
-const handleExportExcel = () => {
-  // 1. Tạo dữ liệu form tiếng Việt dễ nhìn
-  const dataExport = dsSanPham.map(sp => ({
-    "ID (Không sửa)": sp.id, // ID để đối chiếu
-    "Tên sản phẩm": sp.ten,
-    "Giá gốc": sp.giaGoc,
-    "% Giảm": sp.phanTramGiam,
-    "Kho": sp.soLuong,
-    "Đơn vị": sp.donVi,
-    "Mô tả": sp.moTa,
-    "Danh mục ID": sp.phanLoai // Để user biết đường điền mã danh mục
-  }));
-
-  const ws = XLSX.utils.json_to_sheet(dataExport);
-  
-  // Tự động chỉnh độ rộng cột cho đẹp
-  const wscols = [
-    {wch: 25}, // ID
-    {wch: 40}, // Tên
-    {wch: 15}, // Giá
-    {wch: 10}, // Giảm
-    {wch: 10}, // Kho
-    {wch: 10}, // Đơn vị
-    {wch: 30}, // Mô tả
-    {wch: 20}  // Danh mục
-  ];
-  ws['!cols'] = wscols;
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "DanhSachSP");
-  XLSX.writeFile(wb, "DanhSach_SanPham_MaiVang.xlsx");
-};
-  // Tìm hàm handleImportExcel và thay thế bằng code này:
-const handleImportExcel = (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.readAsBinaryString(file);
-
-  reader.onload = async (evt) => {
-    try {
-      const wb = XLSX.read(evt.target.result, { type: 'binary' });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const data = XLSX.utils.sheet_to_json(ws);
-
-      if (data.length === 0) return toast.warning("File Excel rỗng!");
-      if (!confirm(`Tìm thấy ${data.length} dòng dữ liệu. Bạn có muốn xử lý không?`)) return;
-
-      let countUpdate = 0;
-      let countAdd = 0;
-
-      // Xử lý từng dòng một
-      const promises = data.map(async (row) => {
-        const id = row["ID (Không sửa)"];
-        
-        // Lấy dữ liệu từ Excel, nếu không có thì lấy mặc định
-        const productData = {
-          ten: row["Tên sản phẩm"] || "Sản phẩm mới",
-          giaGoc: parseInt(row["Giá gốc"]) || 0,
-          phanTramGiam: parseInt(row["% Giảm"]) || 0,
-          soLuong: parseInt(row["Kho"]) || 0,
-          donVi: row["Đơn vị"] || "Cái",
-          moTa: row["Mô tả"] || "",
-          phanLoai: row["Danh mục ID"] || "",
-          // Tính lại giá bán luôn
-          giaBan: (parseInt(row["Giá gốc"])||0) * (1 - (parseInt(row["% Giảm"])||0)/100),
-          slug: toSlug(row["Tên sản phẩm"] || "san-pham-moi")
-        };
-
-        if (id) {
-          // TRƯỜNG HỢP 1: CẬP NHẬT (Có ID)
-          countUpdate++;
-          return updateDoc(doc(db, "sanPham", id), productData);
-        } else {
-          // TRƯỜNG HỢP 2: THÊM MỚI (Không có ID)
-          // Thêm các trường bắt buộc cho SP mới
-          const newProduct = {
-            ...productData,
-            anh: NO_IMAGE, // Mặc định chưa có ảnh
-            isMoi: true,
-            isKhuyenMai: false,
-            isBanChay: false,
-            isFlashSale: false,
-            ngayTao: serverTimestamp()
-          };
-          countAdd++;
-          return addDoc(collection(db, "sanPham"), newProduct);
-        }
-      });
-
-      await Promise.all(promises);
-      toast.success(`Xong! Đã cập nhật ${countUpdate} SP và thêm mới ${countAdd} SP.`);
-      
-      // Reset input file để chọn lại file khác được
-      e.target.value = null;
-
-    } catch (error) {
-      console.error(error);
-      toast.error("Lỗi file Excel! Vui lòng kiểm tra lại định dạng.");
-    }
+  // XUẤT NHẬP EXCEL
+  const handleExportExcel = () => {
+    const dataExport = dsSanPham.map(sp => ({
+      "ID (Không sửa)": sp.id, "Tên sản phẩm": sp.ten, "Giá gốc": sp.giaGoc, "% Giảm": sp.phanTramGiam, "Kho": sp.soLuong, "Đơn vị": sp.donVi, "Mô tả": sp.moTa, "Danh mục ID": sp.phanLoai 
+    }));
+    const ws = XLSX.utils.json_to_sheet(dataExport);
+    ws['!cols'] = [{wch: 25}, {wch: 40}, {wch: 15}, {wch: 10}, {wch: 10}, {wch: 10}, {wch: 30}, {wch: 20}];
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "DanhSachSP"); XLSX.writeFile(wb, "DanhSach_SanPham_MaiVang.xlsx");
   };
-};
+
+  const handleImportExcel = (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader(); reader.readAsBinaryString(file);
+    reader.onload = async (evt) => {
+      try {
+        const wb = XLSX.read(evt.target.result, { type: 'binary' }); const ws = wb.Sheets[wb.SheetNames[0]]; const data = XLSX.utils.sheet_to_json(ws);
+        if (data.length === 0) return toast.warning("File Excel rỗng!");
+        if (!confirm(`Tìm thấy ${data.length} dòng dữ liệu. Xử lý?`)) return;
+        let countUpdate = 0; let countAdd = 0;
+        const promises = data.map(async (row) => {
+          const id = row["ID (Không sửa)"];
+          const productData = {
+            ten: row["Tên sản phẩm"] || "Sản phẩm mới", giaGoc: parseInt(row["Giá gốc"]) || 0, phanTramGiam: parseInt(row["% Giảm"]) || 0, soLuong: parseInt(row["Kho"]) || 0, donVi: row["Đơn vị"] || "Cái", moTa: row["Mô tả"] || "", phanLoai: row["Danh mục ID"] || "",
+            giaBan: (parseInt(row["Giá gốc"])||0) * (1 - (parseInt(row["% Giảm"])||0)/100), slug: toSlug(row["Tên sản phẩm"] || "san-pham-moi")
+          };
+          if (id) { countUpdate++; return updateDoc(doc(db, "sanPham", id), productData); } 
+          else { countAdd++; return addDoc(collection(db, "sanPham"), {...productData, anh: NO_IMAGE, isMoi: true, isKhuyenMai: false, isBanChay: false, isFlashSale: false, ngayTao: serverTimestamp()}); }
+        });
+        await Promise.all(promises); toast.success(`Xong! Cập nhật ${countUpdate}, Thêm mới ${countAdd}.`); e.target.value = null;
+      } catch (error) { toast.error("Lỗi file Excel!"); }
+    };
+  };
+
   const handleAddAdmin = async () => { if (!newAdminEmail.includes('@')) return toast.error("Email sai!"); await updateDoc(doc(db, "cauHinh", "phanquyen"), { adminEmails: [...adminWhitelist, newAdminEmail] }); setNewAdminEmail(''); toast.success("Đã thêm!"); };
   const handleRemoveAdmin = async (email) => { if (adminWhitelist.length <= 1) return toast.warning("Giữ lại 1 admin!"); if (confirm(`Xóa ${email}?`)) await updateDoc(doc(db, "cauHinh", "phanquyen"), { adminEmails: adminWhitelist.filter(e => e !== email) }); };
   const handleUpdatePassword = async (e) => { e.preventDefault(); if (passData.newPass !== passData.confirmPass) return toast.error("Không khớp!"); try { await updatePassword(auth.currentUser, passData.newPass); toast.success("Xong!"); } catch (e) { toast.error(e.message); } };
 
-  // --- LOGIC HIỂN THỊ SP ---
-  const filteredProducts = dsSanPham
-    .filter(sp => {
-        if (filterCategory) {
-            const subCats = dsDanhMuc.filter(d => d.parent === filterCategory).map(d => d.id);
-            const validCats = [filterCategory, ...subCats];
-            if (!validCats.includes(sp.phanLoai)) return false; 
-        }
+  // --- LOGIC PHÂN TRANG SP ---
+  const filteredProducts = dsSanPham.filter(sp => {
+        if (filterCategory) { const subCats = dsDanhMuc.filter(d => d.parent === filterCategory).map(d => d.id); if (![filterCategory, ...subCats].includes(sp.phanLoai)) return false; }
         return true;
-    })
-    .filter(sp => {
+    }).filter(sp => {
         if (!filterStatus) return true;
-        if (filterStatus === 'new') return sp.isMoi;
-        if (filterStatus === 'best') return sp.isBanChay;
-        if (filterStatus === 'flash') return sp.isFlashSale;
-        if (filterStatus === 'discount') return sp.phanTramGiam > 0;
-        if (filterStatus === 'stock_out') return sp.soLuong <= 0;
+        if (filterStatus === 'new') return sp.isMoi; if (filterStatus === 'best') return sp.isBanChay; if (filterStatus === 'flash') return sp.isFlashSale; if (filterStatus === 'discount') return sp.phanTramGiam > 0; if (filterStatus === 'stock_out') return sp.soLuong <= 0;
         return true;
-    })
-    .sort((a, b) => {
+    }).sort((a, b) => {
       if (sortPrice === 'newest') return (b.ngayTao?.seconds || 0) - (a.ngayTao?.seconds || 0);
-      if (sortPrice === 'asc') return (a.giaBan - b.giaBan);
-      if (sortPrice === 'desc') return (b.giaBan - a.giaBan);
+      if (sortPrice === 'asc') return (a.giaBan - b.giaBan); if (sortPrice === 'desc') return (b.giaBan - a.giaBan);
       return 0;
     });
 
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const indexOfLastItem = currentPage * itemsPerPage; const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentProducts = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+  // --- [MỚI] LOGIC PHÂN TRANG BÀI VIẾT (TIN TỨC) ---
+  const indexOfLastNews = currentNewsPage * newsPerPage;
+  const indexOfFirstNews = indexOfLastNews - newsPerPage;
+  // Sắp xếp bài viết mới nhất lên đầu trước khi cắt trang
+  const sortedNews = [...dsTinTuc].sort((a, b) => (b.ngayDang?.seconds || 0) - (a.ngayDang?.seconds || 0));
+  const currentNews = sortedNews.slice(indexOfFirstNews, indexOfLastNews);
+  const totalNewsPages = Math.ceil(dsTinTuc.length / newsPerPage);
+  const paginateNews = (num) => setCurrentNewsPage(num);
+
   const totalRevenue = dsDonHang.reduce((acc, order) => acc + (order.tongTien || 0), 0);
   const lowStockProducts = dsSanPham.filter(sp => sp.soLuong <= 5).sort((a,b)=>a.soLuong-b.soLuong);
-  const ImageSize = ({ src }) => { const [s, setS] = useState({ w: 0, h: 0 }); const i = new Image(); i.src = src; i.onload = () => setS({ w: i.width, h: i.height }); return <span className="small text-muted d-block mt-1">{s.w} x {s.h} px</span>; };
-
+  
   // --- GIAO DIỆN ---
   if (loadingAuth) return <div className="text-center py-5"><Spinner animation="border" variant="success" /></div>;
 
@@ -339,82 +267,51 @@ const handleImportExcel = (e) => {
             </div>
           </Tab>
         
-        <Tab eventKey="products_cats" title="📦 SẢN PHẨM & DANH MỤC">
-          <div className="p-3">
-            {/* BẮT ĐẦU: TABS CON TÁCH BIỆT */}
-            <Tabs defaultActiveKey="tab_sanpham" id="sub-tabs-admin" className="mb-3 custom-sub-tabs" fill variant="pills">
-              
-              {/* --- TAB 1: QUẢN LÝ SẢN PHẨM --- */}
-              <Tab eventKey="tab_sanpham" title={<span className="fw-bold"><i className="fa-solid fa-box me-2"></i> QUẢN LÝ SẢN PHẨM</span>}>
-                <div className="bg-white p-3 rounded shadow-sm mb-4 border">
-                  <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                    <div className="d-flex gap-2">
-                      <Button variant="success" className="fw-bold shadow-sm" onClick={() => { setEditData({ ...editData, sp: null }); setFormDataSP({ ten: '', giaGoc: '', phanTramGiam: 0, giaBan: '', donVi: 'Cái', soLuong: 100, moTa: '', anh: '', phanLoai: '', isMoi: false, isKhuyenMai: false, isBanChay: false, isFlashSale: false }); setModal({ ...modal, sp: true }) }}>
-                        <i className="fa-solid fa-plus me-1"></i> THÊM SP
-                      </Button>
-                      
-                      {/* Nút Xuất Excel */}
-                      <Button variant="outline-success" onClick={handleExportExcel} title="Tải file Excel về để sửa hoặc thêm mới">
-                        <i className="fa-solid fa-file-excel me-1"></i> Xuất Excel
-                      </Button>
-
-                      {/* Nút Nhập Excel */}
-                      <div className="position-relative">
-                        <Button variant="outline-primary" title="Tải lên file Excel đã sửa">
-                          <i className="fa-solid fa-file-import me-1"></i> Nhập Excel
+          <Tab eventKey="products_cats" title="📦 SẢN PHẨM & DANH MỤC">
+            <div className="p-3">
+              <Tabs defaultActiveKey="tab_sanpham" id="sub-tabs-admin" className="mb-3 custom-sub-tabs" fill variant="pills">
+                <Tab eventKey="tab_sanpham" title={<span className="fw-bold"><i className="fa-solid fa-box me-2"></i> QUẢN LÝ SẢN PHẨM</span>}>
+                  <div className="bg-white p-3 rounded shadow-sm mb-4 border">
+                    <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                      <div className="d-flex gap-2">
+                        <Button variant="success" className="fw-bold shadow-sm" onClick={() => { setEditData({ ...editData, sp: null }); setFormDataSP({ ten: '', giaGoc: '', phanTramGiam: 0, giaBan: '', donVi: 'Cái', soLuong: 100, moTa: '', anh: '', phanLoai: '', isMoi: false, isKhuyenMai: false, isBanChay: false, isFlashSale: false }); setModal({ ...modal, sp: true }) }}>
+                          <i className="fa-solid fa-plus me-1"></i> THÊM SP
                         </Button>
-                        <input 
-                          type="file" 
-                          accept=".xlsx, .xls" 
-                          onChange={handleImportExcel} 
-                          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} 
-                        />
+                        <Button variant="outline-success" onClick={handleExportExcel} title="Xuất Excel"><i className="fa-solid fa-file-excel me-1"></i> Xuất Excel</Button>
+                        <div className="position-relative">
+                          <Button variant="outline-primary" title="Nhập Excel"><i className="fa-solid fa-file-import me-1"></i> Nhập Excel</Button>
+                          <input type="file" accept=".xlsx, .xls" onChange={handleImportExcel} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} />
+                        </div>
+                      </div>
+                      <div className="d-flex gap-2">
+                        <Form.Select size="sm" style={{ width: 180 }} value={filterCategory} onChange={e => setFilterCategory(e.target.value)}><option value="">-- Tất cả danh mục --</option>{dsDanhMuc.map(d => <option key={d.id} value={d.id}>{d.ten}</option>)}</Form.Select>
+                        <Form.Select size="sm" style={{width:160}} value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}><option value="">-- Trạng thái --</option><option value="new">Mới</option><option value="best">Bán chạy</option><option value="flash">Sale</option><option value="stock_out">Hết hàng</option></Form.Select>
+                        <Form.Select size="sm" style={{width:150}} value={sortPrice} onChange={e=>setSortPrice(e.target.value)}><option value="newest">Mới nhất</option><option value="asc">Giá tăng</option><option value="desc">Giá giảm</option></Form.Select>
                       </div>
                     </div>
-
-                    {/* Bộ lọc giữ nguyên */}
-                    <div className="d-flex gap-2">
-                      <Form.Select size="sm" style={{ width: 180 }} value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
-                        <option value="">-- Tất cả danh mục --</option>
-                        {dsDanhMuc.map(d => <option key={d.id} value={d.id}>{d.ten}</option>)}
-                      </Form.Select>
-                      {/* ... (Giữ nguyên các select lọc khác) ... */}
-                      <Form.Select size="sm" style={{width:160}} value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}><option value="">-- Trạng thái --</option><option value="new">Mới</option><option value="best">Bán chạy</option><option value="flash">Sale</option><option value="stock_out">Hết hàng</option></Form.Select>
-                      <Form.Select size="sm" style={{width:150}} value={sortPrice} onChange={e=>setSortPrice(e.target.value)}><option value="newest">Mới nhất</option><option value="asc">Giá tăng</option><option value="desc">Giá giảm</option></Form.Select>
-                    </div>
-                  </div>
-
-                  {/* Bảng sản phẩm (Code cũ) */}
-                  <div className="table-responsive mb-3">
-                    {/* Copy nguyên bảng Table sản phẩm cũ vào đây */}
-                    <Table hover bordered className="align-middle">
-                        <thead className="bg-light"><tr><th>Ảnh</th><th>Tên</th><th>Đơn vị</th><th>Kho</th><th>Giá bán</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
-                        <tbody>{currentProducts.map(sp=>(<tr key={sp.id}><td><img src={sp.anh||NO_IMAGE} width="50" height="50" style={{objectFit:'cover', borderRadius:4}}/></td><td className="fw-bold">{sp.ten}</td><td>{sp.donVi}</td><td className={sp.soLuong<10?'text-danger fw-bold':''}>{sp.soLuong}</td><td className="text-danger fw-bold">{sp.giaBan?.toLocaleString()}¥</td><td>{sp.isFlashSale && <Badge bg="warning" text="dark" className="me-1">Sale</Badge>}{sp.isMoi && <Badge bg="success">New</Badge>}</td><td><Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditData({...editData, sp}); setFormDataSP(sp); setModal({...modal, sp:true})}}>✏️</Button><Button size="sm" variant="danger" onClick={async()=>{if(confirm('Xóa?')) await deleteDoc(doc(db,"sanPham",sp.id))}}>🗑️</Button></td></tr>))}</tbody>
-                      </Table>
-                  </div>
-                  {/* Pagination (Code cũ) */}
-                  <Pagination className="justify-content-center m-0"><Pagination.Prev onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} />{[...Array(totalPages)].map((_, i) => (<Pagination.Item key={i+1} active={i+1 === currentPage} onClick={() => paginate(i+1)}>{i+1}</Pagination.Item>))}<Pagination.Next onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} /></Pagination>
-                </div>
-              </Tab>
-
-              {/* --- TAB 2: QUẢN LÝ DANH MỤC --- */}
-              <Tab eventKey="tab_danhmuc" title={<span className="fw-bold"><i className="fa-solid fa-folder me-2"></i> QUẢN LÝ DANH MỤC</span>}>
-                <div className="bg-white p-3 rounded shadow-sm border">
-                  {/* Copy nguyên phần Quản lý danh mục cũ vào đây */}
-                    <Button variant="primary" className="mb-3 fw-bold shadow-sm" onClick={()=>{setEditData({...editData, dm:null}); setFormDM({ten:'', icon:'', parent:'', order:''}); setModal({...modal, dm:true})}}>+ DANH MỤC MỚI</Button>
-                    <div className="table-responsive">
-                        <Table hover bordered className="align-middle">
-                            <thead className="bg-light"><tr><th>STT</th><th>Tên danh mục</th><th>Icon</th><th>Cấp độ</th><th>Thao tác</th></tr></thead>
-                            <tbody>{dsDanhMuc.map(d=>(<tr key={d.id} className={d.parent ? 'bg-light' : 'fw-bold'}><td style={{width: '80px'}}>{d.order}</td><td>{d.parent ? <span className="text-secondary ms-4"><i className="fa-solid fa-turn-up fa-rotate-90 me-2"></i>{d.ten}</span> : <span className="text-success">{d.ten}</span>}</td><td className="fs-5">{d.icon}</td><td>{d.parent ? <Badge bg="secondary">Con</Badge> : <Badge bg="primary">Gốc</Badge>}</td><td style={{width: '120px'}}><Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditData({...editData, dm:d}); setFormDM(d); setModal({...modal, dm:true})}}>✏️</Button><Button size="sm" variant="danger" onClick={async()=>{if(confirm('Xóa?')) await deleteDoc(doc(db,"danhMuc",d.id))}}>🗑️</Button></td></tr>))}</tbody>
+                    <div className="table-responsive mb-3">
+                      <Table hover bordered className="align-middle">
+                          <thead className="bg-light"><tr><th>Ảnh</th><th>Tên</th><th>Đơn vị</th><th>Kho</th><th>Giá bán</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+                          <tbody>{currentProducts.map(sp=>(<tr key={sp.id}><td><img src={sp.anh||NO_IMAGE} width="50" height="50" style={{objectFit:'cover', borderRadius:4}}/></td><td className="fw-bold">{sp.ten}</td><td>{sp.donVi}</td><td className={sp.soLuong<10?'text-danger fw-bold':''}>{sp.soLuong}</td><td className="text-danger fw-bold">{sp.giaBan?.toLocaleString()}¥</td><td>{sp.isFlashSale && <Badge bg="warning" text="dark" className="me-1">Sale</Badge>}{sp.isMoi && <Badge bg="success">New</Badge>}</td><td><Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditData({...editData, sp}); setFormDataSP(sp); setModal({...modal, sp:true})}}>✏️</Button><Button size="sm" variant="danger" onClick={async()=>{if(confirm('Xóa?')) await deleteDoc(doc(db,"sanPham",sp.id))}}>🗑️</Button></td></tr>))}</tbody>
                         </Table>
                     </div>
-                </div>
-              </Tab>
-
-            </Tabs>
-            {/* KẾT THÚC: TABS CON */}
-          </div>
-        </Tab>
+                    <Pagination className="justify-content-center m-0"><Pagination.Prev onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} />{[...Array(totalPages)].map((_, i) => (<Pagination.Item key={i+1} active={i+1 === currentPage} onClick={() => paginate(i+1)}>{i+1}</Pagination.Item>))}<Pagination.Next onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} /></Pagination>
+                  </div>
+                </Tab>
+                <Tab eventKey="tab_danhmuc" title={<span className="fw-bold"><i className="fa-solid fa-folder me-2"></i> QUẢN LÝ DANH MỤC</span>}>
+                  <div className="bg-white p-3 rounded shadow-sm border">
+                      <Button variant="primary" className="mb-3 fw-bold shadow-sm" onClick={()=>{setEditData({...editData, dm:null}); setFormDM({ten:'', icon:'', parent:'', order:''}); setModal({...modal, dm:true})}}>+ DANH MỤC MỚI</Button>
+                      <div className="table-responsive">
+                          <Table hover bordered className="align-middle">
+                              <thead className="bg-light"><tr><th>STT</th><th>Tên danh mục</th><th>Icon</th><th>Cấp độ</th><th>Thao tác</th></tr></thead>
+                              <tbody>{dsDanhMuc.map(d=>(<tr key={d.id} className={d.parent ? 'bg-light' : 'fw-bold'}><td style={{width: '80px'}}>{d.order}</td><td>{d.parent ? <span className="text-secondary ms-4"><i className="fa-solid fa-turn-up fa-rotate-90 me-2"></i>{d.ten}</span> : <span className="text-success">{d.ten}</span>}</td><td className="fs-5">{d.icon}</td><td>{d.parent ? <Badge bg="secondary">Con</Badge> : <Badge bg="primary">Gốc</Badge>}</td><td style={{width: '120px'}}><Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditData({...editData, dm:d}); setFormDM(d); setModal({...modal, dm:true})}}>✏️</Button><Button size="sm" variant="danger" onClick={async()=>{if(confirm('Xóa?')) await deleteDoc(doc(db,"danhMuc",d.id))}}>🗑️</Button></td></tr>))}</tbody>
+                          </Table>
+                      </div>
+                  </div>
+                </Tab>
+              </Tabs>
+            </div>
+          </Tab>
 
           <Tab eventKey="orders" title="📋 ĐƠN HÀNG">
             <div className="table-responsive bg-white rounded shadow-sm p-3">
@@ -427,186 +324,244 @@ const handleImportExcel = (e) => {
 
           <Tab eventKey="marketing" title="📣 MARKETING & BÀI VIẾT">
             <div className="p-3">
-              <h5 className="fw-bold text-info mb-3">QUẢN LÝ BÀI VIẾT</h5>
-              <div className="bg-white p-3 rounded shadow-sm mb-4">
-                <Button variant="info" className="mb-3 fw-bold text-white" onClick={()=>{setEditData({...editData, news:null}); setFormTinTuc({ tieuDe: '', anh: '', tomTat: '', noiDung: '' }); setModal({...modal, news:true})}}>+ VIẾT BÀI MỚI</Button>
-                <Table hover bordered><thead><tr><th>Ảnh</th><th>Tiêu đề</th><th>Tóm tắt</th><th>Ngày</th><th>Thao tác</th></tr></thead><tbody>{dsTinTuc.map(tin => (<tr key={tin.id}><td><img src={tin.anh || NO_IMAGE} width="60" height="40" style={{objectFit:'cover'}}/></td><td className="fw-bold">{tin.tieuDe}</td><td style={{maxWidth:'300px'}} className="text-truncate">{tin.tomTat}</td><td>{tin.ngayDang ? new Date(tin.ngayDang.seconds * 1000).toLocaleDateString('vi-VN') : ''}</td><td><Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditData({...editData, news:tin}); setFormTinTuc(tin); setModal({...modal, news:true})}}>✏️</Button><Button size="sm" variant="danger" onClick={()=>del('tinTuc', tin.id)}>🗑️</Button></td></tr>))}</tbody></Table>
-              </div>
+              {/* [ĐÃ SỬA] CHIA TAB CON CHO MARKETING */}
+              <Tabs defaultActiveKey="articles" id="marketing-tabs" className="mb-3 custom-sub-tabs" fill variant="pills">
+                
+                {/* 1. QUẢN LÝ BÀI VIẾT (CÓ PHÂN TRANG) */}
+                <Tab eventKey="articles" title={<span className="fw-bold"><i className="fa-solid fa-newspaper me-2"></i> QUẢN LÝ BÀI VIẾT</span>}>
+                  <div className="bg-white p-3 rounded shadow-sm border">
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <Button variant="info" className="fw-bold text-white shadow-sm" onClick={()=>{setEditData({...editData, news:null}); setFormTinTuc({ tieuDe: '', anh: '', tomTat: '', noiDung: '' }); setModal({...modal, news:true})}}>+ VIẾT BÀI MỚI</Button>
+                      <span className="text-muted small">Tổng: {dsTinTuc.length} bài viết</span>
+                    </div>
 
-              <h5 className="fw-bold text-warning mb-3">KHUYẾN MÃI & VẬN CHUYỂN</h5>
-              <Row>
-                <Col md={6}>
-                  <div className="bg-white p-3 shadow-sm rounded h-100"><h6 className="fw-bold text-success border-bottom pb-2">MÃ GIẢM GIÁ</h6><div className="d-flex gap-1 mb-2"><Form.Control placeholder="Mã" value={formCoupon.code} onChange={e=>setFormCoupon({...formCoupon,code:e.target.value.toUpperCase()})}/><Form.Control type="number" placeholder="Giảm (¥)" value={formCoupon.giamGia} onChange={e=>setFormCoupon({...formCoupon,giamGia:e.target.value})}/><Button size="sm" onClick={()=>{add('coupons',formCoupon); setFormCoupon({code:'',giamGia:0})}}>Thêm</Button></div><Table size="sm"><tbody>{dsCoupon.map(c=><tr key={c.id}><td>{c.code}</td><td>{parseInt(c.giamGia).toLocaleString()}¥</td><td><Button size="sm" variant="danger" onClick={()=>del('coupons',c.id)}>X</Button></td></tr>)}</tbody></Table></div>
-                </Col>
-                <Col md={6}>
-                  <div className="bg-white p-3 shadow-sm rounded h-100"><h6 className="fw-bold text-primary border-bottom pb-2">PHÍ SHIP</h6><div className="d-flex gap-1 mb-2"><Form.Control placeholder="Khu vực" value={formShip.khuVuc} onChange={e=>setFormShip({...formShip,khuVuc:e.target.value})}/><Form.Control type="number" placeholder="Phí (¥)" value={formShip.phi} onChange={e=>setFormShip({...formShip,phi:e.target.value})}/><Button size="sm" onClick={()=>{add('shipping',formShip); setFormShip({khuVuc:'',phi:0})}}>Thêm</Button></div><Table size="sm"><tbody>{dsShip.map(s=><tr key={s.id}><td>{s.khuVuc}</td><td>{parseInt(s.phi).toLocaleString()}¥</td><td><Button size="sm" variant="danger" onClick={()=>del('shipping',s.id)}>X</Button></td></tr>)}</tbody></Table></div>
-                </Col>
-              </Row>
+                    <Table hover bordered className="align-middle">
+                      <thead className="bg-light"><tr><th>Ảnh</th><th>Tiêu đề</th><th>Tóm tắt</th><th>Ngày đăng</th><th>Thao tác</th></tr></thead>
+                      <tbody>
+                        {currentNews.length > 0 ? currentNews.map(tin => (
+                          <tr key={tin.id}>
+                            <td style={{width:'80px'}}><img src={tin.anh || NO_IMAGE} width="80" height="50" style={{objectFit:'cover', borderRadius:'4px'}}/></td>
+                            <td className="fw-bold" style={{maxWidth:'250px'}}>{tin.tieuDe}</td>
+                            <td style={{maxWidth:'300px'}} className="text-muted small text-truncate">{tin.tomTat}</td>
+                            <td style={{width:'100px'}}>{tin.ngayDang ? new Date(tin.ngayDang.seconds * 1000).toLocaleDateString('vi-VN') : ''}</td>
+                            <td style={{width:'100px'}}><Button size="sm" variant="warning" className="me-1" onClick={()=>{setEditData({...editData, news:tin}); setFormTinTuc(tin); setModal({...modal, news:true})}}>✏️</Button><Button size="sm" variant="danger" onClick={()=>del('tinTuc', tin.id)}>🗑️</Button></td>
+                          </tr>
+                        )) : <tr><td colSpan="5" className="text-center py-4 text-muted">Chưa có bài viết nào</td></tr>}
+                      </tbody>
+                    </Table>
+
+                    {/* [ĐÃ THÊM] PHÂN TRANG CHO BÀI VIẾT */}
+                    {dsTinTuc.length > newsPerPage && (
+                      <Pagination className="justify-content-center mt-3">
+                        <Pagination.Prev onClick={() => paginateNews(currentNewsPage - 1)} disabled={currentNewsPage === 1} />
+                        {[...Array(totalNewsPages)].map((_, i) => (
+                          <Pagination.Item key={i+1} active={i+1 === currentNewsPage} onClick={() => paginateNews(i+1)}>{i+1}</Pagination.Item>
+                        ))}
+                        <Pagination.Next onClick={() => paginateNews(currentNewsPage + 1)} disabled={currentNewsPage === totalNewsPages} />
+                      </Pagination>
+                    )}
+                  </div>
+                </Tab>
+
+                {/* 2. KHUYẾN MÃI & VẬN CHUYỂN */}
+                <Tab eventKey="promotions" title={<span className="fw-bold"><i className="fa-solid fa-tags me-2"></i> KHUYẾN MÃI & SHIP</span>}>
+                  <Row>
+                    <Col md={6} className="mb-4 mb-md-0">
+                      <div className="bg-white p-3 shadow-sm rounded h-100 border">
+                        <h6 className="fw-bold text-success border-bottom pb-2 mb-3"><i className="fa-solid fa-ticket me-2"></i> MÃ GIẢM GIÁ (COUPON)</h6>
+                        <div className="d-flex gap-2 mb-3">
+                          <Form.Control placeholder="Nhập mã (VD: TET2025)" value={formCoupon.code} onChange={e=>setFormCoupon({...formCoupon,code:e.target.value.toUpperCase()})}/>
+                          <Form.Control type="number" placeholder="Giảm (¥)" style={{width:'100px'}} value={formCoupon.giamGia} onChange={e=>setFormCoupon({...formCoupon,giamGia:e.target.value})}/>
+                          <Button variant="success" size="sm" onClick={()=>{if(!formCoupon.code) return toast.warning("Nhập mã!"); add('coupons',formCoupon); setFormCoupon({code:'',giamGia:0})}}>Thêm</Button>
+                        </div>
+                        <Table size="sm" hover>
+                          <thead className="bg-light"><tr><th>Mã Code</th><th>Giảm giá</th><th>Xóa</th></tr></thead>
+                          <tbody>{dsCoupon.map(c=><tr key={c.id}><td className="fw-bold text-primary">{c.code}</td><td className="fw-bold text-danger">{parseInt(c.giamGia).toLocaleString()}¥</td><td><Button size="sm" variant="outline-danger" style={{border:'none'}} onClick={()=>del('coupons',c.id)}><i className="fa-solid fa-trash"></i></Button></td></tr>)}</tbody>
+                        </Table>
+                      </div>
+                    </Col>
+                    <Col md={6}>
+                      <div className="bg-white p-3 shadow-sm rounded h-100 border">
+                        <h6 className="fw-bold text-primary border-bottom pb-2 mb-3"><i className="fa-solid fa-truck-fast me-2"></i> PHÍ VẬN CHUYỂN</h6>
+                        <div className="d-flex gap-2 mb-3">
+                          <Form.Control placeholder="Khu vực (VD: Tokyo)" value={formShip.khuVuc} onChange={e=>setFormShip({...formShip,khuVuc:e.target.value})}/>
+                          <Form.Control type="number" placeholder="Phí (¥)" style={{width:'100px'}} value={formShip.phi} onChange={e=>setFormShip({...formShip,phi:e.target.value})}/>
+                          <Button variant="primary" size="sm" onClick={()=>{if(!formShip.khuVuc) return toast.warning("Nhập khu vực!"); add('shipping',formShip); setFormShip({khuVuc:'',phi:0})}}>Thêm</Button>
+                        </div>
+                        <Table size="sm" hover>
+                          <thead className="bg-light"><tr><th>Khu vực</th><th>Phí Ship</th><th>Xóa</th></tr></thead>
+                          <tbody>{dsShip.map(s=><tr key={s.id}><td className="fw-bold">{s.khuVuc}</td><td>{parseInt(s.phi).toLocaleString()}¥</td><td><Button size="sm" variant="outline-danger" style={{border:'none'}} onClick={()=>del('shipping',s.id)}><i className="fa-solid fa-trash"></i></Button></td></tr>)}</tbody>
+                        </Table>
+                      </div>
+                    </Col>
+                  </Row>
+                </Tab>
+              </Tabs>
             </div>
           </Tab>
 
           {/* TAB SYSTEM: CẤU HÌNH SHOP - TÁCH BIỆT THANH TOÁN */}
           <Tab eventKey="system" title="⚙️ HỆ THỐNG & CẤU HÌNH">
-          <div className="p-3">
-            <Tab.Container defaultActiveKey="general_info">
-              <Row>
-                {/* --- CỘT TRÁI: MENU CÀI ĐẶT --- */}
-                <Col md={3} className="mb-4">
-                  <Card className="shadow-sm border-0">
-                    <Card.Header className="bg-success text-white fw-bold">
-                      <i className="fa-solid fa-gears me-2"></i> CÀI ĐẶT
-                    </Card.Header>
-                    <Card.Body className="p-0">
-                      <Nav variant="pills" className="flex-column admin-setting-nav">
-                        <Nav.Item>
-                          <Nav.Link eventKey="general_info" className="rounded-0 border-bottom py-3">
-                            <i className="fa-solid fa-shop me-2"></i> Thông tin cửa hàng
-                          </Nav.Link>
-                        </Nav.Item>
-                        <Nav.Item>
-                          <Nav.Link eventKey="payment_info" className="rounded-0 border-bottom py-3">
-                            <i className="fa-solid fa-credit-card me-2"></i> Ngân hàng & QR
-                          </Nav.Link>
-                        </Nav.Item>
-                        <Nav.Item>
-                          <Nav.Link eventKey="admin_manage" className="rounded-0 border-bottom py-3">
-                            <i className="fa-solid fa-users-gear me-2"></i> Phân quyền Admin
-                          </Nav.Link>
-                        </Nav.Item>
-                        <Nav.Item>
-                          <Nav.Link eventKey="my_account" className="rounded-0 py-3">
-                            <i className="fa-solid fa-user-lock me-2"></i> Tài khoản của tôi
-                          </Nav.Link>
-                        </Nav.Item>
-                      </Nav>
-                    </Card.Body>
-                  </Card>
-                </Col>
+            <div className="p-3">
+              <Tab.Container defaultActiveKey="general_info">
+                <Row>
+                  {/* --- CỘT TRÁI: MENU CÀI ĐẶT --- */}
+                  <Col md={3} className="mb-4">
+                    <Card className="shadow-sm border-0">
+                      <Card.Header className="bg-success text-white fw-bold">
+                        <i className="fa-solid fa-gears me-2"></i> CÀI ĐẶT
+                      </Card.Header>
+                      <Card.Body className="p-0">
+                        <Nav variant="pills" className="flex-column admin-setting-nav">
+                          <Nav.Item>
+                            <Nav.Link eventKey="general_info" className="rounded-0 border-bottom py-3">
+                              <i className="fa-solid fa-shop me-2"></i> Thông tin cửa hàng
+                            </Nav.Link>
+                          </Nav.Item>
+                          <Nav.Item>
+                            <Nav.Link eventKey="payment_info" className="rounded-0 border-bottom py-3">
+                              <i className="fa-solid fa-credit-card me-2"></i> Ngân hàng & QR
+                            </Nav.Link>
+                          </Nav.Item>
+                          <Nav.Item>
+                            <Nav.Link eventKey="admin_manage" className="rounded-0 border-bottom py-3">
+                              <i className="fa-solid fa-users-gear me-2"></i> Phân quyền Admin
+                            </Nav.Link>
+                          </Nav.Item>
+                          <Nav.Item>
+                            <Nav.Link eventKey="my_account" className="rounded-0 py-3">
+                              <i className="fa-solid fa-user-lock me-2"></i> Tài khoản của tôi
+                            </Nav.Link>
+                          </Nav.Item>
+                        </Nav>
+                      </Card.Body>
+                    </Card>
+                  </Col>
 
-                {/* --- CỘT PHẢI: NỘI DUNG CHI TIẾT --- */}
-                <Col md={9}>
-                  <Tab.Content>
-                    
-                    {/* 1. THÔNG TIN CỬA HÀNG */}
-                    <Tab.Pane eventKey="general_info">
-                      <div className="bg-white p-4 rounded shadow-sm border">
-                        <h6 className="text-success fw-bold border-bottom pb-2 mb-3">THÔNG TIN CHUNG</h6>
-                        <Row className="g-3">
-                          <Col md={8}>
-                            <Row className="g-3">
-                              <Col md={6}><Form.Group><Form.Label className="fw-bold small">Tên Shop</Form.Label><Form.Control value={shopConfig.tenShop} onChange={e=>setShopConfig({...shopConfig, tenShop:e.target.value})}/></Form.Group></Col>
-                              <Col md={6}><Form.Group><Form.Label className="fw-bold small">Hotline</Form.Label><Form.Control value={shopConfig.sdt} onChange={e=>setShopConfig({...shopConfig, sdt:e.target.value})}/></Form.Group></Col>
-                              <Col md={12}><Form.Group><Form.Label className="fw-bold small">Slogan</Form.Label><Form.Control value={shopConfig.slogan} onChange={e=>setShopConfig({...shopConfig, slogan:e.target.value})}/></Form.Group></Col>
-                              <Col md={12}><Form.Group><Form.Label className="fw-bold small">Thông báo chạy (Header)</Form.Label><Form.Control value={shopConfig.topBarText} onChange={e=>setShopConfig({...shopConfig, topBarText:e.target.value})}/></Form.Group></Col>
-                              <Col md={6}><Form.Group><Form.Label className="fw-bold small">Giờ mở cửa</Form.Label><Form.Control value={shopConfig.openingHours} onChange={e=>setShopConfig({...shopConfig, openingHours:e.target.value})}/></Form.Group></Col>
-                              <Col md={6}><Form.Group><Form.Label className="fw-bold small">Địa chỉ</Form.Label><Form.Control value={shopConfig.diaChi} onChange={e=>setShopConfig({...shopConfig, diaChi:e.target.value})}/></Form.Group></Col>
-                            </Row>
-                          </Col>
-                          <Col md={4} className="text-center">
-                            <Form.Label className="fw-bold small d-block">Logo Shop</Form.Label>
-                            <div className="border rounded p-2 mb-2 d-flex align-items-center justify-content-center" style={{height:'150px', background:'#f8f9fa'}}>
-                              <img src={shopConfig.logo || NO_IMAGE} style={{maxHeight:'100%', maxWidth:'100%'}} />
-                            </div>
-                            <Form.Control type="file" size="sm" onChange={e=>handleUpload(e,'LOGO')}/>
-                          </Col>
-                        </Row>
-                        <div className="mt-4 text-end">
-                          <Button variant="success" className="fw-bold px-4" onClick={luuCauHinh}>LƯU THÔNG TIN</Button>
+                  {/* --- CỘT PHẢI: NỘI DUNG CHI TIẾT --- */}
+                  <Col md={9}>
+                    <Tab.Content>
+                      
+                      {/* 1. THÔNG TIN CỬA HÀNG */}
+                      <Tab.Pane eventKey="general_info">
+                        <div className="bg-white p-4 rounded shadow-sm border">
+                          <h6 className="text-success fw-bold border-bottom pb-2 mb-3">THÔNG TIN CHUNG</h6>
+                          <Row className="g-3">
+                            <Col md={8}>
+                              <Row className="g-3">
+                                <Col md={6}><Form.Group><Form.Label className="fw-bold small">Tên Shop</Form.Label><Form.Control value={shopConfig.tenShop} onChange={e=>setShopConfig({...shopConfig, tenShop:e.target.value})}/></Form.Group></Col>
+                                <Col md={6}><Form.Group><Form.Label className="fw-bold small">Hotline</Form.Label><Form.Control value={shopConfig.sdt} onChange={e=>setShopConfig({...shopConfig, sdt:e.target.value})}/></Form.Group></Col>
+                                <Col md={12}><Form.Group><Form.Label className="fw-bold small">Slogan</Form.Label><Form.Control value={shopConfig.slogan} onChange={e=>setShopConfig({...shopConfig, slogan:e.target.value})}/></Form.Group></Col>
+                                <Col md={12}><Form.Group><Form.Label className="fw-bold small">Thông báo chạy (Header)</Form.Label><Form.Control value={shopConfig.topBarText} onChange={e=>setShopConfig({...shopConfig, topBarText:e.target.value})}/></Form.Group></Col>
+                                <Col md={6}><Form.Group><Form.Label className="fw-bold small">Giờ mở cửa</Form.Label><Form.Control value={shopConfig.openingHours} onChange={e=>setShopConfig({...shopConfig, openingHours:e.target.value})}/></Form.Group></Col>
+                                <Col md={6}><Form.Group><Form.Label className="fw-bold small">Địa chỉ</Form.Label><Form.Control value={shopConfig.diaChi} onChange={e=>setShopConfig({...shopConfig, diaChi:e.target.value})}/></Form.Group></Col>
+                              </Row>
+                            </Col>
+                            <Col md={4} className="text-center">
+                              <Form.Label className="fw-bold small d-block">Logo Shop</Form.Label>
+                              <div className="border rounded p-2 mb-2 d-flex align-items-center justify-content-center" style={{height:'150px', background:'#f8f9fa'}}>
+                                <img src={shopConfig.logo || NO_IMAGE} style={{maxHeight:'100%', maxWidth:'100%'}} />
+                              </div>
+                              <Form.Control type="file" size="sm" onChange={e=>handleUpload(e,'LOGO')}/>
+                            </Col>
+                          </Row>
+                          <div className="mt-4 text-end">
+                             <Button variant="success" className="fw-bold px-4" onClick={luuCauHinh}>LƯU THÔNG TIN</Button>
+                          </div>
                         </div>
-                      </div>
-                    </Tab.Pane>
+                      </Tab.Pane>
 
-                    {/* 2. NGÂN HÀNG & QR */}
-                    <Tab.Pane eventKey="payment_info">
-                      <div className="bg-white p-4 rounded shadow-sm border">
-                        <h6 className="text-primary fw-bold border-bottom pb-2 mb-3">THÔNG TIN CHUYỂN KHOẢN</h6>
-                        <Row className="g-3">
-                          <Col md={6}>
-                            <Form.Group className="mb-3"><Form.Label className="fw-bold small">Tên Ngân hàng</Form.Label><Form.Control value={shopConfig.bankInfo?.bankName} onChange={e=>setShopConfig({...shopConfig, bankInfo:{...shopConfig.bankInfo, bankName:e.target.value}})}/></Form.Group>
-                            <Form.Group className="mb-3"><Form.Label className="fw-bold small">Số Tài Khoản</Form.Label><Form.Control value={shopConfig.bankInfo?.accountNum} onChange={e=>setShopConfig({...shopConfig, bankInfo:{...shopConfig.bankInfo, accountNum:e.target.value}})}/></Form.Group>
-                            <Form.Group className="mb-3"><Form.Label className="fw-bold small">Chủ Tài Khoản</Form.Label><Form.Control value={shopConfig.bankInfo?.accountName} onChange={e=>setShopConfig({...shopConfig, bankInfo:{...shopConfig.bankInfo, accountName:e.target.value}})}/></Form.Group>
-                          </Col>
-                          <Col md={6} className="text-center">
-                            <Form.Label className="fw-bold small">Ảnh mã QR</Form.Label>
-                            <div className="border rounded p-2 mb-2 d-flex align-items-center justify-content-center" style={{height:'200px', background:'#f8f9fa'}}>
-                              {shopConfig.bankInfo?.qrImage ? <img src={shopConfig.bankInfo.qrImage} style={{maxHeight:'100%'}} /> : <span className="text-muted small">Chưa có QR</span>}
-                            </div>
-                            <Form.Control type="file" size="sm" onChange={e=>handleUpload(e,'QR')}/>
-                          </Col>
-                        </Row>
-                        <div className="mt-4 text-end">
-                          <Button variant="success" className="fw-bold px-4" onClick={luuCauHinh}>LƯU NGÂN HÀNG</Button>
+                      {/* 2. NGÂN HÀNG & QR */}
+                      <Tab.Pane eventKey="payment_info">
+                        <div className="bg-white p-4 rounded shadow-sm border">
+                          <h6 className="text-primary fw-bold border-bottom pb-2 mb-3">THÔNG TIN CHUYỂN KHOẢN</h6>
+                          <Row className="g-3">
+                            <Col md={6}>
+                              <Form.Group className="mb-3"><Form.Label className="fw-bold small">Tên Ngân hàng</Form.Label><Form.Control value={shopConfig.bankInfo?.bankName} onChange={e=>setShopConfig({...shopConfig, bankInfo:{...shopConfig.bankInfo, bankName:e.target.value}})}/></Form.Group>
+                              <Form.Group className="mb-3"><Form.Label className="fw-bold small">Số Tài Khoản</Form.Label><Form.Control value={shopConfig.bankInfo?.accountNum} onChange={e=>setShopConfig({...shopConfig, bankInfo:{...shopConfig.bankInfo, accountNum:e.target.value}})}/></Form.Group>
+                              <Form.Group className="mb-3"><Form.Label className="fw-bold small">Chủ Tài Khoản</Form.Label><Form.Control value={shopConfig.bankInfo?.accountName} onChange={e=>setShopConfig({...shopConfig, bankInfo:{...shopConfig.bankInfo, accountName:e.target.value}})}/></Form.Group>
+                            </Col>
+                            <Col md={6} className="text-center">
+                              <Form.Label className="fw-bold small">Ảnh mã QR</Form.Label>
+                              <div className="border rounded p-2 mb-2 d-flex align-items-center justify-content-center" style={{height:'200px', background:'#f8f9fa'}}>
+                                {shopConfig.bankInfo?.qrImage ? <img src={shopConfig.bankInfo.qrImage} style={{maxHeight:'100%'}} /> : <span className="text-muted small">Chưa có QR</span>}
+                              </div>
+                              <Form.Control type="file" size="sm" onChange={e=>handleUpload(e,'QR')}/>
+                            </Col>
+                          </Row>
+                          <div className="mt-4 text-end">
+                             <Button variant="success" className="fw-bold px-4" onClick={luuCauHinh}>LƯU NGÂN HÀNG</Button>
+                          </div>
                         </div>
-                      </div>
-                    </Tab.Pane>
+                      </Tab.Pane>
 
-                    {/* 3. PHÂN QUYỀN ADMIN (LOGIC HIỂN THỊ TRƯỚC) */}
-                    <Tab.Pane eventKey="admin_manage">
-                      <div className="bg-white p-4 rounded shadow-sm border">
-                        <div className="d-flex justify-content-between align-items-center mb-3">
-                          <h6 className="text-danger fw-bold m-0">DANH SÁCH QUẢN TRỊ VIÊN</h6>
-                          {/* Tạm thời dùng Modal hoặc Form inline để thêm Admin có phân quyền sau */}
+                      {/* 3. PHÂN QUYỀN ADMIN (LOGIC HIỂN THỊ TRƯỚC) */}
+                      <Tab.Pane eventKey="admin_manage">
+                        <div className="bg-white p-4 rounded shadow-sm border">
+                          <div className="d-flex justify-content-between align-items-center mb-3">
+                            <h6 className="text-danger fw-bold m-0">DANH SÁCH QUẢN TRỊ VIÊN</h6>
+                            {/* Tạm thời dùng Modal hoặc Form inline để thêm Admin có phân quyền sau */}
+                          </div>
+                          
+                          {/* Form thêm nhanh Admin (Giữ logic cũ tạm thời, sẽ nâng cấp sau) */}
+                          <InputGroup className="mb-4">
+                            <Form.Control placeholder="Nhập email nhân viên muốn cấp quyền..." value={newAdminEmail} onChange={e=>setNewAdminEmail(e.target.value)}/>
+                            <Button variant="danger" onClick={handleAddAdmin}>+ Cấp quyền</Button>
+                          </InputGroup>
+
+                          <Table hover responsive bordered className="align-middle">
+                            <thead className="bg-light"><tr><th>Email Admin</th><th>Quyền hạn</th><th>Thao tác</th></tr></thead>
+                            <tbody>
+                              {adminWhitelist.map((email, i)=>(
+                                <tr key={i}>
+                                  <td className="fw-bold text-dark">{email}</td>
+                                  <td><Badge bg="success">Toàn quyền</Badge></td> {/* Sau này sẽ hiện chi tiết quyền ở đây */}
+                                  <td className="text-center">
+                                     {email !== auth.currentUser?.email && (
+                                       <Button size="sm" variant="outline-danger" onClick={()=>handleRemoveAdmin(email)} title="Xóa quyền"><i className="fa-solid fa-trash"></i></Button>
+                                     )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </Table>
+                          <Alert variant="info" className="small mt-3">
+                            <i className="fa-solid fa-circle-info me-2"></i> 
+                            Người có trong danh sách này có thể đăng nhập vào trang Admin. Hiện tại đang cấp quyền "Toàn quyền" (Full Access).
+                          </Alert>
                         </div>
-                        
-                        {/* Form thêm nhanh Admin (Giữ logic cũ tạm thời, sẽ nâng cấp sau) */}
-                        <InputGroup className="mb-4">
-                          <Form.Control placeholder="Nhập email nhân viên muốn cấp quyền..." value={newAdminEmail} onChange={e=>setNewAdminEmail(e.target.value)}/>
-                          <Button variant="danger" onClick={handleAddAdmin}>+ Cấp quyền</Button>
-                        </InputGroup>
+                      </Tab.Pane>
 
-                        <Table hover responsive bordered className="align-middle">
-                          <thead className="bg-light"><tr><th>Email Admin</th><th>Quyền hạn</th><th>Thao tác</th></tr></thead>
-                          <tbody>
-                            {adminWhitelist.map((email, i)=>(
-                              <tr key={i}>
-                                <td className="fw-bold text-dark">{email}</td>
-                                <td><Badge bg="success">Toàn quyền</Badge></td> {/* Sau này sẽ hiện chi tiết quyền ở đây */}
-                                <td className="text-center">
-                                  {email !== auth.currentUser?.email && (
-                                    <Button size="sm" variant="outline-danger" onClick={()=>handleRemoveAdmin(email)} title="Xóa quyền"><i className="fa-solid fa-trash"></i></Button>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </Table>
-                        <Alert variant="info" className="small mt-3">
-                          <i className="fa-solid fa-circle-info me-2"></i> 
-                          Người có trong danh sách này có thể đăng nhập vào trang Admin. Hiện tại đang cấp quyền "Toàn quyền" (Full Access).
-                        </Alert>
-                      </div>
-                    </Tab.Pane>
+                      {/* 4. TÀI KHOẢN CỦA TÔI */}
+                      <Tab.Pane eventKey="my_account">
+                        <div className="bg-white p-4 rounded shadow-sm border" style={{maxWidth:'600px'}}>
+                          <h6 className="text-dark fw-bold border-bottom pb-2 mb-4">ĐỔI MẬT KHẨU CÁ NHÂN</h6>
+                          <Form onSubmit={handleUpdatePassword}>
+                            <Form.Group className="mb-3">
+                              <Form.Label className="fw-bold small">Email đăng nhập</Form.Label>
+                              <Form.Control type="email" value={auth.currentUser?.email || ''} disabled className="bg-light" />
+                            </Form.Group>
+                            <Form.Group className="mb-3">
+                              <Form.Label className="fw-bold small">Mật khẩu mới <span className="text-danger">*</span></Form.Label>
+                              <Form.Control type="password" value={passData.newPass} onChange={e=>setPassData({...passData, newPass:e.target.value})} placeholder="Nhập mật khẩu mới..." required />
+                            </Form.Group>
+                            <Form.Group className="mb-4">
+                              <Form.Label className="fw-bold small">Xác nhận mật khẩu <span className="text-danger">*</span></Form.Label>
+                              <Form.Control type="password" value={passData.confirmPass} onChange={e=>setPassData({...passData, confirmPass:e.target.value})} placeholder="Nhập lại mật khẩu..." required />
+                            </Form.Group>
+                            <Button type="submit" variant="warning" className="w-100 fw-bold text-white shadow-sm">
+                              <i className="fa-solid fa-key me-2"></i> CẬP NHẬT MẬT KHẨU
+                            </Button>
+                          </Form>
+                        </div>
+                      </Tab.Pane>
 
-                    {/* 4. TÀI KHOẢN CỦA TÔI */}
-                    <Tab.Pane eventKey="my_account">
-                      <div className="bg-white p-4 rounded shadow-sm border" style={{maxWidth:'600px'}}>
-                        <h6 className="text-dark fw-bold border-bottom pb-2 mb-4">ĐỔI MẬT KHẨU CÁ NHÂN</h6>
-                        <Form onSubmit={handleUpdatePassword}>
-                          <Form.Group className="mb-3">
-                            <Form.Label className="fw-bold small">Email đăng nhập</Form.Label>
-                            <Form.Control type="email" value={auth.currentUser?.email || ''} disabled className="bg-light" />
-                          </Form.Group>
-                          <Form.Group className="mb-3">
-                            <Form.Label className="fw-bold small">Mật khẩu mới <span className="text-danger">*</span></Form.Label>
-                            <Form.Control type="password" value={passData.newPass} onChange={e=>setPassData({...passData, newPass:e.target.value})} placeholder="Nhập mật khẩu mới..." required />
-                          </Form.Group>
-                          <Form.Group className="mb-4">
-                            <Form.Label className="fw-bold small">Xác nhận mật khẩu <span className="text-danger">*</span></Form.Label>
-                            <Form.Control type="password" value={passData.confirmPass} onChange={e=>setPassData({...passData, confirmPass:e.target.value})} placeholder="Nhập lại mật khẩu..." required />
-                          </Form.Group>
-                          <Button type="submit" variant="warning" className="w-100 fw-bold text-white shadow-sm">
-                            <i className="fa-solid fa-key me-2"></i> CẬP NHẬT MẬT KHẨU
-                          </Button>
-                        </Form>
-                      </div>
-                    </Tab.Pane>
-
-                  </Tab.Content>
-                </Col>
-              </Row>
-            </Tab.Container>
-          </div>
-        </Tab>
+                    </Tab.Content>
+                  </Col>
+                </Row>
+              </Tab.Container>
+            </div>
+          </Tab>
 
         </Tabs>
       </Container>
