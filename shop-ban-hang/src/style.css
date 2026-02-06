@@ -1440,28 +1440,3 @@ img { max-width: 100%; height: auto; }
     display: none !important;
   }
 }
-
-/* --- DIỆT LỖI MÀN ĐEN (BẢN TOÀN DIỆN - CHỈ CẦN GIỮ ĐOẠN NÀY) --- */
-
-/* Ép ẩn tất cả các loại lớp phủ (Modal, Menu Mobile, và các lớp phủ lạ) */
-.modal-backdrop, 
-.offcanvas-backdrop, 
-div[class*="backdrop"] {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-    z-index: -9999 !important;
-    width: 0 !important;
-    height: 0 !important;
-    position: fixed !important; /* Đảm bảo nó không chiếm không gian */
-}
-
-/* Mở khóa cuộn trang cho Body trong mọi tình huống (Desktop & Mobile) */
-body, 
-body.modal-open, 
-body.offcanvas-open {
-    overflow: auto !important;
-    overflow-y: auto !important;
-    padding-right: 0 !important;
-}
