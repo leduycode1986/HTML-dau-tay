@@ -1462,3 +1462,22 @@ body.modal-open {
 body {
     overflow-y: auto !important; /* Luôn cho phép cuộn dọc */
 }
+
+/* [FIX LỖI TOÀN DIỆN] Tiêu diệt mọi loại màn hình đen (Modal, Offcanvas, Sidebar) */
+div[class*="backdrop"] {
+    display: none !important;       /* Ẩn ngay lập tức */
+    opacity: 0 !important;          /* Làm trong suốt */
+    visibility: hidden !important;  /* Ẩn khỏi tầm nhìn */
+    pointer-events: none !important;/* Cho phép click xuyên qua */
+    z-index: -9999 !important;      /* Đẩy xuống đáy địa ngục */
+    width: 0 !important;
+    height: 0 !important;
+    position: static !important;
+}
+
+/* Mở khóa cuộn trang cho Body trong mọi tình huống */
+body, body.modal-open, body.offcanvas-open {
+    overflow: auto !important;
+    overflow-y: auto !important;
+    padding-right: 0 !important;
+}

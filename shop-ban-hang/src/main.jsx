@@ -5,43 +5,46 @@ import { BrowserRouter } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './style.css'; 
 
-// --- COMPONENT CỨU HỘ: XÓA LỚP MỜ (PHIÊN BẢN MUTATION OBSERVER) ---
-const EmergencyFix = () => {
+// --- COMPONENT CỨU HỘ: DIỆT MỌI LOẠI BACKDROP ---
+const FixBlackScreen = () => {
   useEffect(() => {
-    // 1. Tiêm CSS cưỡng chế
+    // 1. Tiêm CSS Cưỡng chế trực tiếp vào đầu não (Head)
     const style = document.createElement('style');
     style.innerHTML = `
-      .modal-backdrop { display: none !important; opacity: 0 !important; pointer-events: none !important; }
-      body.modal-open { overflow: auto !important; padding-right: 0 !important; }
-      body { overflow-y: auto !important; }
+      div[class*="backdrop"] { display: none !important; opacity: 0 !important; pointer-events: none !important; }
+      body { overflow: auto !important; padding-right: 0 !important; }
     `;
     document.head.appendChild(style);
 
-    // 2. Sử dụng MutationObserver để canh chừng DOM thay đổi
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.addedNodes.length) {
-          // Nếu thấy có backdrop được thêm vào -> Xóa class khóa cuộn của body ngay
-          if (document.body.classList.contains('modal-open')) {
-             document.body.classList.remove('modal-open');
-             document.body.style.overflow = 'auto';
-             document.body.style.paddingRight = '0px';
-          }
-          // Tìm và xóa element backdrop (nếu CSS trên chưa đủ đô)
-          document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-        }
-      });
+    // 2. Hàm dọn dẹp mạnh tay
+    const killBackdrop = () => {
+      // Tìm tất cả phần tử có class chứa chữ 'backdrop'
+      const ghosts = document.querySelectorAll('div[class*="backdrop"]');
+      ghosts.forEach(g => g.remove());
+      
+      // Xóa các class gây kẹt cuộn trang trên body
+      document.body.classList.remove('modal-open', 'offcanvas-open');
+      document.body.style = ''; // Reset sạch style inline
+    };
+
+    // 3. Chạy ngay lập tức
+    killBackdrop();
+
+    // 4. Cài đặt "Camera an ninh" (Observer) để canh chừng DOM thay đổi
+    const observer = new MutationObserver(() => {
+      killBackdrop();
     });
 
-    // Bắt đầu theo dõi thẻ body
+    // Theo dõi toàn bộ body
     observer.observe(document.body, { childList: true, subtree: true });
 
-    // Dọn dẹp lần đầu tiên
-    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-    document.body.classList.remove('modal-open');
-    document.body.style.overflow = 'auto';
+    // 5. Vẫn dọn dẹp định kỳ mỗi 0.5s để chắc chắn 100%
+    const interval = setInterval(killBackdrop, 500);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      clearInterval(interval);
+    };
   }, []);
 
   return null;
@@ -50,8 +53,8 @@ const EmergencyFix = () => {
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      {/* Đặt Fix lên đầu */}
-      <EmergencyFix />
+      {/* Đặt FixBlackScreen ở vị trí cao nhất */}
+      <FixBlackScreen />
       <Store />
     </BrowserRouter>
   </React.StrictMode>
