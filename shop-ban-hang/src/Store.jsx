@@ -147,63 +147,93 @@ function Store() {
       {!isAdminPage && (
         <>          
           <div className="top-bar-notification"><div className="marquee-text"><span className="me-4">{shopConfig.topBarText || "Chào mừng bạn đến với Thực Phẩm Mai Vàng!"}</span>{shopConfig.openingHours && (<span className="mx-4"><i className="fa-regular fa-clock me-1"></i> Mở cửa: {shopConfig.openingHours}</span>)}</div></div>
-          <Navbar bg="white" expand="lg" className="sticky-top shadow-sm py-3" style={{zIndex: 100, borderBottom:'3px solid #198754'}}>
+          {/* --- BẮT ĐẦU ĐOẠN CODE NAVBAR ĐÃ TỐI ƯU --- */}
+          <Navbar bg="white" expand="lg" className="sticky-top shadow-sm py-2" style={{zIndex: 100, borderBottom:'3px solid #198754'}}>
             <Container>
-            <Navbar.Brand as={Link} to="/" className="me-4 text-decoration-none brand-group">
-                {shopConfig.logo ? (<img src={shopConfig.logo} alt="Logo" className="brand-logo-img" />) : (<span className="fs-1">🦁</span>)}
-                <div className="brand-info"><h1 className="shop-name">{shopConfig.tenShop}</h1><span className="shop-slogan">{shopConfig.slogan}</span></div>
-            </Navbar.Brand>
+              {/* 1. LOGO SHOP */}
+              <Navbar.Brand as={Link} to="/" className="me-2 text-decoration-none brand-group d-flex align-items-center">
+                  {shopConfig.logo ? (<img src={shopConfig.logo} alt="Logo" className="brand-logo-img" style={{maxHeight:'50px'}} />) : (<span className="fs-1">🦁</span>)}
+                  <div className="brand-info ms-2 d-none d-xl-block"> {/* Ẩn tên shop trên màn hình nhỏ để nhường chỗ */}
+                      <h1 className="shop-name m-0" style={{fontSize:'1.2rem', fontWeight:'bold', color:'#198754'}}>{shopConfig.tenShop}</h1>
+                      <span className="shop-slogan small text-muted" style={{fontSize:'0.75rem'}}>{shopConfig.slogan}</span>
+                  </div>
+              </Navbar.Brand>
+
               <Navbar.Toggle />
+
               <Navbar.Collapse>
-                <Form className="d-flex flex-grow-1 mx-lg-5 my-2 my-lg-0 search-form-custom" onSubmit={handleSearch}>
-                <div className="input-group">
-                    <Form.Control type="search" placeholder="Tìm sản phẩm...?" value={tuKhoa} onChange={e => setTuKhoa(e.target.value)} className="search-input" />
-                    <Button variant="success" type="submit" className="search-btn"><i className="fa-solid fa-magnifying-glass"></i></Button>
-                </div>
+                {/* 2. Ô TÌM KIẾM (Đã chỉnh mx-lg-2 để rộng hơn) */}
+                <Form className="d-flex flex-grow-1 mx-2 mx-lg-3 my-2 my-lg-0 search-form-custom" onSubmit={handleSearch}>
+                  <div className="input-group">
+                      <Form.Control 
+                          type="search" 
+                          placeholder="Bạn tìm gì hôm nay...?" 
+                          value={tuKhoa} 
+                          onChange={e => setTuKhoa(e.target.value)} 
+                          className="search-input border-success" 
+                      />
+                      <Button variant="success" type="submit" className="search-btn"><i className="fa-solid fa-magnifying-glass"></i></Button>
+                  </div>
                 </Form>
-                    <Nav className="align-items-center gap-3">
-                    <div className="d-none d-lg-flex header-hotline-box"><div className="hotline-icon"><i className="fa-solid fa-phone"></i></div><span className="hotline-number">{shopConfig.sdt}</span></div>
-                    <Link to="/tra-cuu" className="btn-header-action btn-lookup"><i className="fa-solid fa-truck-fast"></i> Tra đơn</Link>
-                    {/* 👉 DÁN ĐOẠN CODE MỚI NÀY VÀO ĐÂY: NÚT YÊU THÍCH */}
-                    <Link to="/wishlist" className="btn-header-action position-relative me-3 text-dark text-decoration-none">
-                        <div style={{fontSize:'22px'}}><i className={`fa-solid fa-heart ${wishlist.length > 0 ? 'text-danger' : 'text-secondary'}`}></i></div>
-                        {wishlist.length > 0 && (
-                          <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{fontSize:'10px'}}>
-                            {wishlist.length}
-                          </span>
-                        )}
-                    </Link>
-                    <div className="header-cart-wrapper">
-                      <Link to="/cart" className="btn-header-action btn-cart-header px-4">
-                        <i className="fa-solid fa-cart-shopping"></i><span className="cart-badge">{gioHang.reduce((a,b)=>a+b.soLuong,0)}</span>
-                      </Link>
-                      <div className="mini-cart-box">
-                        {gioHang.length === 0 ? (<div className="mini-cart-empty"><div style={{fontSize:'30px', marginBottom:'10px'}}>🛒</div>Chưa có sản phẩm nào</div>) : (
-                          <><div className="small text-muted mb-2 border-bottom pb-1">Sản phẩm mới thêm</div><div className="mini-cart-list">{gioHang.slice(0, 5).map((sp) => (<div key={sp.id} className="mini-cart-item"><img src={sp.anh} alt={sp.ten} className="mini-cart-img" /><div className="mini-cart-info"><div className="mini-cart-name">{sp.ten}</div><div className="d-flex justify-content-between"><span className="mini-cart-price">{sp.giaBan?.toLocaleString()} ¥</span><span className="small text-muted">x{sp.soLuong}</span></div></div></div>))}</div><div className="d-flex justify-content-between align-items-center mb-2"><span className="small text-secondary">Tổng cộng:</span><span className="fw-bold text-danger fs-6">{gioHang.reduce((t, s) => t + (s.giaBan || s.giaGoc) * s.soLuong, 0).toLocaleString()} ¥</span></div><Button variant="success" size="sm" className="w-100 fw-bold" onClick={() => navigate('/cart')}>XEM GIỎ HÀNG</Button></>
-                        )}
-                      </div>
-                    </div>
+
+                {/* 3. CÁC NÚT CHỨC NĂNG (Bên phải) */}
+                <Nav className="align-items-center gap-1 gap-xl-2">
+                  {/* Hotline: Chỉ hiện trên màn hình to (XL) */}
+                  <div className="d-none d-xl-flex header-hotline-box align-items-center me-2">
+                      <div className="hotline-icon bg-light text-success rounded-circle d-flex align-items-center justify-content-center me-2" style={{width:35, height:35}}><i className="fa-solid fa-phone"></i></div>
+                      <span className="hotline-number fw-bold text-danger">{shopConfig.sdt}</span>
+                  </div>
+
+                  {/* Nút Tra cứu: Chỉ hiện Icon trên Laptop nhỏ, hiện chữ trên màn to */}
+                  <Link to="/tra-cuu" className="btn btn-light rounded-pill border-0 position-relative text-dark d-flex align-items-center" title="Tra cứu đơn">
+                      <i className="fa-solid fa-truck-fast text-success fs-5"></i>
+                      <span className="d-none d-xl-inline ms-2 small fw-bold">Tra đơn</span>
+                  </Link>
                   
+                  {/* Nút Yêu thích (Wishlist) */}
+                  <Link to="/wishlist" className="btn btn-light rounded-pill border-0 position-relative text-dark d-flex align-items-center" title="Yêu thích">
+                      <i className={`fa-solid fa-heart fs-5 ${wishlist.length > 0 ? 'text-danger' : 'text-secondary'}`}></i>
+                      {wishlist.length > 0 && (
+                        <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{fontSize:'9px'}}>
+                          {wishlist.length}
+                        </span>
+                      )}
+                  </Link>
+
+                  {/* Nút Giỏ hàng */}
+                  <Link to="/cart" className="btn btn-light rounded-pill border-0 position-relative text-dark d-flex align-items-center me-2" title="Giỏ hàng">
+                      <i className="fa-solid fa-cart-shopping fs-5 text-success"></i>
+                      <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark" style={{fontSize:'10px'}}>
+                        {gioHang.reduce((a,b)=>a+b.soLuong,0)}
+                      </span>
+                  </Link>
+                  
+                  {/* Nút Tài khoản / Đăng nhập */}
                   {currentUser ? (
-                    <Dropdown align="end">
-                    <Dropdown.Toggle variant="light" className="border-0 fw-bold d-flex align-items-center gap-2" style={{outline:'none', boxShadow:'none'}}>
-                        <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" width="35" alt="User" />
-                        <span className="d-none d-xl-block small text-start"><div style={{fontSize:'11px', color:'#999'}}>Xin chào,</div><div className="text-success">{currentUser.displayName || 'Thành viên'}</div></span>
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu>
-                        <Dropdown.Item as={Link} to="/member"><i className="fa-solid fa-user-gear me-2"></i> Tài khoản của tôi</Dropdown.Item>
-                        <Dropdown.Divider />
-                        <Dropdown.Item onClick={handleLogout} className="text-danger fw-bold"><i className="fa-solid fa-right-from-bracket me-2"></i> Đăng xuất</Dropdown.Item>
-                    </Dropdown.Menu>
-                    </Dropdown>
-                ) : (
-                    <Link to="/auth" state={{ from: location.pathname }} className="btn-header-action btn-login-header"><i className="fa-regular fa-user"></i> Đăng nhập</Link>
-                )}
+                      <Dropdown align="end">
+                      <Dropdown.Toggle variant="white" className="border-0 fw-bold d-flex align-items-center gap-2 p-0" style={{outline:'none', boxShadow:'none', background:'transparent'}}>
+                          <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" width="38" alt="User" />
+                          <span className="d-none d-xl-block small text-start">
+                              <div style={{fontSize:'10px', color:'#999', lineHeight: '10px'}}>Xin chào,</div>
+                              <div className="text-success text-truncate" style={{maxWidth:'80px'}}>{currentUser.displayName || 'Bạn'}</div>
+                          </span>
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu className="shadow border-0 mt-2">
+                          <Dropdown.Item as={Link} to="/member"><i className="fa-solid fa-user-gear me-2"></i> Tài khoản</Dropdown.Item>
+                          <Dropdown.Divider />
+                          <Dropdown.Item onClick={handleLogout} className="text-danger"><i className="fa-solid fa-right-from-bracket me-2"></i> Đăng xuất</Dropdown.Item>
+                      </Dropdown.Menu>
+                      </Dropdown>
+                  ) : (
+                      <Link to="/auth" state={{ from: location.pathname }} className="btn btn-danger rounded-pill fw-bold px-3 py-1 small shadow-sm">
+                          <i className="fa-regular fa-user me-1"></i> Đăng nhập
+                      </Link>
+                  )}
                 </Nav>
               </Navbar.Collapse>
             </Container>
           </Navbar>
-          
+          {/* --- KẾT THÚC ĐOẠN CODE NAVBAR --- */}          
           <div className="horizontal-menu-section sticky-top" style={{top: '88px', zIndex: 99}}> 
             <Container>
               <div className="horizontal-menu-list">
