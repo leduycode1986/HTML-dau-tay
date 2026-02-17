@@ -18,7 +18,7 @@ function Product({ sp, themVaoGio, openQuickView, toggleWishlist, toggleCompare,
           {sp.isMoi && <Badge bg="success" className="shadow-sm">New</Badge>}
         </div>
         
-        {/* [MỚI] Nút Yêu thích & So sánh (Hiện khi hover) */}
+        {/* Nút Yêu thích & So sánh (Hiện khi hover) */}
         <div className="product-action-vertical">
            <button className={`btn-action ${isLiked ? 'active' : ''}`} onClick={(e)=>{e.preventDefault(); toggleWishlist && toggleWishlist(sp)}} title="Yêu thích">
               <i className={`fa-${isLiked ? 'solid' : 'regular'} fa-heart`}></i>
@@ -32,7 +32,7 @@ function Product({ sp, themVaoGio, openQuickView, toggleWishlist, toggleCompare,
         </div>
 
         <Link to={`/san-pham/${sp.slug || toSlug(sp.ten)}`}>
-          <Card.Img variant="top" src={sp.anh} className="product-img-fixed" alt={sp.ten} loading="lazy" /> {/* Lazy load native */}
+          <Card.Img variant="top" src={sp.anh} className="product-img-fixed" alt={sp.ten} loading="lazy" />
         </Link>
       </div>
 
@@ -53,9 +53,23 @@ function Product({ sp, themVaoGio, openQuickView, toggleWishlist, toggleCompare,
             <span className="text-danger fw-bold fs-5">{parseInt(sp.giaBan).toLocaleString()}¥</span>
             {sp.giaGoc > sp.giaBan && <span className="text-muted text-decoration-line-through small">{parseInt(sp.giaGoc).toLocaleString()}¥</span>}
           </div>
-          <Button variant="outline-success" className="w-100 rounded-pill fw-bold btn-add-cart-hover" onClick={() => themVaoGio(sp)} disabled={sp.soLuong <= 0}>
-            {sp.soLuong > 0 ? "THÊM VÀO GIỎ" : "HẾT HÀNG"}
+          
+          {/* --- [SỬA LỖI] NÚT THÊM GIỎ HÀNG NHỎ GỌN HƠN --- */}
+          <Button 
+            variant="outline-success" 
+            // Bỏ fw-bold, thêm style chỉnh cỡ chữ nhỏ lại
+            className="w-100 rounded-pill py-1 btn-add-cart-hover d-flex align-items-center justify-content-center" 
+            style={{fontSize: '0.85rem', fontWeight: '600'}}
+            onClick={() => themVaoGio(sp)} 
+            disabled={sp.soLuong <= 0}
+          >
+            {sp.soLuong > 0 ? (
+                // Thêm icon xe đẩy cho đẹp và gọn
+                <><i className="fa-solid fa-cart-plus me-2"></i>THÊM VÀO GIỎ</>
+            ) : "HẾT HÀNG"}
           </Button>
+          {/* ----------------------------------------------- */}
+
         </div>
       </Card.Body>
     </Card>

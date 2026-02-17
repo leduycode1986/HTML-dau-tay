@@ -4,6 +4,8 @@ import { Container, Breadcrumb } from 'react-bootstrap';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 import { toSlug } from './utils';
+import ShareButtons from './ShareButtons'; // [MỚI]
+import { ToastContainer } from 'react-toastify'; // Đảm bảo đã import cái này để hiện thông báo copy
 
 function NewsDetail() {
   const { slug } = useParams();
@@ -47,12 +49,12 @@ function NewsDetail() {
             <div className="fw-bold fst-italic text-secondary mb-4 p-3 bg-light rounded border-start border-4 border-success">
               {baiViet.tomTat}
             </div>
-
             <div className="post-content" dangerouslySetInnerHTML={{ __html: baiViet.noiDung }}></div>
-            
+            <ShareButtons title={baiViet.tieuDe} /> {/* Nút chia sẻ */}
             <div className="mt-5 pt-4 border-top">
                 <Link to="/tin-tuc" className="btn btn-outline-secondary rounded-pill px-4"><i className="fa-solid fa-arrow-left me-2"></i> Quay lại danh sách</Link>
             </div>
+            <ToastContainer autoClose={2000} /> {/* Thêm container cho toast */}
           </div>
         </div>
       </Container>

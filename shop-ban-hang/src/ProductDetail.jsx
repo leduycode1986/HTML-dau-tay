@@ -6,6 +6,7 @@ import { toSlug } from './utils';
 import { collection, addDoc, onSnapshot, query, where, serverTimestamp, getDocs, limit } from 'firebase/firestore'; 
 import { db, auth } from './firebase'; 
 import SEO from './SEO'; // [MỚI] Import SEO
+import ShareButtons from './ShareButtons'; // [MỚI]
 
 function ProductDetail({ themVaoGio, toggleWishlist, toggleCompare, wishlist }) {
   // ... (Phần logic state, useEffect fetch data giữ nguyên như cũ) ...
@@ -94,6 +95,7 @@ function ProductDetail({ themVaoGio, toggleWishlist, toggleCompare, wishlist }) 
             <Button className="btn-add-cart-lg" onClick={() => sanPham.soLuong > 0 && themVaoGio(sanPham)} disabled={sanPham.soLuong <= 0}><i className="fa-solid fa-cart-plus me-2"></i> THÊM VÀO GIỎ</Button>
             <Button variant="danger" className="rounded-pill px-4 fw-bold" onClick={handleBuyNow} disabled={sanPham.soLuong <= 0}>MUA NGAY</Button>
           </div>
+          <ShareButtons title={sanPham.ten} /> {/* [MỚI] Nút chia sẻ */}
           <div className="detail-desc-box"><div dangerouslySetInnerHTML={{__html: sanPham.moTa}}></div></div>
         </Col>
       </Row>
