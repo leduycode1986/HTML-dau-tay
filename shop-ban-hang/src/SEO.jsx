@@ -7,7 +7,7 @@ function SEO({ title, description, image, url }) {
   const defaultDesc = "Chuyên cung cấp thực phẩm Việt Nam tại Nhật Bản. Giao hàng nhanh chóng, giá cả hợp lý.";
   
   // Bạn thay link ảnh Logo của bạn vào dòng dưới đây (dùng link từ postimages hoặc link firebase)
-  const defaultImg = "https://postimg.cc/MM3k4r5m"; 
+  const defaultImg = "https://i.postimg.cc/HxD3qV1h/logo-default.jpg";
   
   // Link gốc website
   const siteUrl = "https://html-dau-tay.vercel.app"; 
