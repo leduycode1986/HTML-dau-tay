@@ -128,9 +128,9 @@ function Store() {
       
       {/* [MỚI] Nút so sánh nổi (Floating Compare) */}
       {!isAdminPage && compareList.length > 0 && (
-        <Link to="/compare" className="floating-compare-btn">
-           <i className="fa-solid fa-scale-balanced"></i>
-           <span className="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">{compareList.length}</span>
+        <Link to="/compare" className="floating-compare-btn" style={{ bottom: '250px' }}>
+          <i className="fa-solid fa-scale-balanced"></i>
+          <span className="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">{compareList.length}</span>
         </Link>
       )}
 
@@ -164,7 +164,15 @@ function Store() {
                     <Nav className="align-items-center gap-3">
                     <div className="d-none d-lg-flex header-hotline-box"><div className="hotline-icon"><i className="fa-solid fa-phone"></i></div><span className="hotline-number">{shopConfig.sdt}</span></div>
                     <Link to="/tra-cuu" className="btn-header-action btn-lookup"><i className="fa-solid fa-truck-fast"></i> Tra đơn</Link>
-                    
+                    {/* 👉 DÁN ĐOẠN CODE MỚI NÀY VÀO ĐÂY: NÚT YÊU THÍCH */}
+                    <Link to="/wishlist" className="btn-header-action position-relative me-3 text-dark text-decoration-none">
+                        <div style={{fontSize:'22px'}}><i className={`fa-solid fa-heart ${wishlist.length > 0 ? 'text-danger' : 'text-secondary'}`}></i></div>
+                        {wishlist.length > 0 && (
+                          <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{fontSize:'10px'}}>
+                            {wishlist.length}
+                          </span>
+                        )}
+                    </Link>
                     <div className="header-cart-wrapper">
                       <Link to="/cart" className="btn-header-action btn-cart-header px-4">
                         <i className="fa-solid fa-cart-shopping"></i><span className="cart-badge">{gioHang.reduce((a,b)=>a+b.soLuong,0)}</span>
