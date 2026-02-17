@@ -3,7 +3,12 @@ import { Container, Table, Button } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
 function Compare({ compareList, removeFromCompare, themVaoGio }) {
-  if (compareList.length === 0) return <Container className="py-5 text-center"><h3>Chưa có sản phẩm để so sánh</h3><Link to="/" className="btn btn-outline-success mt-2">Chọn sản phẩm</Link></Container>;
+  if (compareList.length === 0) return (
+    <Container className="py-5 text-center">
+      <h3>Chưa có sản phẩm để so sánh</h3>
+      <Link to="/" className="btn btn-outline-success mt-2">Chọn sản phẩm</Link>
+    </Container>
+  );
 
   return (
     <Container className="py-4">
@@ -15,7 +20,12 @@ function Compare({ compareList, removeFromCompare, themVaoGio }) {
               <th style={{width:'15%'}}>Tiêu chí</th>
               {compareList.map(sp => (
                 <th key={sp.id} style={{width:`${85/compareList.length}%`}}>
-                  <Button variant="outline-danger" size="sm" className="mb-2 border-0" onClick={()=>removeFromCompare(sp.id)}><i className="fa-solid fa-trash"></i> Xóa</Button>
+                  {/* --- [SỬA LỖI TẠI ĐÂY] --- */}
+                  {/* Cũ: onClick={()=>removeFromCompare(sp.id)} -> Sai vì hàm cần object */}
+                  {/* Mới: onClick={()=>removeFromCompare(sp)} -> Đúng */}
+                  <Button variant="outline-danger" size="sm" className="mb-2 border-0" onClick={()=>removeFromCompare(sp)}>
+                    <i className="fa-solid fa-trash"></i> Xóa
+                  </Button>
                   <div className="fw-bold text-success">{sp.ten}</div>
                 </th>
               ))}
@@ -28,7 +38,7 @@ function Compare({ compareList, removeFromCompare, themVaoGio }) {
             </tr>
             <tr>
               <td className="fw-bold bg-light">Giá bán</td>
-              {compareList.map(sp => <td key={sp.id} className="text-danger fw-bold">{sp.giaBan?.toLocaleString()} ¥</td>)}
+              {compareList.map(sp => <td key={sp.id} className="text-danger fw-bold">{parseInt(sp.giaBan).toLocaleString()} ¥</td>)}
             </tr>
             <tr>
               <td className="fw-bold bg-light">Trạng thái</td>
