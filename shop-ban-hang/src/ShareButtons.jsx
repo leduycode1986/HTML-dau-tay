@@ -31,10 +31,10 @@ function ShareButtons({ title, url }) {
         </Button>
       </OverlayTrigger>
 
-      {/* Twitter (X) */}
-      <OverlayTrigger placement="top" overlay={<Tooltip>Chia sẻ lên X (Twitter)</Tooltip>}>
-        <Button variant="outline-dark" size="sm" className="rounded-circle p-0 d-flex align-items-center justify-content-center" style={{width:36, height:36}} onClick={()=>openShareWin(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareTitle)}`)}>
-            <i className="fa-brands fa-x-twitter fs-6"></i>
+      {/* Twitter */}
+      <OverlayTrigger placement="top" overlay={<Tooltip>Chia sẻ lên Twitter</Tooltip>}>
+        <Button variant="outline-info" size="sm" className="rounded-circle p-0 d-flex align-items-center justify-content-center" style={{width:36, height:36, borderColor:'#1DA1F2', color:'#1DA1F2'}} onClick={()=>openShareWin(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareTitle)}`)}>
+            <i className="fa-brands fa-twitter fs-6"></i> {/* <--- Đã sửa thành fa-twitter */}
         </Button>
       </OverlayTrigger>
 
